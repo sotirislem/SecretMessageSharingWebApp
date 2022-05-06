@@ -1,0 +1,25 @@
+<div class="mt-2"></div>
+
+<div class="form-floating">
+	<textarea id="secretTextArea"
+			  class="form-control"
+			  placeholder="Secret"
+			  [(ngModel)]="secretTextArea"
+			  [ngClass]="{ 'is-invalid': secretTextAreaField.invalid && (secretTextAreaField.dirty || secretTextAreaField.touched) }"
+			  #secretTextAreaField="ngModel"
+			  required></textarea>
+	<label for="secretTextArea">Secret</label>
+
+	<div class="invalid-feedback" *ngIf="secretTextAreaField.invalid && (secretTextAreaField.dirty || secretTextAreaField.touched)">
+		<div *ngIf="secretTextAreaField.errors?.['required']">
+			Please type your secret here...
+		</div>
+	</div>
+</div>
+
+<div class="mt-2 d-flex gap-2 justify-content-end">
+	<button #submitButton type="button" class="btn btn-primary" (click)="onSubmit()" [disabled]="!secretTextArea || enryptionInProgress">
+		<span *ngIf="enryptionInProgress" class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+		{{ !enryptionInProgress ? 'Encrypt' : 'Encrypting...' }}
+	</button>
+</div>
