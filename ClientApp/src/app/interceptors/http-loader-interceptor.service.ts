@@ -11,7 +11,7 @@ import {
 } from '@angular/common/http';
 
 @Injectable()
-export class LoaderInterceptor implements HttpInterceptor {
+export class HttpLoaderInterceptor implements HttpInterceptor {
 	private pendingRequests: HttpRequest<any>[] = [];
 
 	constructor(private loaderService: LoaderService) { }

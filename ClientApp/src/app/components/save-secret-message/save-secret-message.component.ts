@@ -13,13 +13,15 @@ import { Routes } from '../../../constants';
 })
 export class SaveSecretMessageComponent implements OnInit {
 	ngbTooltipTimer: any;
+	secretMsgId: string;
+	secretMsgKey: string;
 	secretMsgUrl: string;
 
 	constructor(private router: Router, private routerHelperService: RouterHelperService, private urlHelperService: UrlHelperService, private clipboard: Clipboard) {
-		const secretMsgId = this.routerHelperService.getCurrentNavigationStateData('secretMsgId');
-		const secretMsgKey = this.routerHelperService.getCurrentNavigationStateData('secretMsgKey');
+		this.secretMsgId = this.routerHelperService.getCurrentNavigationStateData('secretMsgId');
+		this.secretMsgKey = this.routerHelperService.getCurrentNavigationStateData('secretMsgKey');
 
-		this.secretMsgUrl = urlHelperService.createLocalUrlWithParams(Routes.Root_GetSecretMessage, { id: secretMsgId, encryptionKey: secretMsgKey });
+		this.secretMsgUrl = urlHelperService.createLocalUrlWithParams(Routes.Root_GetSecretMessage, { id: this.secretMsgId, encryptionKey: this.secretMsgKey });
 	}
 
 	ngOnInit(): void {
@@ -28,10 +30,6 @@ export class SaveSecretMessageComponent implements OnInit {
 	copySecretMsgUrlToClipboard(ngbTooltip: NgbTooltip) {
 		this.clipboard.copy(this.secretMsgUrl);
 		this.toggleCopiedTooltip(ngbTooltip);
-	}
-
-	redirectToFetchData() {
-		window.location.href = this.secretMsgUrl;
 	}
 
 	private toggleCopiedTooltip(ngbTooltip: NgbTooltip) {

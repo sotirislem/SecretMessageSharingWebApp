@@ -8,7 +8,7 @@ import { AppRoutingModule } from './app-routing.module';
 import { AppRootComponent } from './components/app-root/app-root.component';
 import { NavMenuComponent } from './components/nav-menu/nav-menu.component';
 import { LoaderComponent } from './components/loader/loader.component';
-import { LoaderInterceptor } from './interceptors/http-interceptor.service';
+import { HttpLoaderInterceptor } from './interceptors/http-loader-interceptor.service';
 import { HomeComponent } from './components/home/home.component';
 import { SaveSecretMessageComponent } from './components/save-secret-message/save-secret-message.component';
 import { GetSecretMessageComponent } from './components/get-secret-message/get-secret-message.component';
@@ -31,7 +31,7 @@ import { GetSecretMessageComponent } from './components/get-secret-message/get-s
 		NgbModule
 	],
 	providers: [
-		{ provide: HTTP_INTERCEPTORS, useClass: LoaderInterceptor, multi: true }
+		{ provide: HTTP_INTERCEPTORS, useClass: HttpLoaderInterceptor, multi: true }
 	],
 	bootstrap: [AppRootComponent]
 })

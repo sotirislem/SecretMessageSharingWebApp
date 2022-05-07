@@ -1,10 +1,9 @@
 import { Component } from '@angular/core';
 import { SjclService } from '../../services/sjcl.service';
 import { Router } from '@angular/router';
-import { LoaderService } from '../../services/loader.service';
 import { ApiClientService } from '../../services/api-client.service';
 import { Routes } from '../../../constants';
-
+import { SecretMessage } from '../../models/SecretMessage';
 
 @Component({
 	selector: 'app-home',
@@ -13,26 +12,23 @@ import { Routes } from '../../../constants';
 })
 export class HomeComponent {
 	secretTextArea: string;
-	enryptionInProgress: boolean;
+	encryptionInProgress: boolean;
 
-	constructor(private sjclService: SjclService, private router: Router, private loaderService: LoaderService, private apiClientService: ApiClientService) {
+	constructor(private router: Router, private sjclService: SjclService, private apiClientService: ApiClientService) {
 	}
 
 	onSubmit() {
-		this.enryptionInProgress = true;
+		this.encryptionInProgress = true;
 
 		setTimeout(() => {
-			this.sjclService.encryptMessage(this.secretTextArea.trim()).then((secretMessage) => {
+			const [ secretMessage, encryptionKey ] = this.sjclService.encryptMessage(this.secretTextArea.trim());
+			this.apiClientService.saveSecretMessage(secretMessage).subscribe(response => {
 
-				this.apiClientService.saveSecretMessage(secretMessage).subscribe(response => {
-
-					this.router.navigate([Routes.Root_SaveSecretMessage], {
-						state: {
-							secretMsgId: response,
-							secretMsgKey: this.sjclService.retrieveEncryptionKeyFromSessionStorage()
-						}
-					});
-
+				this.router.navigate([Routes.Root_SaveSecretMessage], {
+					state: {
+						secretMsgId: response,
+						secretMsgKey: encryptionKey
+					}
 				});
 
 			});

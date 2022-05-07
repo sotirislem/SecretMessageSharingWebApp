@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { ActivatedRouteSnapshot, CanActivate, Router, RouterStateSnapshot, UrlTree } from '@angular/router';
 import { Observable } from 'rxjs';
+import { Routes } from '../../constants';
 import { RouterHelperService } from '../services/router-helper.service';
 
 @Injectable({
@@ -8,7 +9,7 @@ import { RouterHelperService } from '../services/router-helper.service';
 })
 export class CanActivateGetSecretMessageRouteGuard implements CanActivate {
 
-	constructor(private routerHelperService: RouterHelperService)
+	constructor(private router: Router, private routerHelperService: RouterHelperService)
 	{ }
 
 	canActivate(
@@ -21,6 +22,7 @@ export class CanActivateGetSecretMessageRouteGuard implements CanActivate {
 		if (id && encryptionKey) {
 			return true;
 		}
+		this.router.navigate([Routes.Root]);
 		return false;
 	}
 }

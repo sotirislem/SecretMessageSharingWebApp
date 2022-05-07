@@ -1,6 +1,12 @@
 textarea {
 	min-height: 100px;
+	font-size: 18px;
 }
+
+textarea::placeholder {
+	font-size: 16px;
+}
+
 
 button {
 	width: 150px;

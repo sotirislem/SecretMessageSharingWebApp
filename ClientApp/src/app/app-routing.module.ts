@@ -11,6 +11,7 @@ const AppRoutes: Routes = [
 	{ path: '', component: HomeComponent, pathMatch: 'full' },
 	{ path: RouteConstants.Root_SaveSecretMessage, component: SaveSecretMessageComponent, canActivate: [CanActivateSaveSecretMessageRouteGuard] },
 	{ path: RouteConstants.Root_GetSecretMessage, component: GetSecretMessageComponent, canActivate: [CanActivateGetSecretMessageRouteGuard] },
+	{ path: '**', redirectTo:''}
 ]
 
 @NgModule({

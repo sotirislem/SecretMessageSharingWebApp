@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import * as sjcl from 'sjcl';
 import { Constants } from '../../constants';
 import { SecretMessage } from '../models/SecretMessage';
+import { DecryptionResult, SjclDecryptionResult } from '../models/SjclDecryptionResult';
 
 @Injectable({
 	providedIn: 'root'
@@ -20,11 +21,11 @@ export class SjclService {
 		sjcl.random.startCollectors();
 	}
 
-	async encryptMessage(msg: string): Promise<SecretMessage> {
+	encryptMessage(msg: string): [secretMessage: SecretMessage, encryptionKey: string] {
 		const encryptionParams = this.generateEncryptionParams();
 		const encryptionKey = this.generateEncryptionKey();
 
-		const encryptedMsgData = await sjcl.encrypt(encryptionKey, msg, encryptionParams) as unknown as string;
+		const encryptedMsgData = sjcl.encrypt(encryptionKey, msg, encryptionParams) as unknown as string;
 		const encryptedMsgJson = JSON.parse(encryptedMsgData) as sjcl.SjclCipherEncrypted;
 		const { iv, salt, ct } = encryptedMsgJson;
 
@@ -33,10 +34,10 @@ export class SjclService {
 			salt: salt.toString(),
 			ct: ct.toString()
 		};
-		return secretMessage;
+		return [secretMessage, encryptionKey];
 	}
 
-	async decryptMessage(encryptionKey: string, secretMessage: SecretMessage): Promise<string> {
+	decryptMessage(secretMessage: SecretMessage, encryptionKey: string): SjclDecryptionResult {
 		const cipherEncrypted = <sjcl.SjclCipherEncrypted>{
 			...this.encryptionSettings,
 			iv: secretMessage.iv as unknown,
@@ -44,15 +45,18 @@ export class SjclService {
 			ct: secretMessage.ct as unknown
 		}
 
-		const decryptedMsg: string = await sjcl.decrypt(encryptionKey, JSON.stringify(cipherEncrypted));
-		return decryptedMsg;
-	}
-
-	retrieveEncryptionKeyFromSessionStorage(): string | null {
-		const encryptionKey = sessionStorage.getItem(Constants.ENCRYPTION_KEY_NAME);
-		if (encryptionKey) sessionStorage.removeItem(Constants.ENCRYPTION_KEY_NAME);
-
-		return encryptionKey;
+		let sjclDecryptionResult = {} as SjclDecryptionResult;
+		try {
+			sjclDecryptionResult.decryptedMsg = sjcl.decrypt(encryptionKey, JSON.stringify(cipherEncrypted));
+			sjclDecryptionResult.result = DecryptionResult.OK;
+		}
+		catch (e: any) {
+			sjclDecryptionResult.errorMsg = e.message;
+			sjclDecryptionResult.result = DecryptionResult.Error;
+		}
+		finally {
+			return sjclDecryptionResult;
+		}
 	}
 
 	private generateEncryptionParams(): sjcl.SjclCipherEncryptParams {
@@ -68,13 +72,7 @@ export class SjclService {
 		const b64Key = sjcl.codec.base64.fromBits(randomBits);
 
 		const urlSafeKey = b64Key.replace(/[+=\/]/g, '');
-		this.addEncryptionKeyToSessionStorage(urlSafeKey);
 
 		return urlSafeKey;
 	}
-
-	private addEncryptionKeyToSessionStorage(encryptionKey: string) {
-		sessionStorage.setItem(Constants.ENCRYPTION_KEY_NAME, encryptionKey);
-	}
-
 }
