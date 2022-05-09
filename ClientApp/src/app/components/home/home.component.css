@@ -1,13 +1,18 @@
-textarea {
+#secretTextArea {
 	min-height: 100px;
 	font-size: 18px;
 }
 
-textarea::placeholder {
+#secretTextArea::placeholder {
 	font-size: 16px;
 }
 
-
 button {
-	width: 150px;
+	min-width: 150px;
+}
+
+@media only screen and (max-width: 1000px) {
+	br {
+		display: none;
+	}
 }

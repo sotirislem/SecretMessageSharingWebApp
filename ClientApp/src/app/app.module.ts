@@ -12,7 +12,7 @@ import { HttpLoaderInterceptor } from './interceptors/http-loader-interceptor.se
 import { HomeComponent } from './components/home/home.component';
 import { SaveSecretMessageComponent } from './components/save-secret-message/save-secret-message.component';
 import { GetSecretMessageComponent } from './components/get-secret-message/get-secret-message.component';
-
+import { AppInfoComponent } from './components/app-info/app-info.component';
 
 @NgModule({
 	declarations: [
@@ -21,7 +21,8 @@ import { GetSecretMessageComponent } from './components/get-secret-message/get-s
 		LoaderComponent,
 		HomeComponent,
 		SaveSecretMessageComponent,
-		GetSecretMessageComponent
+		GetSecretMessageComponent,
+		AppInfoComponent
 	],
 	imports: [
 		BrowserModule.withServerTransition({ appId: 'ng-cli-universal' }),

@@ -1,7 +1,19 @@
+<h1 class="h5">Welcome to SecretsManagerWebApp</h1>
+<p class="my-3">
+	This app allows you to create ecrypted messages that can be securely shared with a unique recepient.<br />
+	Each message is encrypted/decrypted locally, on browser, by using the AES-256 algorithm in GCM mode.<br />
+	Remote server is only used to store the encrypted message, so it can be later retrieved by a third person.<br />
+	The encryption key which is used to encrypt/decrypt a message is locally created on user's browser and never gets exposed to server.<br />
+	Every generated message is removed from server upon its retrieval. Also, unread messages are automatically destroyed 1 hour after their creation timestamp.<br />
+	All of the above makes message creation, transmission and retrieval extremely secure, where data breach practically becomes impossible.<br />
+	Learn more by checking out the <a [routerLink]="[Routes.Root_AppInfo]">App Info</a> page.
+</p>
+
 <div class="my-2">
+	<label class="form-label h6" for="secretTextArea">Message</label>
 	<textarea id="secretTextArea"
 			  class="form-control font-monospace"
-			  [(ngModel)]="secretTextArea"
+			  [(ngModel)]="secretMsgPlainText"
 			  [ngClass]="{ 'is-invalid': secretTextAreaField.invalid && (secretTextAreaField.dirty || secretTextAreaField.touched) }"
 			  #secretTextAreaField="ngModel"
 			  placeholder="Type your secret message here"
@@ -15,7 +27,7 @@
 </div>
 
 <div class="d-flex gap-2 justify-content-end">
-	<button #submitButton type="button" class="btn btn-primary" (click)="onSubmit()" [disabled]="!secretTextArea || encryptionInProgress">
+	<button #submitButton type="button" class="btn btn-primary" (click)="onEncryptButtonClick()" [disabled]="!secretMsgPlainText || encryptionInProgress">
 		<span *ngIf="encryptionInProgress" class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
 		{{ !encryptionInProgress ? 'Encrypt' : 'Encrypting...' }}
 	</button>

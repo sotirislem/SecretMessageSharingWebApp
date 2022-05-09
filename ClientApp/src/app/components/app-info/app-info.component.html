@@ -1,0 +1,135 @@
+<h1 class="h5">App Info</h1>
+<div class="accordion" id="how-it-works-accordion">
+	<div class="accordion-item">
+		<h2 id="accordion1-header" class="accordion-header">
+			<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+					data-bs-target="#accordion1-body" aria-controls="accordion1-body" aria-expanded="false">
+				Encryption library
+			</button>
+		</h2>
+		<div id="accordion1-body" class="accordion-collapse collapse"
+			 aria-labelledby="accordion1-header" data-bs-parent="#how-it-works-accordion">
+			<div class="accordion-body">
+				Stanford Javascript Crypto Library (SJCL)<br />
+				<a target="_blank" href="https://crypto.stanford.edu/sjcl/">Official Web Page</a>
+				/
+				<a target="_blank" href="https://github.com/bitwiseshiftleft/sjcl">Source code @ Github</a>
+			</div>
+		</div>
+	</div>
+
+	<div class="accordion-item">
+		<h2 id="accordion2-header" class="accordion-header">
+			<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+					data-bs-target="#accordion2-body" aria-controls="accordion2-body" aria-expanded="false">
+				Encryption algorithm
+			</button>
+		</h2>
+		<div id="accordion2-body" class="accordion-collapse collapse"
+			 aria-labelledby="accordion2-header" data-bs-parent="#how-it-works-accordion">
+			<div class="accordion-body">
+				AES-256 in GCM mode with 128-bits tag
+			</div>
+		</div>
+	</div>
+
+	<div class="accordion-item">
+		<h2 id="accordion3-header" class="accordion-header">
+			<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+					data-bs-target="#accordion3-body" aria-controls="accordion3-body" aria-expanded="false">
+				Encryption key
+			</button>
+		</h2>
+		<div id="accordion3-body" class="accordion-collapse collapse"
+			 aria-labelledby="accordion3-header" data-bs-parent="#how-it-works-accordion">
+			<div class="accordion-body">
+				<ul class="m-0">
+					<li>Auto-generated at run-time (on browser) by using the SJCL library's provided features</li>
+					<li>Generated key length: 50 chars in base64/url-safe format</li>
+					<li>The generated key is not directly used for encryption/decryption, but instead, it is first processed by a key derivation function (PBKDF2 with 100,000 iterations)</li>
+				</ul>
+			</div>
+		</div>
+	</div>
+
+	<div class="accordion-item">
+		<h2 id="accordion4-header" class="accordion-header">
+			<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+					data-bs-target="#accordion4-body" aria-controls="accordion4-body" aria-expanded="false">
+				What data does server store?
+			</button>
+		</h2>
+		<div id="accordion4-body" class="accordion-collapse collapse"
+			 aria-labelledby="accordion4-header" data-bs-parent="#how-it-works-accordion">
+			<div class="accordion-body">
+				The server stores only the minimum information required from the encryption library to decrypt the message, based on the data that was originally used to encrypt it.
+				This information consists of: IV, Salt and the encrypted message itself (CT: CipherText)
+			</div>
+		</div>
+	</div>
+
+	<div class="accordion-item">
+		<h2 id="accordion5-header" class="accordion-header">
+			<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+					data-bs-target="#accordion5-body" aria-controls="accordion5-body" aria-expanded="false">
+				Does server collect any client data?
+			</button>
+		</h2>
+		<div id="accordion5-body" class="accordion-collapse collapse"
+			 aria-labelledby="accordion5-header" data-bs-parent="#how-it-works-accordion">
+			<div class="accordion-body">
+				Υes, this is done purely for logging purposes.
+				The data concerns information such as client's: IP address, browser's user-agent identity, request timestamp
+			</div>
+		</div>
+	</div>
+
+	<div class="accordion-item">
+		<h2 id="accordion6-header" class="accordion-header">
+			<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+					data-bs-target="#accordion6-body" aria-controls="accordion6-body" aria-expanded="false">
+				For how long does the server keep stored messages?
+			</button>
+		</h2>
+		<div id="accordion6-body" class="accordion-collapse collapse"
+			 aria-labelledby="accordion6-header" data-bs-parent="#how-it-works-accordion">
+			<div class="accordion-body">
+				<ul class="m-0">
+					<li>Messages are accessible for 1 time only</li>
+					<li>Messages are being removed from database after retrieval</li>
+					<li>Unread messages are automatically destroyed 1 hour after their creation time</li>
+				</ul>
+			</div>
+		</div>
+	</div>
+
+	<div class="accordion-item">
+		<h2 id="accordion7-header" class="accordion-header">
+			<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+					data-bs-target="#accordion7-body" aria-controls="accordion7-body" aria-expanded="false">
+				What is its usefulness?
+			</button>
+		</h2>
+		<div id="accordion7-body" class="accordion-collapse collapse"
+			 aria-labelledby="accordion7-header" data-bs-parent="#how-it-works-accordion">
+			<div class="accordion-body">
+				The perfect use for this app is secure password sharing with family, friends, colleagues, etc.
+			</div>
+		</div>
+	</div>
+
+	<div class="accordion-item">
+		<h2 id="accordion8-header" class="accordion-header">
+			<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+					data-bs-target="#accordion8-body" aria-controls="accordion8-body" aria-expanded="false">
+				Development stack
+			</button>
+		</h2>
+		<div id="accordion8-body" class="accordion-collapse collapse"
+			 aria-labelledby="accordion8-header" data-bs-parent="#how-it-works-accordion">
+			<div class="accordion-body">
+				Angular 13+, ASP.NET Core 6.0, MSSQL
+			</div>
+		</div>
+	</div>
+</div>

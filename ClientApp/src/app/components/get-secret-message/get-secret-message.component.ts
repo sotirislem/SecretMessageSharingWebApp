@@ -26,7 +26,7 @@ export class GetSecretMessageComponent {
 
 	constructor(route: ActivatedRoute, apiClientService: ApiClientService, private sjclService: SjclService) {
 		const id = route.snapshot.queryParams.id;
-		const encryptionKey = route.snapshot.queryParams.encryptionKey;
+		const encryptionKey = route.snapshot.fragment!;
 
 		this.componentState = ComponentState.LoadingMessage;
 		apiClientService.getSavedSecretMessage(id).subscribe((secretMessageData: SecretMessage) => {

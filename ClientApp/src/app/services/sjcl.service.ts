@@ -1,6 +1,5 @@
 import { Injectable } from '@angular/core';
 import * as sjcl from 'sjcl';
-import { Constants } from '../../constants';
 import { SecretMessage } from '../models/SecretMessage';
 import { DecryptionResult, SjclDecryptionResult } from '../models/SjclDecryptionResult';
 
@@ -71,7 +70,7 @@ export class SjclService {
 		const randomBits = sjcl.random.randomWords(10);
 		const b64Key = sjcl.codec.base64.fromBits(randomBits);
 
-		const urlSafeKey = b64Key.replace(/[+=\/]/g, '');
+		const urlSafeKey = b64Key.replace(/[+=\/]/g, '').substr(0, 50);
 
 		return urlSafeKey;
 	}

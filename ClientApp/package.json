@@ -1,17 +1,17 @@
 {
   "name": "secretsmanagerwebapp",
   "version": "0.0.0",
-	"scripts": {
-		"ng": "ng",
-		"prestart": "node aspnetcore-https",
-		"start": "run-script-os",
-		"start:windows": "ng serve --port 44490 --ssl --ssl-cert %APPDATA%\\ASP.NET\\https\\%npm_package_name%.pem --ssl-key %APPDATA%\\ASP.NET\\https\\%npm_package_name%.key",
-		"start:default": "ng serve --port 44490 --ssl --ssl-cert $HOME/.aspnet/https/${npm_package_name}.pem --ssl-key $HOME/.aspnet/https/${npm_package_name}.key",
-		"build": "ng build",
-		"build:ssr": "ng run SecretsManagerWebApp:server:dev",
-		"watch": "ng build --watch --configuration development",
-		"test": "ng test"
-	},
+  "scripts": {
+    "ng": "ng",
+    "prestart": "node aspnetcore-https",
+    "start": "run-script-os",
+    "start:windows": "ng serve --port 44490 --ssl --ssl-cert %APPDATA%\\ASP.NET\\https\\%npm_package_name%.pem --ssl-key %APPDATA%\\ASP.NET\\https\\%npm_package_name%.key",
+    "start:default": "ng serve --port 44490 --ssl --ssl-cert $HOME/.aspnet/https/${npm_package_name}.pem --ssl-key $HOME/.aspnet/https/${npm_package_name}.key",
+    "build": "ng build",
+    "build:ssr": "ng run SecretsManagerWebApp:server:dev",
+    "watch": "ng build --watch --configuration development",
+    "test": "ng test"
+  },
   "private": true,
   "dependencies": {
     "@angular/animations": "~13.1.1",
@@ -33,6 +33,7 @@
     "jquery": "^3.6.0",
     "oidc-client": "^1.11.5",
     "popper.js": "^1.16.0",
+    "qrcode": "^1.5.0",
     "run-script-os": "^1.1.6",
     "rxjs": "~6.6.0",
     "sjcl": "^1.0.8",
@@ -46,6 +47,7 @@
     "@types/jasmine": "~3.6.0",
     "@types/jasminewd2": "~2.0.8",
     "@types/node": "^12.11.1",
+    "@types/qrcode": "^1.4.2",
     "jasmine-core": "~3.8.0",
     "karma": "~6.3.0",
     "karma-chrome-launcher": "~3.1.0",

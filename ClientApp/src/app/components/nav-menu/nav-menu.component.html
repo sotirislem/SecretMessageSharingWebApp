@@ -3,7 +3,7 @@
 		<div class="container">
 			<a class="navbar-brand" [routerLink]="[Routes.Root]">SecretsManagerWebApp</a>
 
-			<!--<button class="navbar-toggler"
+			<button class="navbar-toggler"
 					type="button"
 					data-toggle="collapse"
 					data-target=".navbar-collapse"
@@ -12,10 +12,20 @@
 					(click)="toggle()">
 				<span class="navbar-toggler-icon"></span>
 			</button>
+
 			<div class="navbar-collapse collapse d-sm-inline-flex justify-content-end"
 				 [ngClass]="{ show: isExpanded }">
 				<ul class="navbar-nav flex-grow">
 					<li class="nav-item"
+						[routerLinkActive]="['link-active']"
+						[routerLinkActiveOptions]="{ exact: true }">
+						<a class="nav-link text-dark" [routerLink]="[Routes.Root]">Create a Message</a>
+					</li>
+					<li class="nav-item" [routerLinkActive]="['link-active']">
+						<a class="nav-link text-dark" [routerLink]="[Routes.Root_AppInfo]">App Info</a>
+					</li>
+
+					<!--<li class="nav-item"
 						[routerLinkActive]="['link-active']"
 						[routerLinkActiveOptions]="{ exact: true }">
 						<a class="nav-link text-dark" [routerLink]="[Routes.Root]">Home</a>
@@ -25,9 +35,9 @@
 					</li>
 					<li class="nav-item" [routerLinkActive]="['link-active']">
 						<a class="nav-link text-dark" [routerLink]="[Routes.Root_GetSecretMessage]">Get Secret Message</a>
-					</li>
+					</li>-->
 				</ul>
-			</div>-->
+			</div>
 		</div>
 	</nav>
 </header>

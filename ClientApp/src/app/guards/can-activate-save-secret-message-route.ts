@@ -16,10 +16,11 @@ export class CanActivateSaveSecretMessageRouteGuard implements CanActivate {
 		route: ActivatedRouteSnapshot,
 		state: RouterStateSnapshot
 	): Observable<boolean | UrlTree> | Promise<boolean | UrlTree> | boolean | UrlTree {
+		const secretMsgPlainText = this.routerHelperService.getCurrentNavigationStateData('secretMsgPlainText');
 		const secretMsgId = this.routerHelperService.getCurrentNavigationStateData('secretMsgId');
 		const secretMsgKey = this.routerHelperService.getCurrentNavigationStateData('secretMsgKey');
 
-		if (secretMsgId && secretMsgKey) {
+		if (secretMsgPlainText && secretMsgId && secretMsgKey) {
 			return true;
 		}
 		this.router.navigate([Routes.Root]);

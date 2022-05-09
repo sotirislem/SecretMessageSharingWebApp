@@ -11,21 +11,24 @@ import { SecretMessage } from '../../models/SecretMessage';
 	styleUrls: ['./home.component.css']
 })
 export class HomeComponent {
-	secretTextArea: string;
+	readonly Routes = Routes;
+
+	secretMsgPlainText: string;
 	encryptionInProgress: boolean;
 
 	constructor(private router: Router, private sjclService: SjclService, private apiClientService: ApiClientService) {
 	}
 
-	onSubmit() {
+	onEncryptButtonClick() {
 		this.encryptionInProgress = true;
-
+		
 		setTimeout(() => {
-			const [ secretMessage, encryptionKey ] = this.sjclService.encryptMessage(this.secretTextArea.trim());
+			const [secretMessage, encryptionKey] = this.sjclService.encryptMessage(this.secretMsgPlainText.trim());
 			this.apiClientService.saveSecretMessage(secretMessage).subscribe(response => {
 
 				this.router.navigate([Routes.Root_SaveSecretMessage], {
 					state: {
+						secretMsgPlainText: this.secretMsgPlainText,
 						secretMsgId: response,
 						secretMsgKey: encryptionKey
 					}

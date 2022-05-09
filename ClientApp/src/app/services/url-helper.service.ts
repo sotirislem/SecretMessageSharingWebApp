@@ -8,11 +8,11 @@ export class UrlHelperService {
 
 	constructor(@Inject('BASE_URL') private baseUrl: string) { }
 
-	createLocalUrlWithParams(routeName: string, params: { [param: string]: string }) {
+	createLocalUrlWithParams(routeName: string, params: { [param: string]: string }, fragment?: string) {
 		let httpParams = new HttpParams();
 		for (let param in params) {
 			httpParams = httpParams.append(param, params[param]);
 		}
-		return `${this.baseUrl}/${routeName}?${httpParams}`;
+		return `${this.baseUrl}/${routeName}?${httpParams}` + (fragment ? `#${fragment}` : '');
 	}
 }

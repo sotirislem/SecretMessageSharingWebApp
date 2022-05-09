@@ -17,7 +17,7 @@ export class CanActivateGetSecretMessageRouteGuard implements CanActivate {
 		state: RouterStateSnapshot
 	): Observable<boolean | UrlTree> | Promise<boolean | UrlTree> | boolean | UrlTree {
 		const id = route.queryParams.id;
-		const encryptionKey = route.queryParams.encryptionKey;
+		const encryptionKey = route.fragment;
 
 		if (id && encryptionKey) {
 			return true;
