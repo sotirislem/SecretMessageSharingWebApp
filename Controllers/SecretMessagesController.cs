@@ -2,8 +2,11 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
+using SecretsManagerWebApp.Helpers;
+using SecretsManagerWebApp.Middlewares;
 using SecretsManagerWebApp.Models.Api;
 using SecretsManagerWebApp.Repositories;
+using System.Diagnostics;
 
 namespace SecretsManagerWebApp.Controllers
 {
@@ -12,10 +15,12 @@ namespace SecretsManagerWebApp.Controllers
 	public class SecretMessagesController : ControllerBase
 	{
 		private readonly ISecretMessagesRepository _secretMessagesRepository;
+		private readonly IGetLogsRepository _getLoggerRepository;
 
-		public SecretMessagesController(ISecretMessagesRepository secretMessagesRepository)
+		public SecretMessagesController(ISecretMessagesRepository secretMessagesRepository, IGetLogsRepository getLoggerRepository)
 		{
 			this._secretMessagesRepository = secretMessagesRepository;
+			this._getLoggerRepository = getLoggerRepository;
 		}
 
 		[HttpPost("store")]
@@ -24,22 +29,35 @@ namespace SecretsManagerWebApp.Controllers
 			var secretMessage = new Models.DbContext.SecretMessage
 			{
 				JsonData = JsonConvert.SerializeObject(secretMessageData),
-				CreatedDateTime = DateTime.Now,
-				CreatorIP = HttpContext.Connection.RemoteIpAddress?.ToString()
+				CreatorIP = HttpContextHelper.GetClientIP(HttpContext),
+				CreatorClientInfo = HttpContextHelper.GetClientInfo(HttpContext)
 			};
 			_secretMessagesRepository.Store(secretMessage);
+
 			return secretMessage.Id;
 		}
 
 		[HttpGet("get/{id}")]
 		public async Task<SecretMessage?> Get(string id)
 		{
-			var res = await _secretMessagesRepository.Get(id);
-			if (res is not null)
+			var secretMessage = await _secretMessagesRepository.Get(id);
+			var getLog = new Models.DbContext.GetLog
 			{
-				return JsonConvert.DeserializeObject<SecretMessage>(res.JsonData);
-			}
+				RequestDateTime = HttpContextHelper.GetRequestDateTime(HttpContext),
+				RequestCreatorIP = HttpContextHelper.GetClientIP(HttpContext),
+				RequestClientInfo = HttpContextHelper.GetClientInfo(HttpContext),
+				SecretMessageId = id,
+				SecretMessageExisted = (secretMessage is not null),
+				SecretMessageCreatedDateTime = secretMessage?.CreatedDateTime,
+				SecretMessageCreatorIP = secretMessage?.CreatorIP,
+				SecretMessageCreatorClientInfo = secretMessage?.CreatorClientInfo
+			};
+			_getLoggerRepository.Add(getLog);
 
+			if (secretMessage is not null)
+			{
+				return JsonConvert.DeserializeObject<SecretMessage>(secretMessage.JsonData);
+			}
 			return null;
 		}
 	}

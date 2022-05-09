@@ -7,10 +7,6 @@ namespace SecretsManagerWebApp.Data
 	{
 		public DbSet<SecretMessage> SecretMessages { get; set; }
 
-		public SecretMessageDbContext(DbContextOptions<SecretMessageDbContext> options) : base(options)
-		{
-
-		}
-
+		public SecretMessageDbContext(DbContextOptions<SecretMessageDbContext> options) : base(options) { }
 	}
 }

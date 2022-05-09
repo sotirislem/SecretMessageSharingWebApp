@@ -7,5 +7,7 @@ namespace SecretsManagerWebApp.Repositories
 		SecretMessage Store(SecretMessage secretMessage);
 
 		Task<SecretMessage> Get(string id);
+
+		void DeleteOldMessages();
 	}
 }

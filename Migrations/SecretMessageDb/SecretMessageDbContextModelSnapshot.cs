@@ -30,6 +30,9 @@ namespace SecretsManagerWebApp.Migrations
                     b.Property<DateTime>("CreatedDateTime")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("CreatorClientInfo")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("CreatorIP")
                         .HasColumnType("nvarchar(max)");
 
