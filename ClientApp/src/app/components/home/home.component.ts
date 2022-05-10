@@ -3,7 +3,8 @@ import { SjclService } from '../../services/sjcl.service';
 import { Router } from '@angular/router';
 import { ApiClientService } from '../../services/api-client.service';
 import { Routes } from '../../../constants';
-import { SecretMessage } from '../../models/SecretMessage';
+import { finalize } from 'rxjs/operators';
+import { SignalRService } from '../../services/signalr.service';
 
 @Component({
 	selector: 'app-home',
@@ -16,25 +17,34 @@ export class HomeComponent {
 	secretMsgPlainText: string;
 	encryptionInProgress: boolean;
 
-	constructor(private router: Router, private sjclService: SjclService, private apiClientService: ApiClientService) {
-	}
+	constructor(
+		private router: Router,
+		private sjclService: SjclService,
+		private apiClientService: ApiClientService,
+		private signalRService: SignalRService
+	) { }
 
-	onEncryptButtonClick() {
+	async onEncryptButtonClick() {
 		this.encryptionInProgress = true;
-		
+
+		await this.signalRService.initHubConnection();
+
 		setTimeout(() => {
 			const [secretMessage, encryptionKey] = this.sjclService.encryptMessage(this.secretMsgPlainText.trim());
-			this.apiClientService.saveSecretMessage(secretMessage).subscribe(response => {
 
-				this.router.navigate([Routes.Root_SaveSecretMessage], {
-					state: {
-						secretMsgPlainText: this.secretMsgPlainText,
-						secretMsgId: response,
-						secretMsgKey: encryptionKey
-					}
+			this.apiClientService.saveSecretMessage(secretMessage)
+				.pipe(finalize(() => {
+					this.encryptionInProgress = false;
+				}))
+				.subscribe(response => {
+					this.router.navigate([Routes.Root_NewSecretMessage], {
+						state: {
+							secretMsgPlainText: this.secretMsgPlainText,
+							secretMsgId: response,
+							secretMsgKey: encryptionKey
+						}
+					});
 				});
-
-			});
 		}, 500);
 	}
 }

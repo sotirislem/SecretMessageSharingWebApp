@@ -7,7 +7,7 @@ import { RouterHelperService } from '../services/router-helper.service';
 @Injectable({
 	providedIn: 'root'
 })
-export class CanActivateSaveSecretMessageRouteGuard implements CanActivate {
+export class GetSecretMessageRouteGuard implements CanActivate {
 
 	constructor(private router: Router, private routerHelperService: RouterHelperService)
 	{ }
@@ -16,11 +16,10 @@ export class CanActivateSaveSecretMessageRouteGuard implements CanActivate {
 		route: ActivatedRouteSnapshot,
 		state: RouterStateSnapshot
 	): Observable<boolean | UrlTree> | Promise<boolean | UrlTree> | boolean | UrlTree {
-		const secretMsgPlainText = this.routerHelperService.getCurrentNavigationStateData('secretMsgPlainText');
-		const secretMsgId = this.routerHelperService.getCurrentNavigationStateData('secretMsgId');
-		const secretMsgKey = this.routerHelperService.getCurrentNavigationStateData('secretMsgKey');
+		const id = route.queryParams.id;
+		const encryptionKey = route.fragment;
 
-		if (secretMsgPlainText && secretMsgId && secretMsgKey) {
+		if (id && encryptionKey) {
 			return true;
 		}
 		this.router.navigate([Routes.Root]);

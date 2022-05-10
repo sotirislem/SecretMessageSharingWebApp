@@ -23,5 +23,10 @@ namespace SecretsManagerWebApp.Helpers
 		{
 			return httpContext.Features.Get<IHttpRequestTimeFeature>()!.RequestTime;
 		}
+
+		internal static string GetRequestHeaderValue(HttpRequest httpRequest, string key)
+		{
+			return httpRequest.Headers[key].ToString();
+		}
 	}
 }

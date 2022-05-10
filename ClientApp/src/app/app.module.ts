@@ -8,11 +8,17 @@ import { AppRoutingModule } from './app-routing.module';
 import { AppRootComponent } from './components/app-root/app-root.component';
 import { NavMenuComponent } from './components/nav-menu/nav-menu.component';
 import { LoaderComponent } from './components/loader/loader.component';
-import { HttpLoaderInterceptor } from './interceptors/http-loader-interceptor.service';
 import { HomeComponent } from './components/home/home.component';
-import { SaveSecretMessageComponent } from './components/save-secret-message/save-secret-message.component';
+import { NewSecretMessageComponent } from './components/new-secret-message/new-secret-message.component';
 import { GetSecretMessageComponent } from './components/get-secret-message/get-secret-message.component';
 import { AppInfoComponent } from './components/app-info/app-info.component';
+
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { ToastrModule } from 'ngx-toastr';
+
+import { HttpLoaderInterceptor } from './interceptors/http-loader-interceptor.service';
+import { HttpHeadersInterceptor } from './interceptors/http-headers-interceptor.service';
+import { HttpErrorInterceptor } from './interceptors/http-error-interceptor.service';
 
 @NgModule({
 	declarations: [
@@ -20,7 +26,7 @@ import { AppInfoComponent } from './components/app-info/app-info.component';
 		NavMenuComponent,
 		LoaderComponent,
 		HomeComponent,
-		SaveSecretMessageComponent,
+		NewSecretMessageComponent,
 		GetSecretMessageComponent,
 		AppInfoComponent
 	],
@@ -29,10 +35,14 @@ import { AppInfoComponent } from './components/app-info/app-info.component';
 		AppRoutingModule,
 		HttpClientModule,
 		FormsModule,
-		NgbModule
+		NgbModule,
+		BrowserAnimationsModule,
+		ToastrModule.forRoot()
 	],
 	providers: [
-		{ provide: HTTP_INTERCEPTORS, useClass: HttpLoaderInterceptor, multi: true }
+		{ provide: HTTP_INTERCEPTORS, useClass: HttpLoaderInterceptor, multi: true },
+		{ provide: HTTP_INTERCEPTORS, useClass: HttpHeadersInterceptor, multi: true },
+		{ provide: HTTP_INTERCEPTORS, useClass: HttpErrorInterceptor, multi: true }
 	],
 	bootstrap: [AppRootComponent]
 })

@@ -31,11 +31,7 @@ namespace SecretsManagerWebApp.Repositories
 		public SecretMessage Store(SecretMessage secretMessage)
 		{
 			_context.SecretMessages.Add(secretMessage);
-			var dbSaveResult = _context.SaveChanges();
-			if (dbSaveResult < 1)
-			{
-				throw new Exception("SecretMessagesRepository: Store");
-			}
+			_context.SaveChanges();
 
 			_logger.LogInformation("SecretMessages:Store => new SecretMessage with ID: {secretMessageId}.", secretMessage.Id);
 			return secretMessage;
@@ -48,10 +44,6 @@ namespace SecretsManagerWebApp.Repositories
 			{
 				_context.SecretMessages.RemoveRange(oldMessages);
 				var dbSaveResult = _context.SaveChanges();
-				if (dbSaveResult < 1)
-				{
-					throw new Exception("SecretMessagesRepository: DeleteOldMessages");
-				}
 
 				_logger.LogInformation("SecretMessagesRepository: Deleted {dbSaveResult} old message(s).", dbSaveResult);
 			}

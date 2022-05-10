@@ -2,10 +2,13 @@ const PROXY_CONFIG = [
 	{
 		context: [
 			"/api",
-			"/swagger"
+			"/swagger",
+			"/signalR"
 		],
 		target: "https://localhost:7275",
-		secure: false
+		secure: false,
+		logLevel: 'debug',
+		ws: true
 	}
 ]
 

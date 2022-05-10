@@ -18,11 +18,7 @@ namespace SecretsManagerWebApp.Repositories
 		public GetLog Add(GetLog getLog)
 		{
 			_context.GetLogs.Add(getLog);
-			var dbSaveResult = _context.SaveChanges();
-			if (dbSaveResult < 1)
-			{
-				throw new Exception("GetLogsRepository: Add");
-			}
+			_context.SaveChanges();
 
 			_logger.LogInformation("GetLogs: Added new Log.");
 			return getLog;

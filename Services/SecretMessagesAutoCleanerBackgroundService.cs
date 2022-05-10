@@ -30,12 +30,12 @@ namespace SecretsManagerWebApp.Services
         {
             _logger.LogInformation("SecretMessagesAutoCleanerBackgroundService: Service triggered DoWork().");
 
-            using (var scope = Services.CreateScope())
-            {
-                var secretMessagesRepository = scope.ServiceProvider.GetRequiredService<ISecretMessagesRepository>();
-                secretMessagesRepository.DeleteOldMessages();
-            }
-        }
+			using (var scope = Services.CreateScope())
+			{
+				var secretMessagesRepository = scope.ServiceProvider.GetRequiredService<ISecretMessagesRepository>();
+				secretMessagesRepository.DeleteOldMessages();
+			}
+		}
 
         public override async Task StopAsync(CancellationToken stoppingToken)
         {

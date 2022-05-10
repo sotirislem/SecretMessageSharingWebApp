@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import * as sjcl from 'sjcl';
-import { SecretMessage } from '../models/SecretMessage';
-import { DecryptionResult, SjclDecryptionResult } from '../models/SjclDecryptionResult';
+import { SecretMessage } from '../models/secret-message.model';
+import { DecryptionResult, SjclDecryptionResult } from '../models/sjcl-decryption-result.model';
 
 @Injectable({
 	providedIn: 'root'

@@ -1,10 +1,14 @@
 using Microsoft.EntityFrameworkCore;
 using SecretsManagerWebApp.Data;
+using SecretsManagerWebApp.Hubs;
 using SecretsManagerWebApp.Middlewares;
 using SecretsManagerWebApp.Repositories;
 using SecretsManagerWebApp.Services;
 
+// builder
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddMemoryCache();
 
 builder.Services.AddDbContext<SecretMessageDbContext>(options =>
 	options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
@@ -20,7 +24,21 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+builder.Services.AddCors(options =>
+{
+	options.AddDefaultPolicy(
+		policy =>
+		{
+			policy.WithOrigins("https://localhost:44490");
+			policy.AllowAnyHeader();
+			policy.AllowAnyMethod();
+			policy.AllowCredentials();
+		});
+});
 
+builder.Services.AddSignalR();
+
+// app
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
@@ -36,9 +54,12 @@ else
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
+app.UseCors();
 
 app.UseMiddleware<HttpRequestTimeMiddleware>();
+app.UseExceptionHandler("/error");
 
+app.MapHub<SecretMessageDeliveryNotificationHub>("signalR/secret-message-delivery-notification-hub");
 app.MapControllers();
 
 app.Run();

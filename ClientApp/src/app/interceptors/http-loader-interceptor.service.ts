@@ -19,11 +19,12 @@ export class HttpLoaderInterceptor implements HttpInterceptor {
 	intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
 		this.addPendingRequest(req);
 
-		return next.handle(req).pipe(
-			finalize(() => {
-				this.removePendingRequest(req);
-			})
-		);
+		return next.handle(req)
+			.pipe(
+				finalize(() => {
+					this.removePendingRequest(req);
+				})
+			);
 	}
 
 	private addPendingRequest(req: HttpRequest<any>) {
