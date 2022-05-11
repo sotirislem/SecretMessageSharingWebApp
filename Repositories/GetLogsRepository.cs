@@ -1,7 +1,7 @@
-﻿using SecretsManagerWebApp.Data;
-using SecretsManagerWebApp.Models.DbContext;
+﻿using SecretMessageSharingWebApp.Data;
+using SecretMessageSharingWebApp.Models.DbContext;
 
-namespace SecretsManagerWebApp.Repositories
+namespace SecretMessageSharingWebApp.Repositories
 {
 	public class GetLogsRepository : IGetLogsRepository
 	{

@@ -1,6 +1,6 @@
-﻿using SecretsManagerWebApp.Repositories;
+﻿using SecretMessageSharingWebApp.Repositories;
 
-namespace SecretsManagerWebApp.Services
+namespace SecretMessageSharingWebApp.Services
 {
     public class SecretMessagesAutoCleanerBackgroundService : BackgroundService
     {

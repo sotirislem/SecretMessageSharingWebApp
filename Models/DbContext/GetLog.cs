@@ -1,4 +1,4 @@
-﻿namespace SecretsManagerWebApp.Models.DbContext
+﻿namespace SecretMessageSharingWebApp.Models.DbContext
 {
 	public class GetLog
 	{

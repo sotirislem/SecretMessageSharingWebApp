@@ -1,4 +1,4 @@
-﻿namespace SecretsManagerWebApp.Models.Api
+﻿namespace SecretMessageSharingWebApp.Models.Api
 {
 	public class SecretMessage
 	{

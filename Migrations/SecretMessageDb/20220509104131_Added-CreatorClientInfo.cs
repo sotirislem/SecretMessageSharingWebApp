@@ -2,7 +2,7 @@
 
 #nullable disable
 
-namespace SecretsManagerWebApp.Migrations
+namespace SecretMessageSharingWebApp.Migrations
 {
     public partial class AddedCreatorClientInfo : Migration
     {

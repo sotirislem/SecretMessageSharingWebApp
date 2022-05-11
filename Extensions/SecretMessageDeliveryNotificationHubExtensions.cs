@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.SignalR;
-using SecretsManagerWebApp.Models.Api;
+using SecretMessageSharingWebApp.Models.Api;
 
-namespace SecretsManagerWebApp.Hubs
+namespace SecretMessageSharingWebApp.Hubs
 {
     public static class SecretMessageDeliveryNotificationHubExtensions
     {

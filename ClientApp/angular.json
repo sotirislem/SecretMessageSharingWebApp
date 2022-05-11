@@ -3,7 +3,7 @@
 	"version": 1,
 	"newProjectRoot": "projects",
 	"projects": {
-		"SecretsManagerWebApp": {
+		"SecretMessageSharingWebApp": {
 			"projectType": "application",
 			"schematics": {
 				"@schematics/angular:application": {
@@ -76,10 +76,10 @@
 					"builder": "@angular-devkit/build-angular:dev-server",
 					"configurations": {
 						"production": {
-							"browserTarget": "SecretsManagerWebApp:build:production"
+							"browserTarget": "SecretMessageSharingWebApp:build:production"
 						},
 						"development": {
-							"browserTarget": "SecretsManagerWebApp:build:development",
+							"browserTarget": "SecretMessageSharingWebApp:build:development",
 							"proxyConfig": "proxy.conf.js"
 						}
 					},
@@ -88,7 +88,7 @@
 				"extract-i18n": {
 					"builder": "@angular-devkit/build-angular:extract-i18n",
 					"options": {
-						"browserTarget": "SecretsManagerWebApp:build"
+						"browserTarget": "SecretMessageSharingWebApp:build"
 					}
 				},
 				"test": {
@@ -136,5 +136,5 @@
 			}
 		}
 	},
-	"defaultProject": "SecretsManagerWebApp"
+	"defaultProject": "SecretMessageSharingWebApp"
 }

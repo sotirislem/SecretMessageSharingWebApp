@@ -1,6 +1,6 @@
-﻿using SecretsManagerWebApp.Models.DbContext;
+﻿using SecretMessageSharingWebApp.Models.DbContext;
 
-namespace SecretsManagerWebApp.Repositories
+namespace SecretMessageSharingWebApp.Repositories
 {
 	public interface ISecretMessagesRepository
 	{

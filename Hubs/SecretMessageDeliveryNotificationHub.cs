@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.SignalR;
 
-namespace SecretsManagerWebApp.Hubs
+namespace SecretMessageSharingWebApp.Hubs
 {
 	public class SecretMessageDeliveryNotificationHub : Hub
     {

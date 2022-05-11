@@ -1,7 +1,7 @@
-﻿using SecretsManagerWebApp.Middlewares;
+﻿using SecretMessageSharingWebApp.Middlewares;
 using UAParser;
 
-namespace SecretsManagerWebApp.Helpers
+namespace SecretMessageSharingWebApp.Helpers
 {
 	public static class HttpContextExtensions
 	{

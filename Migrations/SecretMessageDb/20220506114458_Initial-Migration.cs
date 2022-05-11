@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace SecretsManagerWebApp.Migrations
+namespace SecretMessageSharingWebApp.Migrations
 {
     public partial class InitialMigration : Migration
     {

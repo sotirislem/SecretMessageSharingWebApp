@@ -2,10 +2,10 @@
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using SecretsManagerWebApp.Helpers;
-using SecretsManagerWebApp.Models.Api;
+using SecretMessageSharingWebApp.Helpers;
+using SecretMessageSharingWebApp.Models.Api;
 
-namespace SecretsManagerWebApp.Controllers
+namespace SecretMessageSharingWebApp.Controllers
 {
     [AllowAnonymous]
     [ApiExplorerSettings(IgnoreApi = true)]

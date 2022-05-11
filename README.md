@@ -1,3 +1,3 @@
-# SecretsManagerWebApp
+# SecretMessageSharingWebApp
 
 README: ...TODO

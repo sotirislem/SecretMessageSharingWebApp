@@ -1,7 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using SecretsManagerWebApp.Models.DbContext;
+using SecretMessageSharingWebApp.Models.DbContext;
 
-namespace SecretsManagerWebApp.Data
+namespace SecretMessageSharingWebApp.Data
 {
 	public class GetLogsDbContext : DbContext
 	{

@@ -3,14 +3,14 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using Newtonsoft.Json;
-using SecretsManagerWebApp.Helpers;
-using SecretsManagerWebApp.Hubs;
-using SecretsManagerWebApp.Models.Api;
-using SecretsManagerWebApp.Repositories;
-using SecretsManagerWebApp.Services;
+using SecretMessageSharingWebApp.Helpers;
+using SecretMessageSharingWebApp.Hubs;
+using SecretMessageSharingWebApp.Models.Api;
+using SecretMessageSharingWebApp.Repositories;
+using SecretMessageSharingWebApp.Services;
 using System.Diagnostics;
 
-namespace SecretsManagerWebApp.Controllers
+namespace SecretMessageSharingWebApp.Controllers
 {
 	[ApiController]
 	[Route("api/secret-messages")]

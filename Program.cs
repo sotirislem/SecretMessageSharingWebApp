@@ -1,10 +1,10 @@
 using Microsoft.AspNet.SignalR;
 using Microsoft.EntityFrameworkCore;
-using SecretsManagerWebApp.Data;
-using SecretsManagerWebApp.Hubs;
-using SecretsManagerWebApp.Middlewares;
-using SecretsManagerWebApp.Repositories;
-using SecretsManagerWebApp.Services;
+using SecretMessageSharingWebApp.Data;
+using SecretMessageSharingWebApp.Hubs;
+using SecretMessageSharingWebApp.Middlewares;
+using SecretMessageSharingWebApp.Repositories;
+using SecretMessageSharingWebApp.Services;
 
 // builder
 var builder = WebApplication.CreateBuilder(args);

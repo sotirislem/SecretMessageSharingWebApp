@@ -1,4 +1,4 @@
-﻿namespace SecretsManagerWebApp.Middlewares
+﻿namespace SecretMessageSharingWebApp.Middlewares
 {
     public interface IHttpRequestTimeFeature
     {

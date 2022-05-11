@@ -5,11 +5,11 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
-using SecretsManagerWebApp.Data;
+using SecretMessageSharingWebApp.Data;
 
 #nullable disable
 
-namespace SecretsManagerWebApp.Migrations
+namespace SecretMessageSharingWebApp.Migrations
 {
     [DbContext(typeof(SecretMessageDbContext))]
     [Migration("20220506114458_Initial-Migration")]
@@ -24,7 +24,7 @@ namespace SecretsManagerWebApp.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder, 1L, 1);
 
-            modelBuilder.Entity("SecretsManagerWebApp.Models.DbContext.SecretMessage", b =>
+            modelBuilder.Entity("SecretMessageSharingWebApp.Models.DbContext.SecretMessage", b =>
                 {
                     b.Property<string>("Id")
                         .HasColumnType("nvarchar(450)");

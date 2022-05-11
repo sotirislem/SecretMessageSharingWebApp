@@ -5,12 +5,12 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
-using SecretsManagerWebApp.Data;
-using SecretsManagerWebApp.Repositories;
+using SecretMessageSharingWebApp.Data;
+using SecretMessageSharingWebApp.Repositories;
 
 #nullable disable
 
-namespace SecretsManagerWebApp.Migrations.GetLogsDb
+namespace SecretMessageSharingWebApp.Migrations.GetLogsDb
 {
     [DbContext(typeof(ISecretMessagesRepository))]
     [Migration("20220509120345_Initial-Migration")]
@@ -25,7 +25,7 @@ namespace SecretsManagerWebApp.Migrations.GetLogsDb
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder, 1L, 1);
 
-            modelBuilder.Entity("SecretsManagerWebApp.Models.DbContext.GetLog", b =>
+            modelBuilder.Entity("SecretMessageSharingWebApp.Models.DbContext.GetLog", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
