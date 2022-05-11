@@ -9,17 +9,17 @@ using SecretMessageSharingWebApp.Data;
 
 #nullable disable
 
-namespace SecretMessageSharingWebApp.Migrations
+namespace SecretMessageSharingWebApp.Migrations.SecretMessageDb
 {
     [DbContext(typeof(SecretMessageDbContext))]
-    [Migration("20220509104131_Added-CreatorClientInfo")]
-    partial class AddedCreatorClientInfo
+    [Migration("20220511165528_Initial-Migration")]
+    partial class InitialMigration
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "6.0.4")
+                .HasAnnotation("ProductVersion", "6.0.5")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder, 1L, 1);

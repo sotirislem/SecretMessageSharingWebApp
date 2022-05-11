@@ -228,6 +228,11 @@ _Pvt_Extensions
 # FAKE - F# Make
 .fake/
 
+# My .gitignore starts here...
+**/.vscode
+**/.config
+**/*Deploy*
+
 ClientApp/.angular/cache
 ClientApp/node_modules
 ClientApp/**/models/*.js

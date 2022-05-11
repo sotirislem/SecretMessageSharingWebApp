@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace SecretMessageSharingWebApp.Migrations
+namespace SecretMessageSharingWebApp.Migrations.SecretMessageDb
 {
     public partial class InitialMigration : Migration
     {
@@ -14,10 +14,11 @@ namespace SecretMessageSharingWebApp.Migrations
                 columns: table => new
                 {
                     Id = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    JsonData = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     CreatedDateTime = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    DeleteOnRetrieve = table.Column<bool>(type: "bit", nullable: false),
+                    JsonData = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     CreatorIP = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    DeleteOnRetrieve = table.Column<bool>(type: "bit", nullable: false)
+                    CreatorClientInfo = table.Column<string>(type: "nvarchar(max)", nullable: true)
                 },
                 constraints: table =>
                 {

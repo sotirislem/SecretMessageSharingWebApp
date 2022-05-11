@@ -6,21 +6,20 @@ using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SecretMessageSharingWebApp.Data;
-using SecretMessageSharingWebApp.Repositories;
 
 #nullable disable
 
 namespace SecretMessageSharingWebApp.Migrations.GetLogsDb
 {
-    [DbContext(typeof(ISecretMessagesRepository))]
-    [Migration("20220509120345_Initial-Migration")]
+    [DbContext(typeof(GetLogsDbContext))]
+    [Migration("20220511165450_Initial-Migration")]
     partial class InitialMigration
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "6.0.4")
+                .HasAnnotation("ProductVersion", "6.0.5")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder, 1L, 1);

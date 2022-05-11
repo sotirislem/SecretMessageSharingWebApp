@@ -8,12 +8,13 @@ import { MessageDeliveryNotification } from '../models/message-delivery-notifica
 export class SignalRService {
 	private readonly hubConnection: signalR.HubConnection;
 	private readonly hubConnectionMethodName: string = "secret-message-delivery-notification";
+	private readonly signalRUrl: string;
 
-	constructor(@Inject('BASE_URL') baseUrl: string,) {
-		const signalRUrl = `${baseUrl}/signalR/secret-message-delivery-notification-hub`;
+	constructor(@Inject('API_URL') apiUrl: string,) {
+		this.signalRUrl = `${apiUrl}/signalR/secret-message-delivery-notification-hub`;
 
 		this.hubConnection = new signalR.HubConnectionBuilder()
-			.withUrl(signalRUrl)
+			.withUrl(this.signalRUrl)
 			.build();
 	}
 

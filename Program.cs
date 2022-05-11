@@ -32,18 +32,6 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-builder.Services.AddCors(options =>
-{
-	options.AddDefaultPolicy(
-		policy =>
-		{
-			policy.WithOrigins("https://localhost:44490");
-			policy.AllowAnyHeader();
-			policy.AllowAnyMethod();
-			policy.AllowCredentials();
-		});
-});
-
 GlobalHost.DependencyResolver.Register(
 		typeof(SecretMessageDeliveryNotificationHub),
 		() => new SecretMessageDeliveryNotificationHub(
@@ -71,12 +59,15 @@ else
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
-app.UseCors();
 
-app.UseMiddleware<HttpRequestTimeMiddleware>();
 app.UseExceptionHandler("/error");
 
-app.MapHub<SecretMessageDeliveryNotificationHub>("signalR/secret-message-delivery-notification-hub");
-app.MapControllers();
+app.UseMiddleware<HttpRequestTimeMiddleware>();
+
+app.MapHub<SecretMessageDeliveryNotificationHub>("/signalR/secret-message-delivery-notification-hub");
+
+app.UseEndpoints(configure => configure.MapControllers());
+
+app.MapFallbackToFile("index.html");
 
 app.Run();

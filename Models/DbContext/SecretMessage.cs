@@ -2,16 +2,23 @@
 {
 	public class SecretMessage
 	{
-		public string Id { get; set; } = Guid.NewGuid().ToString("N");
+		public string Id { get; set; }
 
-		public DateTime CreatedDateTime { get; set; } = DateTime.Now;
+		public DateTime CreatedDateTime { get; set; }
 
-		public bool DeleteOnRetrieve { get; set; } = true;
+		public bool DeleteOnRetrieve { get; set; }
 
 		public string JsonData { get; set; }
 
 		public string? CreatorIP { get; set; }
 
 		public string? CreatorClientInfo { get; set; }
+
+		public SecretMessage()
+		{
+			Id = Guid.NewGuid().ToString("N");
+			CreatedDateTime = DateTime.Now;
+			DeleteOnRetrieve = true;
+		}
 	}
 }

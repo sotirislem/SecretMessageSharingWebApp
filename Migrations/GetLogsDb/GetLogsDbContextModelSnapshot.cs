@@ -5,20 +5,19 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SecretMessageSharingWebApp.Data;
-using SecretMessageSharingWebApp.Repositories;
 
 #nullable disable
 
 namespace SecretMessageSharingWebApp.Migrations.GetLogsDb
 {
-    [DbContext(typeof(ISecretMessagesRepository))]
+    [DbContext(typeof(GetLogsDbContext))]
     partial class GetLogsDbContextModelSnapshot : ModelSnapshot
     {
         protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "6.0.4")
+                .HasAnnotation("ProductVersion", "6.0.5")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder, 1L, 1);

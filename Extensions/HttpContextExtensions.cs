@@ -1,7 +1,7 @@
 ﻿using SecretMessageSharingWebApp.Middlewares;
 using UAParser;
 
-namespace SecretMessageSharingWebApp.Helpers
+namespace SecretMessageSharingWebApp.Extensions
 {
 	public static class HttpContextExtensions
 	{

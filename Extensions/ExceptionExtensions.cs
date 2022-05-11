@@ -1,6 +1,6 @@
 ﻿using System.Text;
 
-namespace SecretMessageSharingWebApp.Helpers
+namespace SecretMessageSharingWebApp.Extensions
 {
 	public static class ExceptionExtensions
 	{

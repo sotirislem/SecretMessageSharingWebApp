@@ -2,7 +2,7 @@
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using SecretMessageSharingWebApp.Helpers;
+using SecretMessageSharingWebApp.Extensions;
 using SecretMessageSharingWebApp.Models.Api;
 
 namespace SecretMessageSharingWebApp.Controllers

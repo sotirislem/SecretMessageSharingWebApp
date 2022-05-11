@@ -9,8 +9,8 @@ import { SecretMessage } from '../models/secret-message.model';
 export class ApiClientService {
 	private readonly baseApiUrl: string;
 
-	constructor(@Inject('BASE_URL') baseUrl: string, private httpClient: HttpClient) {
-		this.baseApiUrl = `${baseUrl}/api`;
+	constructor(@Inject('API_URL') apiUrl: string, private httpClient: HttpClient) {
+		this.baseApiUrl = `${apiUrl}/api`;
 	}
 
 	saveSecretMessage(secretMessage: SecretMessage): Observable<string> {

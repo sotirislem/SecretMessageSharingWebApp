@@ -16,5 +16,10 @@ namespace SecretMessageSharingWebApp.Data
 				.ValueGeneratedOnAdd()
 				.UseIdentityColumn();
 		}
+
+		protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+		{
+			base.OnConfiguring(optionsBuilder);
+		}
 	}
 }
