@@ -17,7 +17,7 @@ namespace SecretsManagerWebApp.Controllers
             var context = HttpContext.Features.Get<IExceptionHandlerFeature>();
             var exception = context!.Error;
 
-            logger.LogError(exception.GetAllMessages());
+            logger.LogError(exception.GetAllErrorMessages());
 
             return new ErrorResponse();
         }

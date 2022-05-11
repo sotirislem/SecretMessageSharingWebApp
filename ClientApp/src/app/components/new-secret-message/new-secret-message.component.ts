@@ -1,15 +1,17 @@
 import { Component, OnInit, ViewChild } from '@angular/core';
-import { Clipboard } from '@angular/cdk/clipboard';
-import { NgbModalRef, NgbTooltip } from '@ng-bootstrap/ng-bootstrap';
-import { RouterHelperService } from '../../services/router-helper.service';
-import { Router } from '@angular/router';
-import { UrlHelperService } from '../../services/url-helper.service';
-import { Routes } from '../../../constants';
-import * as QRCode from 'qrcode'
-import { SignalRService } from '../../services/signalr.service';
+import { MessageDeliveryNotification } from '../../models/message-delivery-notification.model';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { ElementRef } from '@angular/core';
-import { MessageDeliveryNotification } from '../../models/message-delivery-notification.model';
+
+import { Clipboard } from '@angular/cdk/clipboard';
+import { NgbModalRef, NgbTooltip } from '@ng-bootstrap/ng-bootstrap'
+
+import { RouterHelperService } from '../../services/router-helper.service';
+import { UrlHelperService } from '../../services/url-helper.service';
+import { SignalRService } from '../../services/signalr.service';
+
+import { Routes } from '../../../constants';
+import * as QRCode from 'qrcode'
 
 @Component({
 	selector: 'app-new-secret-message',

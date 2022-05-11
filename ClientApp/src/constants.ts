@@ -1,5 +1,5 @@
 export abstract class Constants {
-	//static readonly ENCRYPTION_KEY_NAME: string = 'encryptionKey';
+
 }
 
 export abstract class Routes {

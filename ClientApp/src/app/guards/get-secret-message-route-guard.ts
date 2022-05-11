@@ -9,8 +9,7 @@ import { RouterHelperService } from '../services/router-helper.service';
 })
 export class GetSecretMessageRouteGuard implements CanActivate {
 
-	constructor(private router: Router, private routerHelperService: RouterHelperService)
-	{ }
+	constructor(private router: Router, private routerHelperService: RouterHelperService) { }
 
 	canActivate(
 		route: ActivatedRouteSnapshot,
@@ -22,6 +21,7 @@ export class GetSecretMessageRouteGuard implements CanActivate {
 		if (id && encryptionKey) {
 			return true;
 		}
+
 		this.router.navigate([Routes.Root]);
 		return false;
 	}

@@ -1,6 +1,5 @@
 ﻿using SecretsManagerWebApp.Data;
 using SecretsManagerWebApp.Models.DbContext;
-using System.Diagnostics;
 
 namespace SecretsManagerWebApp.Repositories
 {
@@ -24,7 +23,7 @@ namespace SecretsManagerWebApp.Repositories
 				_context.SaveChanges();
 			}
 
-			_logger.LogInformation("SecretMessages:Get => SecretMessage with ID: {secretMessageId}, Exists: {secretMessageExists}.", id, (secretMessage is not null));
+			_logger.LogInformation("SecretMessages:Get => ID: {secretMessageId}, Exists: {secretMessageExists}.", id, (secretMessage is not null));
 			return secretMessage!;
 		}
 
@@ -33,7 +32,7 @@ namespace SecretsManagerWebApp.Repositories
 			_context.SecretMessages.Add(secretMessage);
 			_context.SaveChanges();
 
-			_logger.LogInformation("SecretMessages:Store => new SecretMessage with ID: {secretMessageId}.", secretMessage.Id);
+			_logger.LogInformation("SecretMessages:Store => ID: {secretMessageId}.", secretMessage.Id);
 			return secretMessage;
 		}
 

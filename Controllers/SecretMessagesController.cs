@@ -2,12 +2,12 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
-using Microsoft.Extensions.Caching.Memory;
 using Newtonsoft.Json;
 using SecretsManagerWebApp.Helpers;
 using SecretsManagerWebApp.Hubs;
 using SecretsManagerWebApp.Models.Api;
 using SecretsManagerWebApp.Repositories;
+using SecretsManagerWebApp.Services;
 using System.Diagnostics;
 
 namespace SecretsManagerWebApp.Controllers
@@ -17,20 +17,20 @@ namespace SecretsManagerWebApp.Controllers
 	public class SecretMessagesController : ControllerBase
 	{
 		private readonly ISecretMessagesRepository _secretMessagesRepository;
-		private readonly IGetLogsRepository _getLoggerRepository;
-		private readonly IMemoryCache _memoryCache;
+		private readonly IGetLogsRepository _getLogsRepository;
+		private readonly MemoryCacheService _memoryCacheService;
 		private readonly IHubContext<SecretMessageDeliveryNotificationHub> _secretMessageReadNotificationHub;
 
 		public SecretMessagesController(
 			ISecretMessagesRepository secretMessagesRepository,
-			IGetLogsRepository getLoggerRepository,
-			IMemoryCache memoryCache,
-			IHubContext<SecretMessageDeliveryNotificationHub> hub)
+			IGetLogsRepository getLogsRepository,
+			MemoryCacheService memoryCacheService,
+			IHubContext<SecretMessageDeliveryNotificationHub> secretMessageReadNotificationHub)
 		{
 			this._secretMessagesRepository = secretMessagesRepository;
-			this._getLoggerRepository = getLoggerRepository;
-			this._memoryCache = memoryCache;
-			this._secretMessageReadNotificationHub = hub;
+			this._getLogsRepository = getLogsRepository;
+			this._memoryCacheService = memoryCacheService;
+			this._secretMessageReadNotificationHub = secretMessageReadNotificationHub;
 		}
 
 		[HttpPost("store")]
@@ -39,8 +39,8 @@ namespace SecretsManagerWebApp.Controllers
 			var secretMessage = new Models.DbContext.SecretMessage
 			{
 				JsonData = JsonConvert.SerializeObject(secretMessageData),
-				CreatorIP = HttpContextHelper.GetClientIP(HttpContext),
-				CreatorClientInfo = HttpContextHelper.GetClientInfo(HttpContext)
+				CreatorIP = HttpContext.GetClientIP(),
+				CreatorClientInfo = HttpContext.GetClientInfo()
 			};
 			_secretMessagesRepository.Store(secretMessage);
 
@@ -55,20 +55,20 @@ namespace SecretsManagerWebApp.Controllers
 			var secretMessage = await _secretMessagesRepository.Get(id);
 			var getLog = new Models.DbContext.GetLog
 			{
-				RequestDateTime = HttpContextHelper.GetRequestDateTime(HttpContext),
-				RequestCreatorIP = HttpContextHelper.GetClientIP(HttpContext),
-				RequestClientInfo = HttpContextHelper.GetClientInfo(HttpContext),
+				RequestDateTime = HttpContext.GetRequestDateTime(),
+				RequestCreatorIP = HttpContext.GetClientIP(),
+				RequestClientInfo = HttpContext.GetClientInfo(),
 				SecretMessageId = id,
 				SecretMessageExisted = (secretMessage is not null),
 				SecretMessageCreatedDateTime = secretMessage?.CreatedDateTime,
 				SecretMessageCreatorIP = secretMessage?.CreatorIP,
 				SecretMessageCreatorClientInfo = secretMessage?.CreatorClientInfo
 			};
-			_getLoggerRepository.Add(getLog);
+			_getLogsRepository.Add(getLog);
 
 			if (secretMessage is not null)
 			{
-				TryToSendSecretMessageDeliveryNotification(secretMessage.Id, getLog);
+				TrySendSecretMessageDeliveryNotification(secretMessage.Id, getLog);
 				return JsonConvert.DeserializeObject<SecretMessage>(secretMessage.JsonData);
 			}
 			return null;
@@ -76,32 +76,27 @@ namespace SecretsManagerWebApp.Controllers
 
 		private void SaveSecretMessageCreatorSignalRConnectionId(string secretMessageId)
 		{
-			var signalRConnectionId = HttpContextHelper.GetRequestHeaderValue(Request, "SignalR-ConnectionId");
+			var signalRConnectionId = Request.GetRequestHeaderValue("SignalR-ConnectionId");
 			if (!string.IsNullOrEmpty(signalRConnectionId))
 			{
-				_memoryCache.Set(secretMessageId, signalRConnectionId);
+				_memoryCacheService.SetValue(secretMessageId, signalRConnectionId);
 			}
 		}
 
-		private async void TryToSendSecretMessageDeliveryNotification(string secretMessageId, Models.DbContext.GetLog getLog)
+		private void TrySendSecretMessageDeliveryNotification(string secretMessageId, Models.DbContext.GetLog getLog)
 		{
-			var messageCreatorSignalRConnectionIdExists = _memoryCache.TryGetValue(secretMessageId, out string messageCreatorSignalRConnectionId);
-			if (messageCreatorSignalRConnectionIdExists)
+			(var signalRConnectionIdExists, var signalRConnectionId) = _memoryCacheService.GetValue(secretMessageId);
+			if (signalRConnectionIdExists)
 			{
-				_memoryCache.Remove(secretMessageId);
-
-				if (SecretMessageDeliveryNotificationHub.ActiveConnections.Contains(messageCreatorSignalRConnectionId))
+				var messageDeliveryNotification = new MessageDeliveryNotification
 				{
-					var messageDeliveryNotification = new MessageDeliveryNotification
-					{
-						MessageCreatedOn = getLog.SecretMessageCreatedDateTime!.Value,
-						MessageDeliveredOn = getLog.RequestDateTime,
-						RecipientIp = getLog.RequestCreatorIP!,
-						RecipientClientInfo = getLog.RequestClientInfo!
-					};
-					await _secretMessageReadNotificationHub.Clients.Client(messageCreatorSignalRConnectionId).SendAsync("secret-message-delivery-notification", messageDeliveryNotification);
-				}
-				
+					MessageCreatedOn = getLog.SecretMessageCreatedDateTime!.Value,
+					MessageDeliveredOn = getLog.RequestDateTime,
+					RecipientIp = getLog.RequestCreatorIP!,
+					RecipientClientInfo = getLog.RequestClientInfo!
+				};
+
+				_secretMessageReadNotificationHub.TrySendNotification(signalRConnectionId, messageDeliveryNotification);
 			}
 		}
 	}

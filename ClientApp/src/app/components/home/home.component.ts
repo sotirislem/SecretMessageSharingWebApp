@@ -1,10 +1,12 @@
 import { Component } from '@angular/core';
-import { SjclService } from '../../services/sjcl.service';
-import { Router } from '@angular/router';
-import { ApiClientService } from '../../services/api-client.service';
-import { Routes } from '../../../constants';
 import { finalize } from 'rxjs/operators';
+
+import { SjclService } from '../../services/sjcl.service';
+import { ApiClientService } from '../../services/api-client.service';
 import { SignalRService } from '../../services/signalr.service';
+
+import { Router } from '@angular/router';
+import { Routes } from '../../../constants';
 
 @Component({
 	selector: 'app-home',

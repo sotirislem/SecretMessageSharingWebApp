@@ -1,6 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
-
-namespace SecretsManagerWebApp.Models.DbContext
+﻿namespace SecretsManagerWebApp.Models.DbContext
 {
 	public class GetLog
 	{

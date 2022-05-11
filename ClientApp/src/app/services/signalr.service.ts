@@ -26,7 +26,7 @@ export class SignalRService {
 
 		await this.hubConnection
 			.start()
-			.then(() => console.log('SignalR: Connection started, Id:', this.hubConnection.connectionId))
+			.then(() => console.log('SignalR: Connection started, ID:', this.hubConnection.connectionId))
 			.catch(err => console.error('SignalR: Error while starting connection: ' + err));
 	}
 

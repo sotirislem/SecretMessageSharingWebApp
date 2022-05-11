@@ -1,12 +1,14 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
+import { Routes as RouteConstants } from '../constants';
+
+import { HomeComponent } from "./components/home/home.component";
+import { AppInfoComponent } from './components/app-info/app-info.component';
 import { NewSecretMessageComponent } from "./components/new-secret-message/new-secret-message.component";
 import { GetSecretMessageComponent } from "./components/get-secret-message/get-secret-message.component";
-import { HomeComponent } from "./components/home/home.component";
+
 import { NewSecretMessageRouteGuard } from './guards/new-secret-message-route-guard';
 import { GetSecretMessageRouteGuard } from './guards/get-secret-message-route-guard';
-import { Routes as RouteConstants } from '../constants';
-import { AppInfoComponent } from './components/app-info/app-info.component';
 
 const AppRoutes: Routes = [
 	{ path: '', component: HomeComponent, pathMatch: 'full' },

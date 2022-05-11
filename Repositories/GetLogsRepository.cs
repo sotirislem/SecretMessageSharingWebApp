@@ -1,6 +1,5 @@
 ﻿using SecretsManagerWebApp.Data;
 using SecretsManagerWebApp.Models.DbContext;
-using System.Diagnostics;
 
 namespace SecretsManagerWebApp.Repositories
 {
@@ -20,7 +19,7 @@ namespace SecretsManagerWebApp.Repositories
 			_context.GetLogs.Add(getLog);
 			_context.SaveChanges();
 
-			_logger.LogInformation("GetLogs: Added new Log.");
+			_logger.LogInformation("GetLogs => Added new Log.");
 			return getLog;
 		}
 	}

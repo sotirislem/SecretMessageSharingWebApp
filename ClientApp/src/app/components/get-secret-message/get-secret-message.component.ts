@@ -1,9 +1,11 @@
 import { Component } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
 import { SecretMessage } from '../../models/secret-message.model';
 import { DecryptionResult, SjclDecryptionResult } from '../../models/sjcl-decryption-result.model';
+
 import { ApiClientService } from '../../services/api-client.service';
 import { SjclService } from '../../services/sjcl.service';
+
+import { ActivatedRoute } from '@angular/router';
 
 enum ComponentState {
 	LoadingMessage,

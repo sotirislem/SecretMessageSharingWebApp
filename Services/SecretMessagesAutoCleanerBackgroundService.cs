@@ -1,6 +1,4 @@
-﻿using SecretsManagerWebApp.Data;
-using Microsoft.EntityFrameworkCore;
-using SecretsManagerWebApp.Repositories;
+﻿using SecretsManagerWebApp.Repositories;
 
 namespace SecretsManagerWebApp.Services
 {

@@ -2,9 +2,9 @@
 
 namespace SecretsManagerWebApp.Helpers
 {
-	public static class Extensions
+	public static class ExceptionExtensions
 	{
-        public static string GetAllMessages(this Exception ex)
+        public static string GetAllErrorMessages(this Exception ex)
         {
             if (ex is null)
                 throw new ArgumentNullException("ex");

@@ -1,3 +1,4 @@
+using Microsoft.AspNet.SignalR;
 using Microsoft.EntityFrameworkCore;
 using SecretsManagerWebApp.Data;
 using SecretsManagerWebApp.Hubs;
@@ -8,7 +9,11 @@ using SecretsManagerWebApp.Services;
 // builder
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddMemoryCache();
+builder.Host.ConfigureLogging(logging =>
+{
+	logging.ClearProviders();
+	logging.AddConsole();
+});
 
 builder.Services.AddDbContext<SecretMessageDbContext>(options =>
 	options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
@@ -19,6 +24,9 @@ builder.Services.AddScoped<ISecretMessagesRepository, SecretMessagesRepository>(
 builder.Services.AddScoped<IGetLogsRepository, GetLogsRepository>();
 
 builder.Services.AddHostedService<SecretMessagesAutoCleanerBackgroundService>();
+
+builder.Services.AddMemoryCache();
+builder.Services.AddSingleton<MemoryCacheService>();
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
@@ -35,6 +43,15 @@ builder.Services.AddCors(options =>
 			policy.AllowCredentials();
 		});
 });
+
+GlobalHost.DependencyResolver.Register(
+		typeof(SecretMessageDeliveryNotificationHub),
+		() => new SecretMessageDeliveryNotificationHub(
+			LoggerFactory
+				.Create(logging => logging.AddConsole())
+				.CreateLogger<SecretMessageDeliveryNotificationHub>()
+			)
+		);
 
 builder.Services.AddSignalR();
 

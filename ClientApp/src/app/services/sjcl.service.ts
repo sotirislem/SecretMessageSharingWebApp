@@ -1,5 +1,5 @@
-import { Injectable } from '@angular/core';
 import * as sjcl from 'sjcl';
+import { Injectable } from '@angular/core';
 import { SecretMessage } from '../models/secret-message.model';
 import { DecryptionResult, SjclDecryptionResult } from '../models/sjcl-decryption-result.model';
 
