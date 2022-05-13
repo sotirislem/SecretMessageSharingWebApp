@@ -1,6 +1,6 @@
 ﻿namespace SecretMessageSharingWebApp.Models.Api
 {
-	public class SecretMessage
+	public class SecretMessageData
 	{
 		public string IV { get; set; }
 

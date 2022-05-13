@@ -1,6 +1,6 @@
 import * as sjcl from 'sjcl';
 import { Injectable } from '@angular/core';
-import { SecretMessage } from '../models/secret-message.model';
+import { SecretMessageData } from '../models/secret-message-data.model';
 import { DecryptionResult, SjclDecryptionResult } from '../models/sjcl-decryption-result.model';
 
 @Injectable({
@@ -20,7 +20,7 @@ export class SjclService {
 		sjcl.random.startCollectors();
 	}
 
-	encryptMessage(msg: string): [secretMessage: SecretMessage, encryptionKey: string] {
+	encryptMessage(msg: string): [secretMessage: SecretMessageData, encryptionKey: string] {
 		const encryptionParams = this.generateEncryptionParams();
 		const encryptionKey = this.generateEncryptionKey();
 
@@ -28,7 +28,7 @@ export class SjclService {
 		const encryptedMsgJson = JSON.parse(encryptedMsgData) as sjcl.SjclCipherEncrypted;
 		const { iv, salt, ct } = encryptedMsgJson;
 
-		const secretMessage = <SecretMessage>{
+		const secretMessage = <SecretMessageData>{
 			iv: iv.toString(),
 			salt: salt.toString(),
 			ct: ct.toString()
@@ -36,7 +36,7 @@ export class SjclService {
 		return [secretMessage, encryptionKey];
 	}
 
-	decryptMessage(secretMessage: SecretMessage, encryptionKey: string): SjclDecryptionResult {
+	decryptMessage(secretMessage: SecretMessageData, encryptionKey: string): SjclDecryptionResult {
 		const cipherEncrypted = <sjcl.SjclCipherEncrypted>{
 			...this.encryptionSettings,
 			iv: secretMessage.iv as unknown,

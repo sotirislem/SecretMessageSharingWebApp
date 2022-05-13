@@ -1,11 +1,12 @@
 import { Component } from '@angular/core';
-import { SecretMessage } from '../../models/secret-message.model';
+import { GetSecretMessageResponse } from '../../models/get-secret-message-response.model';
 import { DecryptionResult, SjclDecryptionResult } from '../../models/sjcl-decryption-result.model';
 
 import { ApiClientService } from '../../services/api-client.service';
 import { SjclService } from '../../services/sjcl.service';
 
 import { ActivatedRoute } from '@angular/router';
+import { IndividualConfig, ToastrService } from 'ngx-toastr';
 
 enum ComponentState {
 	LoadingMessage,
@@ -26,20 +27,44 @@ export class GetSecretMessageComponent {
 	messageId: string;
 	decryptionResult: SjclDecryptionResult;
 
-	constructor(route: ActivatedRoute, apiClientService: ApiClientService, private sjclService: SjclService) {
-		const id = route.snapshot.queryParams.id;
+	constructor(route: ActivatedRoute, apiClientService: ApiClientService, private sjclService: SjclService, private toastrService: ToastrService) {
+		this.messageId = route.snapshot.queryParams.id;
 		const encryptionKey = route.snapshot.fragment!;
 
 		this.componentState = ComponentState.LoadingMessage;
-		apiClientService.getSavedSecretMessage(id).subscribe((secretMessageData: SecretMessage) => {
-			if (secretMessageData) {
-				this.decryptionResult = this.sjclService.decryptMessage(secretMessageData, encryptionKey);
+		apiClientService.getSavedSecretMessage(this.messageId).subscribe((response: GetSecretMessageResponse) => {
+			if (response) {
+				this.decryptionResult = this.sjclService.decryptMessage(response.secretMessageData, encryptionKey);
 				this.componentState = ComponentState.ReadyWithMessage;
+
+				this.displayDeliveryNotificationSentToast(response.deliveryNotificationSent);
+
+				if (this.decryptionResult.result === DecryptionResult.OK)
+					this.setDecryptedMsgAutoclearTimeout();
 			} else {
 				this.componentState = ComponentState.ReadyNoMessage;
 			}
 		});
+	}
 
-		this.messageId = id;
+	private displayDeliveryNotificationSentToast(deliveryNotificationSent: boolean) {
+		const toastConfig = <IndividualConfig>{
+			timeOut: 7_000,
+			positionClass: 'toast-top-center',
+			extendedTimeOut: 0
+		};
+
+		if (deliveryNotificationSent)
+			this.toastrService.success('Delivery notification was sent', '', toastConfig);
+		else
+			this.toastrService.warning('Delivery notification could not be sent', '', toastConfig);
+	}
+
+	private setDecryptedMsgAutoclearTimeout() {
+		const clearTimeout = 3 * (60 * 1000);
+
+		setTimeout(() => {
+			this.decryptionResult.decryptedMsg = '--- Message deleted ---';
+		}, clearTimeout);
 	}
 }

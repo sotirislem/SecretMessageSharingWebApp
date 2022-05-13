@@ -14,7 +14,7 @@ namespace SecretMessageSharingWebApp.Repositories
 			_logger = logger;
 		}
 
-		public async Task<SecretMessage> Get(string id)
+		public async Task<SecretMessage?> Get(string id)
 		{
 			var secretMessage = await _context.SecretMessages.FindAsync(id);
 			if (secretMessage is not null && secretMessage.DeleteOnRetrieve)
@@ -24,7 +24,7 @@ namespace SecretMessageSharingWebApp.Repositories
 			}
 
 			_logger.LogInformation("SecretMessages:Get => ID: {secretMessageId}, Exists: {secretMessageExists}.", id, (secretMessage is not null));
-			return secretMessage!;
+			return secretMessage;
 		}
 
 		public SecretMessage Store(SecretMessage secretMessage)

@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild } from '@angular/core';
+import { Component, OnInit, ViewChild, ViewEncapsulation } from '@angular/core';
 import { MessageDeliveryNotification } from '../../models/message-delivery-notification.model';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { ElementRef } from '@angular/core';
@@ -42,10 +42,10 @@ export class NewSecretMessageComponent implements OnInit {
 		this.secretMsgKey = routerHelperService.getCurrentNavigationStateData('secretMsgKey');
 		this.secretMsgUrl = urlHelperService.createLocalUrlWithParams(Routes.Root_GetSecretMessage, { id: this.secretMsgId }, this.secretMsgKey);
 
-		signalRService.registerNewSecretMessageDeliveryNotificationHandler((data: MessageDeliveryNotification) => {
+		signalRService.registerNewSecretMessageDeliveryNotificationHandler((response: MessageDeliveryNotification) => {
 			this.ngbTooltip.close();
 
-			this.messageDeliveryNotificationData = data;
+			this.messageDeliveryNotificationData = response;
 			modalService.open(this.msgDeliveryNotificationModal, { centered: true });
 		});
 	}

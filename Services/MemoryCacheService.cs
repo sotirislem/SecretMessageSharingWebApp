@@ -5,7 +5,7 @@ namespace SecretMessageSharingWebApp.Services
 {
 	public class MemoryCacheService
 	{
-		private const int ValueExpirationTimeInMinutes = 10;
+		private const int ValueExpirationTimeInMinutes = 60;
 		private readonly IMemoryCache _memoryCache;
 
 		public MemoryCacheService(IMemoryCache memoryCache)

@@ -1,5 +1,7 @@
 using Microsoft.AspNet.SignalR;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging.ApplicationInsights;
 using SecretMessageSharingWebApp.Data;
 using SecretMessageSharingWebApp.Hubs;
 using SecretMessageSharingWebApp.Middlewares;
@@ -9,11 +11,7 @@ using SecretMessageSharingWebApp.Services;
 // builder
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Host.ConfigureLogging(logging =>
-{
-	logging.ClearProviders();
-	logging.AddConsole();
-});
+builder.Services.AddApplicationInsightsTelemetry(builder.Configuration["APPLICATIONINSIGHTS_CONNECTION_STRING"]);
 
 builder.Services.AddDbContext<SecretMessageDbContext>(options =>
 	options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
@@ -32,16 +30,23 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+builder.Services.AddSignalR();
+
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+	options.ForwardedHeaders =
+		ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+});
+
+#pragma warning disable ASP0000
 GlobalHost.DependencyResolver.Register(
 		typeof(SecretMessageDeliveryNotificationHub),
 		() => new SecretMessageDeliveryNotificationHub(
-			LoggerFactory
-				.Create(logging => logging.AddConsole())
+			builder.Services.BuildServiceProvider().GetService<ILoggerFactory>()!
 				.CreateLogger<SecretMessageDeliveryNotificationHub>()
 			)
 		);
-
-builder.Services.AddSignalR();
+#pragma warning restore ASP0000
 
 // app
 var app = builder.Build();
@@ -53,6 +58,7 @@ if (app.Environment.IsDevelopment())
 }
 else
 {
+	app.UseForwardedHeaders();
 	app.UseHsts();  // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
 }
 

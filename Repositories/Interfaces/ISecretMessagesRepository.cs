@@ -6,7 +6,7 @@ namespace SecretMessageSharingWebApp.Repositories
 	{
 		SecretMessage Store(SecretMessage secretMessage);
 
-		Task<SecretMessage> Get(string id);
+		Task<SecretMessage?> Get(string id);
 
 		void DeleteOldMessages();
 	}

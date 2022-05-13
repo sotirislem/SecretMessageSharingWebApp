@@ -16,6 +16,7 @@ namespace SecretMessageSharingWebApp.Controllers
 	[Route("api/secret-messages")]
 	public class SecretMessagesController : ControllerBase
 	{
+		private readonly ILogger<SecretMessagesController> _logger;
 		private readonly ISecretMessagesRepository _secretMessagesRepository;
 		private readonly IGetLogsRepository _getLogsRepository;
 		private readonly MemoryCacheService _memoryCacheService;
@@ -25,8 +26,10 @@ namespace SecretMessageSharingWebApp.Controllers
 			ISecretMessagesRepository secretMessagesRepository,
 			IGetLogsRepository getLogsRepository,
 			MemoryCacheService memoryCacheService,
-			IHubContext<SecretMessageDeliveryNotificationHub> secretMessageReadNotificationHub)
+			IHubContext<SecretMessageDeliveryNotificationHub> secretMessageReadNotificationHub,
+			ILogger<SecretMessagesController> logger)
 		{
+			this._logger = logger;
 			this._secretMessagesRepository = secretMessagesRepository;
 			this._getLogsRepository = getLogsRepository;
 			this._memoryCacheService = memoryCacheService;
@@ -34,7 +37,7 @@ namespace SecretMessageSharingWebApp.Controllers
 		}
 
 		[HttpPost("store")]
-		public string Store(SecretMessage secretMessageData)
+		public string Store(SecretMessageData secretMessageData)
 		{
 			var secretMessage = new Models.DbContext.SecretMessage
 			{
@@ -50,7 +53,7 @@ namespace SecretMessageSharingWebApp.Controllers
 		}
 
 		[HttpGet("get/{id}")]
-		public async Task<SecretMessage?> Get(string id)
+		public async Task<GetSecretMessageResponse?> Get(string id)
 		{
 			var secretMessage = await _secretMessagesRepository.Get(id);
 			var getLog = new Models.DbContext.GetLog
@@ -68,8 +71,13 @@ namespace SecretMessageSharingWebApp.Controllers
 
 			if (secretMessage is not null)
 			{
-				TrySendSecretMessageDeliveryNotification(secretMessage.Id, getLog);
-				return JsonConvert.DeserializeObject<SecretMessage>(secretMessage.JsonData);
+				var deliveryNotificationSent = await TrySendSecretMessageDeliveryNotification(secretMessage.Id, getLog);
+
+				return new GetSecretMessageResponse
+				{
+					DeliveryNotificationSent = deliveryNotificationSent,
+					SecretMessageData = JsonConvert.DeserializeObject<SecretMessageData>(secretMessage.JsonData)!
+				};
 			}
 			return null;
 		}
@@ -83,7 +91,7 @@ namespace SecretMessageSharingWebApp.Controllers
 			}
 		}
 
-		private void TrySendSecretMessageDeliveryNotification(string secretMessageId, Models.DbContext.GetLog getLog)
+		private Task<bool> TrySendSecretMessageDeliveryNotification(string secretMessageId, Models.DbContext.GetLog getLog)
 		{
 			(var signalRConnectionIdExists, var signalRConnectionId) = _memoryCacheService.GetValue(secretMessageId);
 			if (signalRConnectionIdExists)
@@ -96,8 +104,10 @@ namespace SecretMessageSharingWebApp.Controllers
 					RecipientClientInfo = getLog.RequestClientInfo!
 				};
 
-				_secretMessageReadNotificationHub.TrySendNotification(signalRConnectionId, messageDeliveryNotification);
+				return _secretMessageReadNotificationHub.TrySendNotification(signalRConnectionId, messageDeliveryNotification, _logger);
 			}
+
+			return Task.FromResult(false);
 		}
 	}
 }

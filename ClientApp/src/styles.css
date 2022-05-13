@@ -8,12 +8,23 @@ code {
   color: #e01a76;
 }
 
+ul {
+	padding-left: 1.5rem !important;
+}
+
 .btn-primary {
-  color: #fff;
-  background-color: #1b6ec2;
-  border-color: #1861ac;
+	color: #fff;
+	background-color: #1b6ec2;
+	border-color: #1861ac;
 }
 
 .font-weight-500 {
 	font-weight: 500;
+}
+
+.toast-container .ngx-toastr {
+	width: fit-content !important;
+}
+.toast-container.toast-top-center {
+	margin-top: 10px;
 }

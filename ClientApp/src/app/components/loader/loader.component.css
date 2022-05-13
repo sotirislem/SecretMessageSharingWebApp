@@ -16,7 +16,7 @@
 	z-index: 9999;
 }
 
-p {
+.spinner-text {
 	font-size: 17px;
 	font-weight: 500;
 	cursor: default;

@@ -237,3 +237,6 @@ ClientApp/.angular/cache
 ClientApp/node_modules
 ClientApp/**/models/*.js
 ClientApp/**/models/*.map
+
+Properties/PublishProfiles
+Properties/ServiceDependencies

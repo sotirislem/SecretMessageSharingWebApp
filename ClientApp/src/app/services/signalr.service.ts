@@ -31,7 +31,7 @@ export class SignalRService {
 			.catch(err => console.error('SignalR: Error while starting connection: ' + err));
 	}
 
-	registerNewSecretMessageDeliveryNotificationHandler(invokeMethod: (data: MessageDeliveryNotification) => void) {
+	registerNewSecretMessageDeliveryNotificationHandler(invokeMethod: (response: MessageDeliveryNotification) => void) {
 		if (!this.hubConnectionInitialized) return;
 
 		this.unregisterExistingHandlers();

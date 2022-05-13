@@ -30,7 +30,7 @@ export class HttpErrorInterceptor implements HttpInterceptor {
 						toastrMessage = apiError.message;
 					}
 					else {
-						toastrTitle = response.statusText;
+						toastrTitle = response.statusText  + ' ' + `(Error code: ${response.status})`;
 						toastrMessage = response.message;
 					}
 
