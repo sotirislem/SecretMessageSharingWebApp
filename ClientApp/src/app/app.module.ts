@@ -19,6 +19,7 @@ import { ToastrModule } from 'ngx-toastr';
 import { HttpLoaderInterceptor } from './interceptors/http-loader-interceptor.service';
 import { HttpHeadersInterceptor } from './interceptors/http-headers-interceptor.service';
 import { HttpErrorInterceptor } from './interceptors/http-error-interceptor.service';
+import { DateTimeFullPipe } from './pipes/date-time-full.pipe';
 
 @NgModule({
 	declarations: [
@@ -28,7 +29,8 @@ import { HttpErrorInterceptor } from './interceptors/http-error-interceptor.serv
 		HomeComponent,
 		NewSecretMessageComponent,
 		GetSecretMessageComponent,
-		AppInfoComponent
+		AppInfoComponent,
+		DateTimeFullPipe
 	],
 	imports: [
 		BrowserModule.withServerTransition({ appId: 'ng-cli-universal' }),

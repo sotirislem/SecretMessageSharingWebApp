@@ -1,6 +1,7 @@
 <header>
 	<nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
 		<div class="container">
+
 			<a class="navbar-brand" [routerLink]="[Routes.Root]">SecretMessageSharingWebApp</a>
 
 			<button class="navbar-toggler"
@@ -13,31 +14,22 @@
 				<span class="navbar-toggler-icon"></span>
 			</button>
 
-			<div class="navbar-collapse collapse d-sm-inline-flex justify-content-end"
-				 [ngClass]="{ show: isExpanded }">
+			<div class="navbar-collapse collapse d-sm-inline-flex justify-content-end" [ngClass]="{ show: isExpanded }">
 				<ul class="navbar-nav flex-grow" (click)="collapse()">
+
 					<li class="nav-item"
 						[routerLinkActive]="['link-active']"
 						[routerLinkActiveOptions]="{ exact: true }">
 						<a class="nav-link text-dark" [routerLink]="[Routes.Root]">Create a Message</a>
 					</li>
+
 					<li class="nav-item" [routerLinkActive]="['link-active']">
 						<a class="nav-link text-dark" [routerLink]="[Routes.Root_AppInfo]">App Info</a>
 					</li>
 
-					<!--<li class="nav-item"
-						[routerLinkActive]="['link-active']"
-						[routerLinkActiveOptions]="{ exact: true }">
-						<a class="nav-link text-dark" [routerLink]="[Routes.Root]">Home</a>
-					</li>
-					<li class="nav-item" [routerLinkActive]="['link-active']">
-						<a class="nav-link text-dark" [routerLink]="[Routes.Root_NewSecretMessage]">New Secret Message</a>
-					</li>
-					<li class="nav-item" [routerLinkActive]="['link-active']">
-						<a class="nav-link text-dark" [routerLink]="[Routes.Root_GetSecretMessage]">Get Secret Message</a>
-					</li>-->
 				</ul>
 			</div>
+
 		</div>
 	</nav>
 </header>
