@@ -11,7 +11,7 @@ namespace SecretMessageSharingWebApp.Extensions
 			var uaParser = Parser.GetDefault();
 
 			ClientInfo clientInfo = uaParser.Parse(userAgent);
-			return $"{clientInfo.OS}, {clientInfo.Device}, {clientInfo.UA}";
+			return $"{clientInfo.Device}, {clientInfo.OS}, {clientInfo.UA}";
 		}
 
 		public static string GetClientIP(this HttpContext httpContext)
