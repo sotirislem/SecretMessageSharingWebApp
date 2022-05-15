@@ -11,7 +11,9 @@ using SecretMessageSharingWebApp.Services;
 // builder
 var builder = WebApplication.CreateBuilder(args);
 
+#if (!DEBUG)
 builder.Services.AddApplicationInsightsTelemetry(builder.Configuration["APPLICATIONINSIGHTS_CONNECTION_STRING"]);
+#endif
 
 builder.Services.AddDbContext<SecretMessageDbContext>(options =>
 	options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
@@ -70,9 +72,10 @@ app.UseExceptionHandler("/error");
 
 app.UseMiddleware<HttpRequestTimeMiddleware>();
 
-app.MapHub<SecretMessageDeliveryNotificationHub>("/signalR/secret-message-delivery-notification-hub");
-
-app.UseEndpoints(configure => configure.MapControllers());
+app.UseEndpoints(configure => {
+	configure.MapHub<SecretMessageDeliveryNotificationHub>(SecretMessageDeliveryNotificationHub.Url);
+	configure.MapControllers();
+});
 
 app.MapFallbackToFile("index.html");
 

@@ -20,20 +20,20 @@ namespace SecretMessageSharingWebApp.Controllers
 		private readonly ISecretMessagesRepository _secretMessagesRepository;
 		private readonly IGetLogsRepository _getLogsRepository;
 		private readonly MemoryCacheService _memoryCacheService;
-		private readonly IHubContext<SecretMessageDeliveryNotificationHub> _secretMessageReadNotificationHub;
+		private readonly IHubContext<SecretMessageDeliveryNotificationHub, ISecretMessageDeliveryNotificationHub> _secretMessageDeliveryNotificationHub;
 
 		public SecretMessagesController(
 			ISecretMessagesRepository secretMessagesRepository,
 			IGetLogsRepository getLogsRepository,
 			MemoryCacheService memoryCacheService,
-			IHubContext<SecretMessageDeliveryNotificationHub> secretMessageReadNotificationHub,
+			IHubContext<SecretMessageDeliveryNotificationHub, ISecretMessageDeliveryNotificationHub> secretMessageDeliveryNotificationHub,
 			ILogger<SecretMessagesController> logger)
 		{
 			this._logger = logger;
 			this._secretMessagesRepository = secretMessagesRepository;
 			this._getLogsRepository = getLogsRepository;
 			this._memoryCacheService = memoryCacheService;
-			this._secretMessageReadNotificationHub = secretMessageReadNotificationHub;
+			this._secretMessageDeliveryNotificationHub = secretMessageDeliveryNotificationHub;
 		}
 
 		[HttpPost("store")]
@@ -104,7 +104,7 @@ namespace SecretMessageSharingWebApp.Controllers
 					RecipientClientInfo = getLog.RequestClientInfo!
 				};
 
-				return _secretMessageReadNotificationHub.TrySendNotification(signalRConnectionId, messageDeliveryNotification, _logger);
+				return _secretMessageDeliveryNotificationHub.TrySendMessageDeliveryNotification(signalRConnectionId, messageDeliveryNotification, _logger);
 			}
 
 			return Task.FromResult(false);

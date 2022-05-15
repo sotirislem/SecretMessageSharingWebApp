@@ -3,7 +3,7 @@ import { finalize } from 'rxjs/operators';
 
 import { SjclService } from '../../services/sjcl.service';
 import { ApiClientService } from '../../services/api-client.service';
-import { SignalRService } from '../../services/signalr.service';
+import { SecretMessageDeliveryNotificationHubService } from '../../services/secret-message-delivery-notification-hub.service';
 
 import { Router } from '@angular/router';
 import { Routes } from '../../../constants';
@@ -23,13 +23,13 @@ export class HomeComponent {
 		private router: Router,
 		private sjclService: SjclService,
 		private apiClientService: ApiClientService,
-		private signalRService: SignalRService
+		private secretMessageDeliveryNotificationHubService: SecretMessageDeliveryNotificationHubService
 	) { }
 
 	async onEncryptButtonClick() {
 		this.encryptionInProgress = true;
 
-		await this.signalRService.initHubConnection();
+		await this.secretMessageDeliveryNotificationHubService.initHubConnection();
 
 		setTimeout(() => {
 			const [secretMessage, encryptionKey] = this.sjclService.encryptMessage(this.secretMsgPlainText.trim());

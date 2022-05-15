@@ -1,9 +1,12 @@
-import { BrowserModule } from '@angular/platform-browser';
 import { NgModule } from '@angular/core';
-import { FormsModule } from '@angular/forms';
-import { HttpClientModule, HTTP_INTERCEPTORS } from '@angular/common/http';
-import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
+import { BrowserModule } from '@angular/platform-browser';
 import { AppRoutingModule } from './app-routing.module';
+import { HttpClientModule, HTTP_INTERCEPTORS } from '@angular/common/http';
+import { FormsModule } from '@angular/forms';
+import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { ToastrModule } from 'ngx-toastr';
+import { AppInsightsModule } from '../insights/app-insights.module';
 
 import { AppRootComponent } from './components/app-root/app-root.component';
 import { NavMenuComponent } from './components/nav-menu/nav-menu.component';
@@ -13,13 +16,16 @@ import { NewSecretMessageComponent } from './components/new-secret-message/new-s
 import { GetSecretMessageComponent } from './components/get-secret-message/get-secret-message.component';
 import { AppInfoComponent } from './components/app-info/app-info.component';
 
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { ToastrModule } from 'ngx-toastr';
+import { DateTimeFullPipe } from './pipes/date-time-full.pipe';
 
 import { HttpLoaderInterceptor } from './interceptors/http-loader-interceptor.service';
 import { HttpHeadersInterceptor } from './interceptors/http-headers-interceptor.service';
 import { HttpErrorInterceptor } from './interceptors/http-error-interceptor.service';
-import { DateTimeFullPipe } from './pipes/date-time-full.pipe';
+
+import { environment } from '../environments/environment';
+
+
+const appInsightsModule = (environment.production ? [AppInsightsModule] : []);
 
 @NgModule({
 	declarations: [
@@ -39,7 +45,8 @@ import { DateTimeFullPipe } from './pipes/date-time-full.pipe';
 		FormsModule,
 		NgbModule,
 		BrowserAnimationsModule,
-		ToastrModule.forRoot()
+		ToastrModule.forRoot(),
+		...appInsightsModule
 	],
 	providers: [
 		{ provide: HTTP_INTERCEPTORS, useClass: HttpLoaderInterceptor, multi: true },

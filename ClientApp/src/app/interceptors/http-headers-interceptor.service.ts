@@ -7,20 +7,19 @@ import {
 	HttpInterceptor,
     HttpHeaders
 } from '@angular/common/http';
-import { SignalRService } from '../services/signalr.service';
+import { SecretMessageDeliveryNotificationHubService } from '../services/secret-message-delivery-notification-hub.service';
 
 @Injectable()
 export class HttpHeadersInterceptor implements HttpInterceptor {
 
-	constructor(private signalRService: SignalRService) { }
+	constructor(private secretMessageDeliveryNotificationHubService: SecretMessageDeliveryNotificationHubService) { }
 
 	intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
-		const signalRConnectionId = this.signalRService.getHubConnectionId();
 
-		if (signalRConnectionId) {
+		if (this.secretMessageDeliveryNotificationHubService.hubConnectionInitialized) {
 			req = req.clone({
 				headers: new HttpHeaders({
-					'SignalR-ConnectionId': signalRConnectionId,
+					'SignalR-ConnectionId': this.secretMessageDeliveryNotificationHubService.hubConnectionId!
 				})
 			});
 		}

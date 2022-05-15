@@ -7,7 +7,7 @@ const PROXY_CONFIG = [
 		context: [
 			"/api",
 			"/swagger",
-			"/signalR"
+			"/signalr"
 		],
 		target: target,
 		secure: false,

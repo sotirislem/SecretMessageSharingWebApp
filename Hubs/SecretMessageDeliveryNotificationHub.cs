@@ -1,11 +1,19 @@
 ﻿using Microsoft.AspNetCore.SignalR;
+using SecretMessageSharingWebApp.Extensions;
+using SecretMessageSharingWebApp.Models.Api;
 
 namespace SecretMessageSharingWebApp.Hubs
 {
-	public class SecretMessageDeliveryNotificationHub : Hub
+    public interface ISecretMessageDeliveryNotificationHub
     {
-        public const string HubMethodName = "secret-message-delivery-notification";
-        public static List<string> ActiveConnections = new List<string>();
+        [HubMethodName("message-delivery-notification")]
+        Task SendMessageDeliveryNotification(MessageDeliveryNotification messageDeliveryNotification);
+    }
+
+    public class SecretMessageDeliveryNotificationHub : Hub<ISecretMessageDeliveryNotificationHub>
+    {
+        public const string Url = "signalr/secret-message-delivery-notification-hub";
+        public static readonly List<string> ActiveConnections = new List<string>();
 
         private ILogger<SecretMessageDeliveryNotificationHub> _logger;
 
@@ -25,6 +33,10 @@ namespace SecretMessageSharingWebApp.Hubs
         public override Task OnDisconnectedAsync(Exception? exception)
         {
             _logger.LogInformation("SecretMessageDeliveryNotificationHub => Connection terminated, ID: {connectionId}", Context.ConnectionId);
+            if (exception is not null)
+			{
+                _logger.LogError("SecretMessageDeliveryNotificationHub => Exception: {exceptionMessage}", exception.GetAllErrorMessages());
+            }
 
             ActiveConnections.Remove(Context.ConnectionId);
             return base.OnDisconnectedAsync(exception);
