@@ -15,9 +15,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddApplicationInsightsTelemetry(builder.Configuration["APPLICATIONINSIGHTS_CONNECTION_STRING"]);
 #endif
 
-builder.Services.AddDbContext<SecretMessageDbContext>(options =>
-	options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
-builder.Services.AddDbContext<GetLogsDbContext>(options =>
+builder.Services.AddDbContext<SecretMessagesDbContext>(options =>
 	options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 builder.Services.AddScoped<ISecretMessagesRepository, SecretMessagesRepository>();
@@ -27,6 +25,14 @@ builder.Services.AddHostedService<SecretMessagesAutoCleanerBackgroundService>();
 
 builder.Services.AddMemoryCache();
 builder.Services.AddSingleton<MemoryCacheService>();
+
+builder.Services.AddDistributedMemoryCache();
+builder.Services.AddSession(options =>
+{
+	options.IdleTimeout = TimeSpan.FromMinutes(10);
+	options.Cookie.HttpOnly = true;
+	options.Cookie.IsEssential = true;
+});
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
@@ -67,6 +73,7 @@ else
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
+app.UseSession();
 
 app.UseExceptionHandler("/error");
 

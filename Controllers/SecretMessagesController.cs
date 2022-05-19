@@ -23,30 +23,32 @@ namespace SecretMessageSharingWebApp.Controllers
 		private readonly IHubContext<SecretMessageDeliveryNotificationHub, ISecretMessageDeliveryNotificationHub> _secretMessageDeliveryNotificationHub;
 
 		public SecretMessagesController(
+			ILogger<SecretMessagesController> logger,
 			ISecretMessagesRepository secretMessagesRepository,
 			IGetLogsRepository getLogsRepository,
 			MemoryCacheService memoryCacheService,
-			IHubContext<SecretMessageDeliveryNotificationHub, ISecretMessageDeliveryNotificationHub> secretMessageDeliveryNotificationHub,
-			ILogger<SecretMessagesController> logger)
+			IHubContext<SecretMessageDeliveryNotificationHub, ISecretMessageDeliveryNotificationHub> secretMessageDeliveryNotificationHub)
 		{
-			this._logger = logger;
-			this._secretMessagesRepository = secretMessagesRepository;
-			this._getLogsRepository = getLogsRepository;
-			this._memoryCacheService = memoryCacheService;
-			this._secretMessageDeliveryNotificationHub = secretMessageDeliveryNotificationHub;
+			_logger = logger;
+			_secretMessagesRepository = secretMessagesRepository;
+			_getLogsRepository = getLogsRepository;
+			_memoryCacheService = memoryCacheService;
+			_secretMessageDeliveryNotificationHub = secretMessageDeliveryNotificationHub;
 		}
 
+		#region Endpoints
 		[HttpPost("store")]
 		public string Store(SecretMessageData secretMessageData)
 		{
-			var secretMessage = new Models.DbContext.SecretMessage
+			var secretMessage = new Models.Entities.SecretMessage
 			{
 				JsonData = JsonConvert.SerializeObject(secretMessageData),
 				CreatorIP = HttpContext.GetClientIP(),
 				CreatorClientInfo = HttpContext.GetClientInfo()
 			};
-			_secretMessagesRepository.Store(secretMessage);
+			_secretMessagesRepository.Insert(secretMessage, true);
 
+			SaveMsgToRecentlyStoredSecretMessagesList(secretMessage.Id);
 			SaveSecretMessageCreatorSignalRConnectionId(secretMessage.Id);
 
 			return secretMessage.Id;
@@ -55,8 +57,8 @@ namespace SecretMessageSharingWebApp.Controllers
 		[HttpGet("get/{id}")]
 		public async Task<GetSecretMessageResponse?> Get(string id)
 		{
-			var secretMessage = await _secretMessagesRepository.Get(id);
-			var getLog = new Models.DbContext.GetLog
+			var secretMessage = _secretMessagesRepository.Retrieve(id);
+			var getLog = new Models.Entities.GetLog
 			{
 				RequestDateTime = HttpContext.GetRequestDateTime(),
 				RequestCreatorIP = HttpContext.GetClientIP(),
@@ -67,7 +69,7 @@ namespace SecretMessageSharingWebApp.Controllers
 				SecretMessageCreatorIP = secretMessage?.CreatorIP,
 				SecretMessageCreatorClientInfo = secretMessage?.CreatorClientInfo
 			};
-			_getLogsRepository.Add(getLog);
+			_getLogsRepository.Insert(getLog, true);
 
 			if (secretMessage is not null)
 			{
@@ -82,6 +84,79 @@ namespace SecretMessageSharingWebApp.Controllers
 			return null;
 		}
 
+		[HttpGet("getRecentMessages")]
+		public List<RecentlyStoredMessage> GetRecentlyStoredMessages()
+		{
+			var recentStoredSecretMessagesList = GetRecentlyStoredSecretMessagesList();
+			if (!recentStoredSecretMessagesList.Any())
+			{
+				return new List<RecentlyStoredMessage>();
+			}
+
+			var resultsA = _secretMessagesRepository.GetAll()
+				.Where(o => recentStoredSecretMessagesList.Contains(o.Id))
+				.Select(o => new RecentlyStoredMessage
+				{
+					Id = o.Id,
+					CreatedDateTime = o.CreatedDateTime
+				})
+				.AsEnumerable();
+
+			var resultsB = _getLogsRepository.GetAll()
+				.Where(o => o.SecretMessageExisted && recentStoredSecretMessagesList.Contains(o.SecretMessageId))
+				.Select(o => new RecentlyStoredMessage
+				{
+					Id = o.SecretMessageId,
+					CreatedDateTime = o.SecretMessageCreatedDateTime!.Value,
+					DeliveryDetails = new DeliveryDetails { DeliveredAt = o.RequestDateTime, RecipientIP = o.RequestCreatorIP!, RecipientClientInfo = o.RequestClientInfo! }
+				})
+				.AsEnumerable();
+			
+			var results = resultsA.Union(resultsB).OrderByDescending(o => o.CreatedDateTime).ToList();
+
+			return results;
+		}
+
+		[HttpDelete("deleteRecentMessage/{id}")]
+		public bool DeleteRecentlyStoredMessage(string id)
+		{
+			var recentStoredSecretMessagesList = GetRecentlyStoredSecretMessagesList();
+			if (!recentStoredSecretMessagesList.Contains(id))
+			{
+				return false;
+			}
+			
+			var secretMessage = _secretMessagesRepository.Get(id);
+			if (secretMessage is null)
+			{
+				return false;
+			}
+
+			_secretMessagesRepository.Delete(secretMessage!, true);
+			return true;
+		}
+		#endregion Endpoints
+
+		#region Private Helpers
+		public void SaveMsgToRecentlyStoredSecretMessagesList(string secretMessageId)
+		{
+			if (HttpContext.Session.GetObject<List<string>>(Constants.SessionKey_RecentlyStoredSecretMessagesList) is List<string> storedSecretMessagesList)
+			{
+				storedSecretMessagesList.Add(secretMessageId);
+			}
+			else
+			{
+				storedSecretMessagesList = new List<string> { secretMessageId };
+			}
+
+			HttpContext.Session.SetObject(Constants.SessionKey_RecentlyStoredSecretMessagesList, storedSecretMessagesList);
+		}
+
+		public List<string> GetRecentlyStoredSecretMessagesList()
+		{
+			return HttpContext.Session.GetObject<List<string>>(Constants.SessionKey_RecentlyStoredSecretMessagesList) ?? new List<string>();
+		}
+
 		private void SaveSecretMessageCreatorSignalRConnectionId(string secretMessageId)
 		{
 			var signalRConnectionId = Request.GetRequestHeaderValue("SignalR-ConnectionId");
@@ -91,13 +166,14 @@ namespace SecretMessageSharingWebApp.Controllers
 			}
 		}
 
-		private Task<bool> TrySendSecretMessageDeliveryNotification(string secretMessageId, Models.DbContext.GetLog getLog)
+		private Task<bool> TrySendSecretMessageDeliveryNotification(string secretMessageId, Models.Entities.GetLog getLog)
 		{
 			(var signalRConnectionIdExists, var signalRConnectionId) = _memoryCacheService.GetValue(secretMessageId);
 			if (signalRConnectionIdExists)
 			{
-				var messageDeliveryNotification = new MessageDeliveryNotification
+				var messageDeliveryNotification = new MessageDeliveryDetails
 				{
+					MessageId = secretMessageId,
 					MessageCreatedOn = getLog.SecretMessageCreatedDateTime!.Value,
 					MessageDeliveredOn = getLog.RequestDateTime,
 					RecipientIp = getLog.RequestCreatorIP!,
@@ -109,5 +185,6 @@ namespace SecretMessageSharingWebApp.Controllers
 
 			return Task.FromResult(false);
 		}
+		#endregion
 	}
 }

@@ -1,4 +1,5 @@
-export interface MessageDeliveryNotification {
+export interface MessageDeliveryDetails {
+	messageId: string;
 	messageCreatedOn: Date;
 	messageDeliveredOn: Date;
 	recipientIp: string;

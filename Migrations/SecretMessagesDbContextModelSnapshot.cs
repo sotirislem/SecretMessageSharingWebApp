@@ -3,19 +3,17 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
-using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SecretMessageSharingWebApp.Data;
 
 #nullable disable
 
-namespace SecretMessageSharingWebApp.Migrations.GetLogsDb
+namespace SecretMessageSharingWebApp.Migrations
 {
-    [DbContext(typeof(GetLogsDbContext))]
-    [Migration("20220511165450_Initial-Migration")]
-    partial class InitialMigration
+    [DbContext(typeof(SecretMessagesDbContext))]
+    partial class SecretMessagesDbContextModelSnapshot : ModelSnapshot
     {
-        protected override void BuildTargetModel(ModelBuilder modelBuilder)
+        protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -24,7 +22,7 @@ namespace SecretMessageSharingWebApp.Migrations.GetLogsDb
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder, 1L, 1);
 
-            modelBuilder.Entity("SecretMessageSharingWebApp.Models.DbContext.GetLog", b =>
+            modelBuilder.Entity("SecretMessageSharingWebApp.Models.Entities.GetLog", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -55,11 +53,39 @@ namespace SecretMessageSharingWebApp.Migrations.GetLogsDb
 
                     b.Property<string>("SecretMessageId")
                         .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SecretMessageId");
+
+                    b.ToTable("GetLogs");
+                });
+
+            modelBuilder.Entity("SecretMessageSharingWebApp.Models.Entities.SecretMessage", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime>("CreatedDateTime")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatorClientInfo")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("CreatorIP")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("DeleteOnRetrieve")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("JsonData")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 
-                    b.ToTable("GetLogs");
+                    b.ToTable("SecretMessages");
                 });
 #pragma warning restore 612, 618
         }

@@ -38,9 +38,7 @@ export class HttpLoaderInterceptor implements HttpInterceptor {
 			this.pendingRequests.splice(i, 1);
 		}
 
-		if (this.pendingRequests.length > 0) {
-			this.loaderService.enableLoading();
-		} else {
+		if (this.pendingRequests.length == 0) {
 			this.loaderService.disableLoading();
 		}
 	}

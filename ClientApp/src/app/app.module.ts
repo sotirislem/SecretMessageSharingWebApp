@@ -14,7 +14,9 @@ import { LoaderComponent } from './components/loader/loader.component';
 import { HomeComponent } from './components/home/home.component';
 import { NewSecretMessageComponent } from './components/new-secret-message/new-secret-message.component';
 import { GetSecretMessageComponent } from './components/get-secret-message/get-secret-message.component';
+import { RecentlyStoredMessagesComponent } from './components/recent-stored-messages/recently-stored-messages.component';
 import { AppInfoComponent } from './components/app-info/app-info.component';
+import { MessageDeliveryDetailsModalComponent } from './components/message-delivery-details-modal/message-delivery-details-modal.component';
 
 import { DateTimeFullPipe } from './pipes/date-time-full.pipe';
 
@@ -35,8 +37,10 @@ const appInsightsModule = (environment.production ? [AppInsightsModule] : []);
 		HomeComponent,
 		NewSecretMessageComponent,
 		GetSecretMessageComponent,
+		RecentlyStoredMessagesComponent,
 		AppInfoComponent,
-		DateTimeFullPipe
+		DateTimeFullPipe,
+		MessageDeliveryDetailsModalComponent
 	],
 	imports: [
 		BrowserModule.withServerTransition({ appId: 'ng-cli-universal' }),

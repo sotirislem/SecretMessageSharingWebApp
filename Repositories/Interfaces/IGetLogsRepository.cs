@@ -1,9 +1,8 @@
-﻿using SecretMessageSharingWebApp.Models.DbContext;
+﻿using SecretMessageSharingWebApp.Models.Entities;
+using SecretMessageSharingWebApp.Repositories.Interfaces;
 
 namespace SecretMessageSharingWebApp.Repositories
 {
-	public interface IGetLogsRepository
-	{
-		GetLog Add(GetLog getLog);
-	}
+	public interface IGetLogsRepository : IGeneralRepository<GetLog>
+	{ }
 }

@@ -24,13 +24,13 @@ export class HttpErrorInterceptor implements HttpInterceptor {
 					let toastrTitle: string = '';
 
 					if (response.status === 500) {
-						const apiError = JSON.parse(response.error) as ApiError;
+						const apiError = response.error as ApiError;
 
 						toastrTitle = 'API Error';
 						toastrMessage = apiError.message;
 					}
 					else {
-						toastrTitle = response.statusText  + ' ' + `(Error code: ${response.status})`;
+						toastrTitle = `HTTP Response: ${response.statusText} (Status code: ${response.status})`;
 						toastrMessage = response.message;
 					}
 

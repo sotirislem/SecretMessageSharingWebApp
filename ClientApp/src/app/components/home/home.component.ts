@@ -34,19 +34,23 @@ export class HomeComponent {
 		setTimeout(() => {
 			const [secretMessage, encryptionKey] = this.sjclService.encryptMessage(this.secretMsgPlainText.trim());
 
-			this.apiClientService.saveSecretMessage(secretMessage)
+			this.apiClientService.storeSecretMessage(secretMessage)
 				.pipe(finalize(() => {
 					this.encryptionInProgress = false;
 				}))
 				.subscribe(response => {
-					this.router.navigate([Routes.Root_NewSecretMessage], {
-						state: {
-							secretMsgPlainText: this.secretMsgPlainText,
-							secretMsgId: response,
-							secretMsgKey: encryptionKey
-						}
-					});
+					this.navigateToNewSecretMessagePage(response, encryptionKey);
 				});
 		}, 500);
+	}
+
+	private navigateToNewSecretMessagePage(secretMsgId: string, secretMsgKey: string) {
+		this.router.navigate([Routes.NewSecretMessage], {
+			state: {
+				secretMsgPlainText: this.secretMsgPlainText,
+				secretMsgId: secretMsgId,
+				secretMsgKey: secretMsgKey
+			}
+		});
 	}
 }

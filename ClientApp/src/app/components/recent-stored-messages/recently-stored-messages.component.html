@@ -1,0 +1,30 @@
+<h1 class="h5 mb-4">Recently stored secret messages</h1>
+
+<div class="alert alert-warning" role="alert" *ngIf="recentlyStoredMessages?.length == 0">
+	There are no recently created secret messages
+</div>
+
+<table id="dataTable" class="table table-striped table-hover table-sm" *ngIf="recentlyStoredMessages?.length != 0">
+	<thead>
+		<tr>
+			<th scope="col">Message ID</th>
+			<th scope="col">Created On</th>
+			<th scope="col" class="text-center">Delivered?</th>
+			<th scope="col" class="text-center">Delete?</th>
+		</tr>
+	</thead>
+	<tbody>
+		<tr *ngFor="let msg of recentlyStoredMessages">
+			<td>{{msg.id}}</td>
+			<td>{{msg.createdDateTime | dateTimeFull}}</td>
+			<td class="text-center">
+				<span *ngIf="!msg.deliveryDetails">&mdash;</span>
+				<button *ngIf="msg.deliveryDetails" (click)="showDeliveryDetails(msg)">Details</button>
+			</td>
+			<td class="text-center">
+				<span *ngIf="msg.deliveryDetails">&mdash;</span>
+				<button *ngIf="!msg.deliveryDetails" (click)="deleteStoredMessage(msg)" class="btn-danger">Delete</button>
+			</td>
+		</tr>
+	</tbody>
+</table>

@@ -1,48 +1,42 @@
 ﻿using SecretMessageSharingWebApp.Data;
-using SecretMessageSharingWebApp.Models.DbContext;
+using SecretMessageSharingWebApp.Models.Entities;
 
 namespace SecretMessageSharingWebApp.Repositories
 {
-	public class SecretMessagesRepository : ISecretMessagesRepository
+	public class SecretMessagesRepository : GeneralRepository<SecretMessage>, ISecretMessagesRepository
 	{
-		private readonly SecretMessageDbContext _context;
 		private readonly ILogger<SecretMessagesRepository> _logger;
 
-		public SecretMessagesRepository(SecretMessageDbContext context, ILogger<SecretMessagesRepository> logger)
+		public SecretMessagesRepository(SecretMessagesDbContext context, ILogger<SecretMessagesRepository> logger) : base(context)
 		{
-			this._context = context;
 			_logger = logger;
 		}
 
-		public async Task<SecretMessage?> Get(string id)
+		public override void Insert(SecretMessage secretMessage, bool save = false)
 		{
-			var secretMessage = await _context.SecretMessages.FindAsync(id);
-			if (secretMessage is not null && secretMessage.DeleteOnRetrieve)
-			{
-				_context.Remove(secretMessage);
-				_context.SaveChanges();
-			}
-
-			_logger.LogInformation("SecretMessages:Get => ID: {secretMessageId}, Exists: {secretMessageExists}.", id, (secretMessage is not null));
-			return secretMessage;
+			base.Insert(secretMessage, save);
+			_logger.LogInformation("SecretMessages:Insert => ID: {secretMessageId}.", secretMessage.Id);
 		}
 
-		public SecretMessage Store(SecretMessage secretMessage)
+		public SecretMessage? Retrieve(string id)
 		{
-			_context.SecretMessages.Add(secretMessage);
-			_context.SaveChanges();
+			var secretMessage = base.Get(id);
+			if (secretMessage is not null && secretMessage.DeleteOnRetrieve)
+			{
+				base.Delete(secretMessage, true);
+			}
 
-			_logger.LogInformation("SecretMessages:Store => ID: {secretMessageId}.", secretMessage.Id);
+			_logger.LogInformation("SecretMessages:Retrieve => ID: {secretMessageId}, Exists: {secretMessageExists}.", id, (secretMessage is not null));
 			return secretMessage;
 		}
 
 		public void DeleteOldMessages()
 		{
-			var oldMessages = _context.SecretMessages.Where(m => m.CreatedDateTime < DateTime.Now.AddHours(-1));
+			var oldMessages = _dbSet.Where(m => m.CreatedDateTime < DateTime.Now.AddHours(-1));
 			if (oldMessages.Any())
 			{
-				_context.SecretMessages.RemoveRange(oldMessages);
-				var dbSaveResult = _context.SaveChanges();
+				_dbSet.RemoveRange(oldMessages);
+				var dbSaveResult = Save();
 
 				_logger.LogInformation("SecretMessagesRepository: Deleted {dbSaveResult} old message(s).", dbSaveResult);
 			}

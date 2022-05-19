@@ -1,6 +1,5 @@
-import { HttpParams } from '@angular/common/http';
-import { Inject, Injectable } from '@angular/core';
-import { Router, UrlSerializer } from '@angular/router';
+import { Injectable } from '@angular/core';
+import { Router } from '@angular/router';
 
 @Injectable({
 	providedIn: 'root'

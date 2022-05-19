@@ -29,7 +29,7 @@
             var httpRequestTimeFeature = new HttpRequestTimeFeature();
             context.Features.Set<IHttpRequestTimeFeature>(httpRequestTimeFeature);
 
-            return this._next(context);
+            return _next(context);
         }
     }
 }

@@ -1,17 +1,14 @@
-import { Component, OnInit, ViewChild, ViewEncapsulation } from '@angular/core';
-import { MessageDeliveryNotification } from '../../models/message-delivery-notification.model';
-import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
-import { ElementRef } from '@angular/core';
+import { Component, OnInit, ViewChild } from '@angular/core';
 
 import { Clipboard } from '@angular/cdk/clipboard';
-import { NgbModalRef, NgbTooltip } from '@ng-bootstrap/ng-bootstrap'
+import { NgbTooltip } from '@ng-bootstrap/ng-bootstrap'
 
 import { RouterHelperService } from '../../services/router-helper.service';
 import { UrlHelperService } from '../../services/url-helper.service';
 import { SecretMessageDeliveryNotificationHubService } from '../../services/secret-message-delivery-notification-hub.service';
 
 import { Routes } from '../../../constants';
-import * as QRCode from 'qrcode'
+import * as QRCode from 'qrcode';
 
 @Component({
 	selector: 'app-new-secret-message',
@@ -19,35 +16,30 @@ import * as QRCode from 'qrcode'
 	styleUrls: ['./new-secret-message.component.css']
 })
 export class NewSecretMessageComponent implements OnInit {
-	@ViewChild('msgDeliveryNotificationModalElement') msgDeliveryNotificationModal: NgbModalRef;
 	@ViewChild('ngbTooltipElement') ngbTooltip: NgbTooltip;
-
 	ngbTooltipTimer: any;
+
 	secretMsgPlainText: string;
 	secretMsgId: string;
 	secretMsgKey: string;
 	secretMsgUrl: string;
+	secretMsgDelivered: boolean;
 	qrCodeCanvas: HTMLCanvasElement;
-	messageDeliveryNotificationData: MessageDeliveryNotification;
 
 	constructor(
 		private clipboard: Clipboard,
 		routerHelperService: RouterHelperService,
 		urlHelperService: UrlHelperService,
-		secretMessageDeliveryNotificationHubService: SecretMessageDeliveryNotificationHubService,
-		modalService: NgbModal
+		secretMessageDeliveryNotificationHubService: SecretMessageDeliveryNotificationHubService
 	) {
 		this.secretMsgPlainText = routerHelperService.getCurrentNavigationStateData('secretMsgPlainText');
 		this.secretMsgId = routerHelperService.getCurrentNavigationStateData('secretMsgId');
 		this.secretMsgKey = routerHelperService.getCurrentNavigationStateData('secretMsgKey');
-		this.secretMsgUrl = urlHelperService.createLocalUrlWithParams(Routes.Root_GetSecretMessage, { id: this.secretMsgId }, this.secretMsgKey);
+		this.secretMsgUrl = urlHelperService.createLocalUrlWithParams(Routes.GetSecretMessage, { id: this.secretMsgId }, this.secretMsgKey);
 
-		secretMessageDeliveryNotificationHubService.registerNewSecretMessageDeliveryNotificationHandler((response: MessageDeliveryNotification) => {
-			this.ngbTooltip.close();
-
-			this.messageDeliveryNotificationData = response;
-			modalService.open(this.msgDeliveryNotificationModal, { centered: true });
-		});
+		secretMessageDeliveryNotificationHubService.receivedDeliveryNotificationsObservable.subscribe(
+			(secretMessageId) => this.receivedDeliveryNotificationsObserver(secretMessageId)
+		);
 	}
 
 	ngOnInit(): void {
@@ -70,5 +62,12 @@ export class NewSecretMessageComponent implements OnInit {
 		this.ngbTooltipTimer = setTimeout(() => {
 			this.ngbTooltip.close();
 		}, 5000);
+	}
+
+	receivedDeliveryNotificationsObserver(secretMessageId: string) {
+		if (secretMessageId == this.secretMsgId) {
+			this.ngbTooltip.close();
+			this.secretMsgDelivered = true;
+		}
 	}
 }

@@ -1,0 +1,12 @@
+#dataTable th {
+	font-weight: 500;
+}
+
+#dataTable tr td {
+	cursor: default;
+	vertical-align: middle;
+}
+
+#dataTable td:first-child {
+	word-wrap: anywhere;
+}

@@ -1,7 +1,9 @@
 ﻿namespace SecretMessageSharingWebApp.Models.Api
 {
-	public class MessageDeliveryNotification
+	public class MessageDeliveryDetails
 	{
+		public string MessageId { get; set; }
+
 		public DateTime MessageCreatedOn { get; set; }
 
 		public DateTime MessageDeliveredOn { get; set; }

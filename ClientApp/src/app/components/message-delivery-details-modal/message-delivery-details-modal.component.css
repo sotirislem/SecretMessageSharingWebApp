@@ -1,0 +1,16 @@
+.modal-header .btn-close {
+	background-color: white !important;
+	box-shadow: none !important;
+	outline: none !important;
+}
+
+.modal-body table th {
+	width: 50%;
+	border-right: 1px solid #ddd;
+	font-size: 15px;
+	font-weight: 600;
+}
+
+.modal-body table td {
+	text-align: right;
+}

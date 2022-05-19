@@ -2,6 +2,7 @@ import { HttpClient, HttpResponse } from '@angular/common/http';
 import { Inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { GetSecretMessageResponse } from '../models/get-secret-message-response.model';
+import { RecentlyStoredMessage } from '../models/recently-stored-message.model';
 import { SecretMessageData } from '../models/secret-message-data.model';
 
 @Injectable({
@@ -14,14 +15,24 @@ export class ApiClientService {
 		this.baseApiUrl = `${apiUrl}/api`;
 	}
 
-	saveSecretMessage(secretMessage: SecretMessageData): Observable<string> {
+	storeSecretMessage(secretMessage: SecretMessageData): Observable<string> {
 		const url = this.getApiUrl('secret-messages/store');
-		return this.httpClient.post(url, secretMessage, { responseType: "text" });
+		return this.httpClient.post<string>(url, secretMessage, { responseType: 'text' as 'json' });
 	}
 
-	getSavedSecretMessage(id: string): Observable<GetSecretMessageResponse> {
+	getSecretMessage(id: string): Observable<GetSecretMessageResponse> {
 		const url = this.getApiUrl('secret-messages/get/' + id);
 		return this.httpClient.get<GetSecretMessageResponse>(url);
+	}
+
+	getRecentlyStoredMessages(): Observable<RecentlyStoredMessage[]> {
+		const url = this.getApiUrl('secret-messages/getRecentMessages');
+		return this.httpClient.get<RecentlyStoredMessage[]>(url);
+	}
+
+	deleteRecentlyStoredMessage(id: string): Observable<boolean> {
+		const url = this.getApiUrl('secret-messages/deleteRecentMessage/' + id);
+		return this.httpClient.delete<boolean>(url);
 	}
 
 	private getApiUrl(apiPath: string) {

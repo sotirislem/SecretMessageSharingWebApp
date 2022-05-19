@@ -32,7 +32,7 @@ export class GetSecretMessageComponent {
 		const encryptionKey = route.snapshot.fragment!;
 
 		this.componentState = ComponentState.LoadingMessage;
-		apiClientService.getSavedSecretMessage(this.messageId).subscribe((response: GetSecretMessageResponse) => {
+		apiClientService.getSecretMessage(this.messageId).subscribe((response: GetSecretMessageResponse) => {
 			if (response) {
 				this.decryptionResult = this.sjclService.decryptMessage(response.secretMessageData, encryptionKey);
 				this.componentState = ComponentState.ReadyWithMessage;

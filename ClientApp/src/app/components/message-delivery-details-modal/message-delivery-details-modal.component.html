@@ -1,0 +1,36 @@
+<div class="modal-header bg-dark bg-gradient text-light">
+	<h4 id="modal-basic-title" class="modal-title">
+		Message delivery {{isNotification ? 'notification' : 'details'}}
+	</h4>
+	<button type="button" aria-label="Close" class="btn-close btn btn-dark bg-light" (click)="dismiss()"></button>
+</div>
+
+<div class="modal-body">
+	<p>
+		Message Id: <span class="font-weight-500">{{messageDeliveryDetails.messageId}}</span>
+	</p>
+	<p *ngIf="isNotification">
+		Your message has been delivered to a recipient, please find more details below:
+	</p>
+
+	<table class="table table-striped">
+		<tbody>
+			<tr>
+				<th>Message created on</th>
+				<td>{{messageDeliveryDetails.messageCreatedOn | dateTimeFull}}</td>
+			</tr>
+			<tr>
+				<th>Message delivered on</th>
+				<td>{{messageDeliveryDetails.messageDeliveredOn | dateTimeFull}}</td>
+			</tr>
+			<tr>
+				<th>Recipient's IP</th>
+				<td>{{messageDeliveryDetails.recipientIp}}</td>
+			</tr>
+			<tr>
+				<th>Recipient's Device</th>
+				<td>{{messageDeliveryDetails.recipientClientInfo}}</td>
+			</tr>
+		</tbody>
+	</table>
+</div>

@@ -1,13 +1,11 @@
-﻿using SecretMessageSharingWebApp.Models.DbContext;
+﻿using SecretMessageSharingWebApp.Models.Entities;
+using SecretMessageSharingWebApp.Repositories.Interfaces;
 
 namespace SecretMessageSharingWebApp.Repositories
 {
-	public interface ISecretMessagesRepository
+	public interface ISecretMessagesRepository : IGeneralRepository<SecretMessage>
 	{
-		SecretMessage Store(SecretMessage secretMessage);
-
-		Task<SecretMessage?> Get(string id);
-
+		SecretMessage? Retrieve(string id);
 		void DeleteOldMessages();
 	}
 }

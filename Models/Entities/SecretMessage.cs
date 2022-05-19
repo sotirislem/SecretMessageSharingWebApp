@@ -1,4 +1,4 @@
-﻿namespace SecretMessageSharingWebApp.Models.DbContext
+﻿namespace SecretMessageSharingWebApp.Models.Entities
 {
 	public class SecretMessage
 	{

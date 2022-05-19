@@ -5,12 +5,12 @@ namespace SecretMessageSharingWebApp.Services
 {
 	public class MemoryCacheService
 	{
-		private const int ValueExpirationTimeInMinutes = 60;
+		private const int ValueExpirationTimeInMinutes = 10;
 		private readonly IMemoryCache _memoryCache;
 
 		public MemoryCacheService(IMemoryCache memoryCache)
 		{
-			this._memoryCache = memoryCache;
+			_memoryCache = memoryCache;
 		}
 
 		public void SetValue(string key, string value)
@@ -31,7 +31,7 @@ namespace SecretMessageSharingWebApp.Services
 			var exists = _memoryCache.TryGetValue(key, out string value);
 			if (exists && remove)
 			{
-				_memoryCache.Remove(key);
+				RemoveValue(key);
 			}
 
 			return (exists, value);

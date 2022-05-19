@@ -7,7 +7,7 @@ namespace SecretMessageSharingWebApp.Hubs
     public interface ISecretMessageDeliveryNotificationHub
     {
         [HubMethodName("message-delivery-notification")]
-        Task SendMessageDeliveryNotification(MessageDeliveryNotification messageDeliveryNotification);
+        Task SendMessageDeliveryNotification(MessageDeliveryDetails messageDeliveryDetails);
     }
 
     public class SecretMessageDeliveryNotificationHub : Hub<ISecretMessageDeliveryNotificationHub>
@@ -19,7 +19,7 @@ namespace SecretMessageSharingWebApp.Hubs
 
         public SecretMessageDeliveryNotificationHub(ILogger<SecretMessageDeliveryNotificationHub> logger)
 		{
-            this._logger = logger;
+            _logger = logger;
         }
 
         public override Task OnConnectedAsync()
