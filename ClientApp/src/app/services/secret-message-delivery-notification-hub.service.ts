@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@angular/core';
 import { MessageDeliveryDetails } from '../models/message-delivery-details.model';
-import * as signalR from "@microsoft/signalr"
+import * as signalR from "@microsoft/signalr";
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { MessageDeliveryDetailsModalComponent } from '../components/message-delivery-details-modal/message-delivery-details-modal.component';
 import { Subject } from 'rxjs';
