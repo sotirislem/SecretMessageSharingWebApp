@@ -5,18 +5,23 @@ namespace SecretMessageSharingWebApp.Extensions
 {
 	public static class HttpContextExtensions
 	{
-		public static string GetClientInfo(this HttpContext httpContext)
+		public static string? GetClientInfo(this HttpContext httpContext)
 		{
 			var userAgent = httpContext.Request.Headers["User-Agent"];
-			var uaParser = Parser.GetDefault();
+			if (string.IsNullOrWhiteSpace(userAgent))
+			{
+				return null;
+			}
 
+			var uaParser = Parser.GetDefault();
 			ClientInfo clientInfo = uaParser.Parse(userAgent);
+
 			return $"{clientInfo.Device}, {clientInfo.OS}, {clientInfo.UA}";
 		}
 
-		public static string GetClientIP(this HttpContext httpContext)
+		public static string? GetClientIP(this HttpContext httpContext)
 		{
-			return httpContext.Connection.RemoteIpAddress?.ToString()!;
+			return httpContext.Connection.RemoteIpAddress?.ToString();
 		}
 
 		public static DateTime GetRequestDateTime(this HttpContext httpContext)
@@ -24,9 +29,9 @@ namespace SecretMessageSharingWebApp.Extensions
 			return httpContext.Features.Get<IHttpRequestTimeFeature>()!.RequestTime;
 		}
 
-		public static string GetRequestHeaderValue(this HttpRequest httpRequest, string key)
+		public static string? GetRequestHeaderValue(this HttpRequest httpRequest, string key)
 		{
-			return httpRequest.Headers[key].ToString();
+			return httpRequest.Headers?[key].ToString();
 		}
 	}
 }

@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import { GetSecretMessageResponse } from '../../models/get-secret-message-response.model';
+import { GetSecretMessageResponse } from '../../models/api/get-secret-message-response.model';
 import { DecryptionResult, SjclDecryptionResult } from '../../models/sjcl-decryption-result.model';
 
 import { ApiClientService } from '../../services/api-client.service';
@@ -34,7 +34,7 @@ export class GetSecretMessageComponent {
 		this.componentState = ComponentState.LoadingMessage;
 		apiClientService.getSecretMessage(this.messageId).subscribe((response: GetSecretMessageResponse) => {
 			if (response) {
-				this.decryptionResult = this.sjclService.decryptMessage(response.secretMessageData, encryptionKey);
+				this.decryptionResult = this.sjclService.decryptMessage(response.data, encryptionKey);
 				this.componentState = ComponentState.ReadyWithMessage;
 
 				this.displayDeliveryNotificationSentToast(response.deliveryNotificationSent);

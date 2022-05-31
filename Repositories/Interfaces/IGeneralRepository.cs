@@ -1,10 +1,13 @@
-﻿namespace SecretMessageSharingWebApp.Repositories.Interfaces
+﻿namespace SecretMessageSharingWebApp.Repositories
 {
     public interface IGeneralRepository<TEntity> where TEntity : class
     {
-        TEntity? Get(string id);
+        Task<TEntity?> Get(string id);
+
         IQueryable<TEntity> GetAll();
+
         void Insert(TEntity entity, bool save = false);
+
         void Delete(TEntity entity, bool save = false);
     }
 }

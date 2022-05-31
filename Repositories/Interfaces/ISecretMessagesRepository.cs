@@ -1,11 +1,11 @@
-﻿using SecretMessageSharingWebApp.Models.Entities;
-using SecretMessageSharingWebApp.Repositories.Interfaces;
+﻿using SecretMessageSharingWebApp.Data.Dto;
 
 namespace SecretMessageSharingWebApp.Repositories
 {
-	public interface ISecretMessagesRepository : IGeneralRepository<SecretMessage>
+	public interface ISecretMessagesRepository : IGeneralRepository<SecretMessageDto>
 	{
-		SecretMessage? Retrieve(string id);
-		void DeleteOldMessages();
+		Task <SecretMessageDto?> Retrieve(string id);
+
+		int DeleteOldMessages();
 	}
 }

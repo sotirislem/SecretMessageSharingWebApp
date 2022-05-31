@@ -8,7 +8,7 @@ import {
 	HttpInterceptor,
 	HttpErrorResponse
 } from '@angular/common/http';
-import { ApiError } from '../models/api-error.model'
+import { ApiError } from '../models/api/api-error.model'
 import { ToastrService } from 'ngx-toastr';
 
 @Injectable()

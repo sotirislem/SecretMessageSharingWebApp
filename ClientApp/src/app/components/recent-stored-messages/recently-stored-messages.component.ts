@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
-import { RecentlyStoredMessage } from '../../models/recently-stored-message.model';
-import { MessageDeliveryDetails } from '../../models/message-delivery-details.model';
+import { RecentlyStoredSecretMessage } from '../../models/api/recently-stored-secret-messages-response.model';
+import { SecretMessageDeliveryNotification } from '../../models/api/secret-message-delivery-notification.model';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { ApiClientService } from '../../services/api-client.service';
 import { MessageDeliveryDetailsModalComponent } from '../message-delivery-details-modal/message-delivery-details-modal.component';
@@ -11,20 +11,20 @@ import { MessageDeliveryDetailsModalComponent } from '../message-delivery-detail
 	styleUrls: ['./recently-stored-messages.component.css']
 })
 export class RecentlyStoredMessagesComponent {
-	recentlyStoredMessages: RecentlyStoredMessage[];
+	recentlyStoredSecretMessages: RecentlyStoredSecretMessage[];
 
 	constructor(private apiClient: ApiClientService, private modalService: NgbModal) {
-		this.apiClient.getRecentlyStoredMessages().subscribe((response) => {
-			this.recentlyStoredMessages = response;
+		this.apiClient.getRecentlyStoredSecretMessages().subscribe((response) => {
+			this.recentlyStoredSecretMessages = response.recentlyStoredSecretMessages;
 		});
 	}
 
-	showDeliveryDetails(msg: RecentlyStoredMessage) {
-		const messageDeliveryDetails = <MessageDeliveryDetails>{
+	showDeliveryDetails(msg: RecentlyStoredSecretMessage) {
+		const messageDeliveryDetails = <SecretMessageDeliveryNotification>{
 			messageId: msg.id,
 			messageCreatedOn: msg.createdDateTime,
 			messageDeliveredOn: msg.deliveryDetails!.deliveredAt,
-			recipientIp: msg.deliveryDetails?.recipientIP,
+			recipientIP: msg.deliveryDetails?.recipientIP,
 			recipientClientInfo: msg.deliveryDetails?.recipientClientInfo
 		};
 
@@ -32,13 +32,13 @@ export class RecentlyStoredMessagesComponent {
 		modal.componentInstance.messageDeliveryDetails = messageDeliveryDetails;
 	}
 
-	deleteStoredMessage(msg: RecentlyStoredMessage) {
+	deleteStoredMessage(msg: RecentlyStoredSecretMessage) {
 		var deleteConfirmation = confirm(`Are you sure you want delete stored SecretMessage with Id: '${msg.id}' ?`);
 		if (!deleteConfirmation) return;
 
-		this.apiClient.deleteRecentlyStoredMessage(msg.id).subscribe((deleted) => {
+		this.apiClient.deleteRecentlyStoredSecretMessage(msg.id).subscribe((deleted) => {
 			if (deleted) {
-				this.recentlyStoredMessages = this.recentlyStoredMessages.filter(o => o !== msg);
+				this.recentlyStoredSecretMessages = this.recentlyStoredSecretMessages.filter(o => o !== msg);
 			}
 		});
 	}

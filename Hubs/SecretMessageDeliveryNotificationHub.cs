@@ -1,13 +1,13 @@
 ﻿using Microsoft.AspNetCore.SignalR;
 using SecretMessageSharingWebApp.Extensions;
-using SecretMessageSharingWebApp.Models.Api;
+using SecretMessageSharingWebApp.Models.Api.Responses;
 
 namespace SecretMessageSharingWebApp.Hubs
 {
-    public interface ISecretMessageDeliveryNotificationHub
+	public interface ISecretMessageDeliveryNotificationHub
     {
         [HubMethodName("message-delivery-notification")]
-        Task SendMessageDeliveryNotification(MessageDeliveryDetails messageDeliveryDetails);
+        Task SendSecretMessageDeliveryNotification(SecretMessageDeliveryNotification secretMessageDeliveryNotification);
     }
 
     public class SecretMessageDeliveryNotificationHub : Hub<ISecretMessageDeliveryNotificationHub>

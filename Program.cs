@@ -18,18 +18,21 @@ builder.Services.AddApplicationInsightsTelemetry(builder.Configuration["APPLICAT
 builder.Services.AddDbContext<SecretMessagesDbContext>(options =>
 	options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
+builder.Services.AddMemoryCache();
+builder.Services.AddSingleton<IMemoryCacheService, MemoryCacheService>();
+
 builder.Services.AddScoped<ISecretMessagesRepository, SecretMessagesRepository>();
+builder.Services.AddScoped<ISecretMessagesService, SecretMessagesService>();
+
 builder.Services.AddScoped<IGetLogsRepository, GetLogsRepository>();
+builder.Services.AddScoped<IGetLogsService, GetLogsService>();
 
 builder.Services.AddHostedService<SecretMessagesAutoCleanerBackgroundService>();
-
-builder.Services.AddMemoryCache();
-builder.Services.AddSingleton<MemoryCacheService>();
 
 builder.Services.AddDistributedMemoryCache();
 builder.Services.AddSession(options =>
 {
-	options.IdleTimeout = TimeSpan.FromMinutes(10);
+	options.IdleTimeout = TimeSpan.FromMinutes(15);
 	options.Cookie.HttpOnly = true;
 	options.Cookie.IsEssential = true;
 });
@@ -67,7 +70,7 @@ if (app.Environment.IsDevelopment())
 else
 {
 	app.UseForwardedHeaders();
-	app.UseHsts();  // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
+	app.UseHsts();
 }
 
 app.UseHttpsRedirection();

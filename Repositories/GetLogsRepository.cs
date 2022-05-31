@@ -1,13 +1,11 @@
 ﻿using SecretMessageSharingWebApp.Data;
-using SecretMessageSharingWebApp.Models.Entities;
+using SecretMessageSharingWebApp.Data.Dto;
 
 namespace SecretMessageSharingWebApp.Repositories
 {
-	public class GetLogsRepository : GeneralRepository<GetLog>, IGetLogsRepository
+	public class GetLogsRepository : GeneralRepository<GetLogDto>, IGetLogsRepository
 	{
-		public GetLogsRepository(SecretMessagesDbContext context) : base (context)
-		{
-
-		}
+		public GetLogsRepository(SecretMessagesDbContext context) : base(context)
+		{ }
 	}
 }

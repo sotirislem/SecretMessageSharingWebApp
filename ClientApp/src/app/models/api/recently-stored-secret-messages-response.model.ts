@@ -1,4 +1,8 @@
-export interface RecentlyStoredMessage {
+export interface RecentlyStoredSecretMessagesResponse {
+	recentlyStoredSecretMessages: RecentlyStoredSecretMessage[]
+}
+
+export interface RecentlyStoredSecretMessage {
 	id: string;
 	createdDateTime: Date;
 	deliveryDetails?: DeliveryDetails;

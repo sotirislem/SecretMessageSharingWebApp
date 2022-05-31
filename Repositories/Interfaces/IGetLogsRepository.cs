@@ -1,8 +1,7 @@
-﻿using SecretMessageSharingWebApp.Models.Entities;
-using SecretMessageSharingWebApp.Repositories.Interfaces;
+﻿using SecretMessageSharingWebApp.Data.Dto;
 
 namespace SecretMessageSharingWebApp.Repositories
 {
-	public interface IGetLogsRepository : IGeneralRepository<GetLog>
+	public interface IGetLogsRepository : IGeneralRepository<GetLogDto>
 	{ }
 }

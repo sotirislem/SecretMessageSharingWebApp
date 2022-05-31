@@ -1,24 +1,24 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using SecretMessageSharingWebApp.Models.Entities;
+using SecretMessageSharingWebApp.Data.Dto;
 
 namespace SecretMessageSharingWebApp.Data
 {
 	public class SecretMessagesDbContext : DbContext
 	{
-		public DbSet<SecretMessage> SecretMessages { get; set; }
-		public DbSet<GetLog> GetLogs { get; set; }
+		public DbSet<SecretMessageDto> SecretMessages { get; set; }
+		public DbSet<GetLogDto> GetLogs { get; set; }
 
 		public SecretMessagesDbContext(DbContextOptions<SecretMessagesDbContext> options) : base(options)
 		{ }
 
 		protected override void OnModelCreating(ModelBuilder modelBuilder)
 		{
-			modelBuilder.Entity<GetLog>()
+			modelBuilder.Entity<GetLogDto>()
 				.Property(p => p.Id)
 				.ValueGeneratedOnAdd()
 				.UseIdentityColumn();
 
-			modelBuilder.Entity<GetLog>()
+			modelBuilder.Entity<GetLogDto>()
 				.HasIndex(p => p.SecretMessageId);
 		}
 

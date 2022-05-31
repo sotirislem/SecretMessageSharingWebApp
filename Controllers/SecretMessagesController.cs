@@ -2,11 +2,12 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
-using Newtonsoft.Json;
 using SecretMessageSharingWebApp.Extensions;
 using SecretMessageSharingWebApp.Hubs;
-using SecretMessageSharingWebApp.Models.Api;
-using SecretMessageSharingWebApp.Repositories;
+using SecretMessageSharingWebApp.Mappings;
+using SecretMessageSharingWebApp.Models.Api.Requests;
+using SecretMessageSharingWebApp.Models.Api.Responses;
+using SecretMessageSharingWebApp.Models.Domain;
 using SecretMessageSharingWebApp.Services;
 using System.Diagnostics;
 
@@ -17,128 +18,135 @@ namespace SecretMessageSharingWebApp.Controllers
 	public class SecretMessagesController : ControllerBase
 	{
 		private readonly ILogger<SecretMessagesController> _logger;
-		private readonly ISecretMessagesRepository _secretMessagesRepository;
-		private readonly IGetLogsRepository _getLogsRepository;
-		private readonly MemoryCacheService _memoryCacheService;
+		private readonly ISecretMessagesService _secretMessagesService;
+		private readonly IGetLogsService _getLogsService;
+		private readonly IMemoryCacheService _memoryCacheService;
 		private readonly IHubContext<SecretMessageDeliveryNotificationHub, ISecretMessageDeliveryNotificationHub> _secretMessageDeliveryNotificationHub;
 
 		public SecretMessagesController(
 			ILogger<SecretMessagesController> logger,
-			ISecretMessagesRepository secretMessagesRepository,
-			IGetLogsRepository getLogsRepository,
-			MemoryCacheService memoryCacheService,
+			ISecretMessagesService secretMessagesService,
+			IGetLogsService getLogsService,
+			IMemoryCacheService memoryCacheService,
 			IHubContext<SecretMessageDeliveryNotificationHub, ISecretMessageDeliveryNotificationHub> secretMessageDeliveryNotificationHub)
 		{
 			_logger = logger;
-			_secretMessagesRepository = secretMessagesRepository;
-			_getLogsRepository = getLogsRepository;
+			_secretMessagesService = secretMessagesService;
+			_getLogsService = getLogsService;
 			_memoryCacheService = memoryCacheService;
 			_secretMessageDeliveryNotificationHub = secretMessageDeliveryNotificationHub;
 		}
 
 		#region Endpoints
 		[HttpPost("store")]
-		public string Store(SecretMessageData secretMessageData)
+		public string StoreNewSecretMessage(StoreNewSecretMessageRequest storeNewSecretMessageRequest)
 		{
-			var secretMessage = new Models.Entities.SecretMessage
-			{
-				JsonData = JsonConvert.SerializeObject(secretMessageData),
-				CreatorIP = HttpContext.GetClientIP(),
-				CreatorClientInfo = HttpContext.GetClientInfo()
-			};
-			_secretMessagesRepository.Insert(secretMessage, true);
+			var secretMessage = storeNewSecretMessageRequest.ToSecretMessage();
+			secretMessage.CreatedDateTime = HttpContext.GetRequestDateTime();
+			secretMessage.CreatorIP = HttpContext.GetClientIP();
+			secretMessage.CreatorClientInfo = HttpContext.GetClientInfo();
 
-			SaveMsgToRecentlyStoredSecretMessagesList(secretMessage.Id);
-			SaveSecretMessageCreatorSignalRConnectionId(secretMessage.Id);
+			secretMessage = _secretMessagesService.Insert(secretMessage);
+
+			SaveSecretMessageToRecentlyStoredSecretMessagesList(secretMessage.Id);
+			SaveSecretMessageCreatorSignalRConnectionIdToMemoryCache(secretMessage.Id);
 
 			return secretMessage.Id;
 		}
 
 		[HttpGet("get/{id}")]
-		public async Task<GetSecretMessageResponse?> Get(string id)
+		public async Task<GetSecretMessageResponse?> GetSecretMessage(string id)
 		{
-			var secretMessage = _secretMessagesRepository.Retrieve(id);
-			var getLog = new Models.Entities.GetLog
+			var secretMessage = await _secretMessagesService.Retrieve(id);
+
+			var getLog = new GetLog
 			{
+				SecretMessageId = id,
 				RequestDateTime = HttpContext.GetRequestDateTime(),
 				RequestCreatorIP = HttpContext.GetClientIP(),
 				RequestClientInfo = HttpContext.GetClientInfo(),
-				SecretMessageId = id,
 				SecretMessageExisted = (secretMessage is not null),
 				SecretMessageCreatedDateTime = secretMessage?.CreatedDateTime,
 				SecretMessageCreatorIP = secretMessage?.CreatorIP,
 				SecretMessageCreatorClientInfo = secretMessage?.CreatorClientInfo
 			};
-			_getLogsRepository.Insert(getLog, true);
+			getLog = _getLogsService.CreateNewLog(getLog);
 
 			if (secretMessage is not null)
 			{
-				var deliveryNotificationSent = await TrySendSecretMessageDeliveryNotification(secretMessage.Id, getLog);
+				var deliveryNotificationSent = await TrySendSecretMessageDeliveryNotification(getLog.ToSecretMessageDeliveryNotification());
 
 				return new GetSecretMessageResponse
 				{
 					DeliveryNotificationSent = deliveryNotificationSent,
-					SecretMessageData = JsonConvert.DeserializeObject<SecretMessageData>(secretMessage.JsonData)!
+					Data = secretMessage.Data
 				};
 			}
+
 			return null;
 		}
 
-		[HttpGet("getRecentMessages")]
-		public List<RecentlyStoredMessage> GetRecentlyStoredMessages()
+		[HttpGet("getRecentlyStoredSecretMessages")]
+		public RecentlyStoredSecretMessagesResponse GetRecentlyStoredSecretMessages()
 		{
 			var recentStoredSecretMessagesList = GetRecentlyStoredSecretMessagesList();
 			if (!recentStoredSecretMessagesList.Any())
 			{
-				return new List<RecentlyStoredMessage>();
+				return new RecentlyStoredSecretMessagesResponse();
 			}
 
-			var resultsA = _secretMessagesRepository.GetAll()
-				.Where(o => recentStoredSecretMessagesList.Contains(o.Id))
-				.Select(o => new RecentlyStoredMessage
-				{
-					Id = o.Id,
-					CreatedDateTime = o.CreatedDateTime
-				})
-				.AsEnumerable();
+			var resultsPartA = _secretMessagesService.GetRecentlyStoredSecretMessagesInfo(recentStoredSecretMessagesList);
+			var resultsPartB = _getLogsService.GetRecentlyStoredSecretMessagesInfo(recentStoredSecretMessagesList);
 
-			var resultsB = _getLogsRepository.GetAll()
-				.Where(o => o.SecretMessageExisted && recentStoredSecretMessagesList.Contains(o.SecretMessageId))
-				.Select(o => new RecentlyStoredMessage
-				{
-					Id = o.SecretMessageId,
-					CreatedDateTime = o.SecretMessageCreatedDateTime!.Value,
-					DeliveryDetails = new DeliveryDetails { DeliveredAt = o.RequestDateTime, RecipientIP = o.RequestCreatorIP!, RecipientClientInfo = o.RequestClientInfo! }
-				})
-				.AsEnumerable();
-			
-			var results = resultsA.Union(resultsB).OrderByDescending(o => o.CreatedDateTime).ToList();
+			var recentlyStoredSecretMessages = resultsPartA.Union(resultsPartB)
+				.OrderByDescending(x => x.CreatedDateTime)
+				.Select(x => x.ToApiRecentlyStoredSecretMessage())
+				.ToList();
 
-			return results;
+			return new RecentlyStoredSecretMessagesResponse()
+			{
+				RecentlyStoredSecretMessages = recentlyStoredSecretMessages
+			};
 		}
 
-		[HttpDelete("deleteRecentMessage/{id}")]
-		public bool DeleteRecentlyStoredMessage(string id)
+		[HttpDelete("deleteRecentlyStoredSecretMessage/{id}")]
+		public async Task<bool> DeleteRecentlyStoredSecretMessage(string id)
 		{
 			var recentStoredSecretMessagesList = GetRecentlyStoredSecretMessagesList();
 			if (!recentStoredSecretMessagesList.Contains(id))
 			{
 				return false;
 			}
-			
-			var secretMessage = _secretMessagesRepository.Get(id);
-			if (secretMessage is null)
-			{
-				return false;
-			}
 
-			_secretMessagesRepository.Delete(secretMessage!, true);
-			return true;
+			var deleted = await _secretMessagesService.Delete(id);
+			return deleted;
 		}
 		#endregion Endpoints
 
 		#region Private Helpers
-		public void SaveMsgToRecentlyStoredSecretMessagesList(string secretMessageId)
+		private void SaveSecretMessageCreatorSignalRConnectionIdToMemoryCache(string secretMessageId)
+		{
+			var signalRConnectionId = Request.GetRequestHeaderValue("SignalR-ConnectionId");
+			if (!string.IsNullOrEmpty(signalRConnectionId))
+			{
+				_memoryCacheService.SetValue(secretMessageId, signalRConnectionId);
+			}
+		}
+
+		private async Task<bool> TrySendSecretMessageDeliveryNotification(SecretMessageDeliveryNotification secretMessageDeliveryNotification)
+		{
+			bool notificationSent = false;
+
+			(var signalRConnectionIdExists, var signalRConnectionId) = _memoryCacheService.GetValue(secretMessageDeliveryNotification.MessageId);
+			if (signalRConnectionIdExists)
+			{
+				notificationSent = await _secretMessageDeliveryNotificationHub.TrySendSecretMessageDeliveryNotification(_logger, signalRConnectionId, secretMessageDeliveryNotification);
+			}
+
+			return notificationSent;
+		}
+
+		private void SaveSecretMessageToRecentlyStoredSecretMessagesList(string secretMessageId)
 		{
 			if (HttpContext.Session.GetObject<List<string>>(Constants.SessionKey_RecentlyStoredSecretMessagesList) is List<string> storedSecretMessagesList)
 			{
@@ -152,38 +160,9 @@ namespace SecretMessageSharingWebApp.Controllers
 			HttpContext.Session.SetObject(Constants.SessionKey_RecentlyStoredSecretMessagesList, storedSecretMessagesList);
 		}
 
-		public List<string> GetRecentlyStoredSecretMessagesList()
+		private List<string> GetRecentlyStoredSecretMessagesList()
 		{
 			return HttpContext.Session.GetObject<List<string>>(Constants.SessionKey_RecentlyStoredSecretMessagesList) ?? new List<string>();
-		}
-
-		private void SaveSecretMessageCreatorSignalRConnectionId(string secretMessageId)
-		{
-			var signalRConnectionId = Request.GetRequestHeaderValue("SignalR-ConnectionId");
-			if (!string.IsNullOrEmpty(signalRConnectionId))
-			{
-				_memoryCacheService.SetValue(secretMessageId, signalRConnectionId);
-			}
-		}
-
-		private Task<bool> TrySendSecretMessageDeliveryNotification(string secretMessageId, Models.Entities.GetLog getLog)
-		{
-			(var signalRConnectionIdExists, var signalRConnectionId) = _memoryCacheService.GetValue(secretMessageId);
-			if (signalRConnectionIdExists)
-			{
-				var messageDeliveryNotification = new MessageDeliveryDetails
-				{
-					MessageId = secretMessageId,
-					MessageCreatedOn = getLog.SecretMessageCreatedDateTime!.Value,
-					MessageDeliveredOn = getLog.RequestDateTime,
-					RecipientIp = getLog.RequestCreatorIP!,
-					RecipientClientInfo = getLog.RequestClientInfo!
-				};
-
-				return _secretMessageDeliveryNotificationHub.TrySendMessageDeliveryNotification(signalRConnectionId, messageDeliveryNotification, _logger);
-			}
-
-			return Task.FromResult(false);
 		}
 		#endregion
 	}

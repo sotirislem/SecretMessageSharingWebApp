@@ -1,8 +1,8 @@
-﻿namespace SecretMessageSharingWebApp.Models.Entities
+﻿namespace SecretMessageSharingWebApp.Models.Domain
 {
 	public class GetLog
 	{
-		public int Id { get; set; }
+		public int Id { get; init; }
 
 		public DateTime RequestDateTime { get; set; }
 

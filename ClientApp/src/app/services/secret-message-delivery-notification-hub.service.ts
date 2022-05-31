@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@angular/core';
-import { MessageDeliveryDetails } from '../models/message-delivery-details.model';
+import { SecretMessageDeliveryNotification } from '../models/api/secret-message-delivery-notification.model';
 import * as signalR from "@microsoft/signalr";
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { MessageDeliveryDetailsModalComponent } from '../components/message-delivery-details-modal/message-delivery-details-modal.component';
@@ -48,7 +48,7 @@ export class SecretMessageDeliveryNotificationHubService {
 	}
 
 	private registerHandler() {
-		this.hubConnection.on(this.hubMethodName, (response: MessageDeliveryDetails) => {
+		this.hubConnection.on(this.hubMethodName, (response: SecretMessageDeliveryNotification) => {
 			this.receivedDeliveryNotifications.next(response.messageId);
 
 			const modal = this.modalService.open(MessageDeliveryDetailsModalComponent, { centered: true });

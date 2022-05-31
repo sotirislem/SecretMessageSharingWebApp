@@ -32,9 +32,9 @@ export class HomeComponent {
 		await this.secretMessageDeliveryNotificationHubService.initHubConnection();
 
 		setTimeout(() => {
-			const [secretMessage, encryptionKey] = this.sjclService.encryptMessage(this.secretMsgPlainText.trim());
+			const [secretMessageData, encryptionKey] = this.sjclService.encryptMessage(this.secretMsgPlainText.trim());
 
-			this.apiClientService.storeSecretMessage(secretMessage)
+			this.apiClientService.storeSecretMessage(secretMessageData)
 				.pipe(finalize(() => {
 					this.encryptionInProgress = false;
 				}))

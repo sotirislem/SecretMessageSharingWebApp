@@ -1,6 +1,6 @@
 import { Component, Input } from '@angular/core';
 import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
-import { MessageDeliveryDetails } from '../../models/message-delivery-details.model';
+import { SecretMessageDeliveryNotification } from '../../models/api/secret-message-delivery-notification.model';
 
 @Component({
 	selector: 'app-message-delivery-details-modal',
@@ -9,7 +9,7 @@ import { MessageDeliveryDetails } from '../../models/message-delivery-details.mo
 })
 export class MessageDeliveryDetailsModalComponent {
 
-	@Input() messageDeliveryDetails: MessageDeliveryDetails;
+	@Input() messageDeliveryDetails: SecretMessageDeliveryNotification;
 	@Input() isNotification: boolean;
 
 	constructor(public modal: NgbActiveModal) { }

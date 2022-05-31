@@ -1,9 +1,9 @@
-﻿namespace SecretMessageSharingWebApp.Models.Api
+﻿namespace SecretMessageSharingWebApp.Models.Domain
 {
-	public class RecentlyStoredMessage
+	public class RecentlyStoredSecretMessage
 	{
 		public string Id { get; set; }
-		
+
 		public DateTime CreatedDateTime { get; set; }
 
 		public DeliveryDetails? DeliveryDetails { get; set; }
@@ -13,8 +13,8 @@
 	{
 		public DateTime DeliveredAt { get; set; }
 
-		public string RecipientIP { get; set; }
+		public string? RecipientIP { get; set; }
 
-		public string RecipientClientInfo { get; set; }
+		public string? RecipientClientInfo { get; set; }
 	}
 }

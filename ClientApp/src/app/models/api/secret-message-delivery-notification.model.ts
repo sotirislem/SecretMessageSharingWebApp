@@ -1,7 +1,7 @@
-export interface MessageDeliveryDetails {
+export interface SecretMessageDeliveryNotification {
 	messageId: string;
 	messageCreatedOn: Date;
 	messageDeliveredOn: Date;
-	recipientIp: string;
+	recipientIP: string;
 	recipientClientInfo: string;
 }

@@ -3,9 +3,9 @@ using Microsoft.Extensions.Primitives;
 
 namespace SecretMessageSharingWebApp.Services
 {
-	public class MemoryCacheService
+	public class MemoryCacheService : IMemoryCacheService
 	{
-		private const int ValueExpirationTimeInMinutes = 10;
+		private const int ValueExpirationTimeInMinutes = 15;
 		private readonly IMemoryCache _memoryCache;
 
 		public MemoryCacheService(IMemoryCache memoryCache)

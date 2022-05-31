@@ -1,36 +1,25 @@
 ﻿using SecretMessageSharingWebApp.Data;
-using SecretMessageSharingWebApp.Models.Entities;
+using SecretMessageSharingWebApp.Data.Dto;
 
 namespace SecretMessageSharingWebApp.Repositories
 {
-	public class SecretMessagesRepository : GeneralRepository<SecretMessage>, ISecretMessagesRepository
+	public class SecretMessagesRepository : GeneralRepository<SecretMessageDto>, ISecretMessagesRepository
 	{
-		private readonly ILogger<SecretMessagesRepository> _logger;
+		public SecretMessagesRepository(SecretMessagesDbContext context) : base(context)
+		{ }
 
-		public SecretMessagesRepository(SecretMessagesDbContext context, ILogger<SecretMessagesRepository> logger) : base(context)
+		public async Task<SecretMessageDto?> Retrieve(string id)
 		{
-			_logger = logger;
-		}
-
-		public override void Insert(SecretMessage secretMessage, bool save = false)
-		{
-			base.Insert(secretMessage, save);
-			_logger.LogInformation("SecretMessages:Insert => ID: {secretMessageId}.", secretMessage.Id);
-		}
-
-		public SecretMessage? Retrieve(string id)
-		{
-			var secretMessage = base.Get(id);
-			if (secretMessage is not null && secretMessage.DeleteOnRetrieve)
+			var secretMessageDto = await base.Get(id);
+			if (secretMessageDto is not null && secretMessageDto.DeleteOnRetrieve)
 			{
-				base.Delete(secretMessage, true);
+				base.Delete(secretMessageDto, true);
 			}
 
-			_logger.LogInformation("SecretMessages:Retrieve => ID: {secretMessageId}, Exists: {secretMessageExists}.", id, (secretMessage is not null));
-			return secretMessage;
+			return secretMessageDto;
 		}
 
-		public void DeleteOldMessages()
+		public int DeleteOldMessages()
 		{
 			var oldMessages = _dbSet.Where(m => m.CreatedDateTime < DateTime.Now.AddHours(-1));
 			if (oldMessages.Any())
@@ -38,8 +27,10 @@ namespace SecretMessageSharingWebApp.Repositories
 				_dbSet.RemoveRange(oldMessages);
 				var dbSaveResult = Save();
 
-				_logger.LogInformation("SecretMessagesRepository: Deleted {dbSaveResult} old message(s).", dbSaveResult);
+				return dbSaveResult;
 			}
+
+			return 0;
 		}
 	}
 }

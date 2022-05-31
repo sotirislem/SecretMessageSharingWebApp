@@ -31,8 +31,13 @@ namespace SecretMessageSharingWebApp.Services
 			using (var scope = Services.CreateScope())
 			{
 				var secretMessagesRepository = scope.ServiceProvider.GetRequiredService<ISecretMessagesRepository>();
-				secretMessagesRepository.DeleteOldMessages();
-			}
+
+				var deletedMessages = secretMessagesRepository.DeleteOldMessages();
+                if (deletedMessages > 0)
+                {
+                    _logger.LogInformation("SecretMessagesAutoCleanerBackgroundService: Deleted {deletedMessages} old message(s).", deletedMessages);
+                }
+            }
 		}
 
         public override async Task StopAsync(CancellationToken stoppingToken)

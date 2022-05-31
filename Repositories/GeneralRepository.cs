@@ -1,6 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using SecretMessageSharingWebApp.Data;
-using SecretMessageSharingWebApp.Repositories.Interfaces;
+using SecretMessageSharingWebApp.Repositories;
 
 namespace SecretMessageSharingWebApp.Repositories
 {
@@ -15,23 +15,23 @@ namespace SecretMessageSharingWebApp.Repositories
 			_dbSet = context.Set<TEntity>();
 		}
 
-		public virtual TEntity? Get(string id)
+		public async Task<TEntity?> Get(string id)
 		{
-			return _dbSet.Find(id);
+			return await _dbSet.FindAsync(id);
 		}
 
-		public virtual IQueryable<TEntity> GetAll()
+		public IQueryable<TEntity> GetAll()
 		{
 			return _dbSet.AsQueryable();
 		}
 
-		public virtual void Insert(TEntity entity, bool save = false)
+		public void Insert(TEntity entity, bool save = false)
 		{
 			_dbSet.Add(entity);
 			if (save) Save();
 		}
 
-		public virtual void Delete(TEntity entity, bool save = false)
+		public void Delete(TEntity entity, bool save = false)
 		{
 			if (_context.Entry(entity).State == EntityState.Detached)
 			{
