@@ -1,4 +1,4 @@
-﻿namespace SecretMessageSharingWebApp.Repositories
+﻿namespace SecretMessageSharingWebApp.Repositories.Interfaces
 {
     public interface IGeneralRepository<TEntity> where TEntity : class
     {

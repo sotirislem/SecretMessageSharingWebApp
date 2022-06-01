@@ -1,6 +1,7 @@
 ﻿using SecretMessageSharingWebApp.Models.Domain;
-using SecretMessageSharingWebApp.Repositories;
 using SecretMessageSharingWebApp.Mappings;
+using SecretMessageSharingWebApp.Services.Interfaces;
+using SecretMessageSharingWebApp.Repositories.Interfaces;
 
 namespace SecretMessageSharingWebApp.Services
 {
@@ -15,23 +16,21 @@ namespace SecretMessageSharingWebApp.Services
 			_logger = logger;
 		}
 
-		public async Task<SecretMessage?> Retrieve(string id)
-		{
-			var secretMessageDto = await _secretMessagesRepository.Retrieve(id);
-
-			_logger.LogInformation("SecretMessagesService:Retrieve => ID: {secretMessageId}, Exists: {secretMessageExists}.", id, (secretMessageDto is not null));
-			
-			return secretMessageDto?.ToSecretMessage();
-		}
-
-		public SecretMessage Insert(SecretMessage secretMessage)
+		public SecretMessage Store(SecretMessage secretMessage)
 		{
 			var secretMessageDto = secretMessage.ToSecretMessageDto();
 			_secretMessagesRepository.Insert(secretMessageDto, true);
 
 			_logger.LogInformation("SecretMessagesService:Insert => ID: {secretMessageId}.", secretMessageDto.Id);
-
 			return secretMessageDto.ToSecretMessage();
+		}
+
+		public async Task<SecretMessage?> Retrieve(string id)
+		{
+			var secretMessageDto = await _secretMessagesRepository.Retrieve(id);
+
+			_logger.LogInformation("SecretMessagesService:Retrieve => ID: {secretMessageId}, Exists: {secretMessageExists}.", id, (secretMessageDto is not null));
+			return secretMessageDto?.ToSecretMessage();
 		}
 
 		public async Task<bool> Delete(string id)

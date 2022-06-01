@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Primitives;
+using SecretMessageSharingWebApp.Services.Interfaces;
 
 namespace SecretMessageSharingWebApp.Services
 {

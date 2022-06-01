@@ -1,6 +1,6 @@
 ﻿using SecretMessageSharingWebApp.Data.Dto;
 
-namespace SecretMessageSharingWebApp.Repositories
+namespace SecretMessageSharingWebApp.Repositories.Interfaces
 {
 	public interface ISecretMessagesRepository : IGeneralRepository<SecretMessageDto>
 	{

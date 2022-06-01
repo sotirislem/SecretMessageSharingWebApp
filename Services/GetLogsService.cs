@@ -1,6 +1,7 @@
 ﻿using SecretMessageSharingWebApp.Models.Domain;
-using SecretMessageSharingWebApp.Repositories;
 using SecretMessageSharingWebApp.Mappings;
+using SecretMessageSharingWebApp.Services.Interfaces;
+using SecretMessageSharingWebApp.Repositories.Interfaces;
 
 namespace SecretMessageSharingWebApp.Services
 {
@@ -21,7 +22,6 @@ namespace SecretMessageSharingWebApp.Services
 			_getLogsRepository.Insert(getLogDto, true);
 
 			_logger.LogInformation("GetLogsService:Insert => ID: {getLogId}.", getLogDto.Id);
-
 			return getLogDto.ToGetLog();
 		}
 

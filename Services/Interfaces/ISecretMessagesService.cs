@@ -1,10 +1,10 @@
 ﻿using SecretMessageSharingWebApp.Models.Domain;
 
-namespace SecretMessageSharingWebApp.Services
+namespace SecretMessageSharingWebApp.Services.Interfaces
 {
 	public interface ISecretMessagesService
 	{
-		SecretMessage Insert(SecretMessage secretMessage);
+		SecretMessage Store(SecretMessage secretMessage);
 
 		Task<SecretMessage?> Retrieve(string id);
 

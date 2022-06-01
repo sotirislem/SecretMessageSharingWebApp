@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using SecretMessageSharingWebApp.Data;
 using SecretMessageSharingWebApp.Repositories;
+using SecretMessageSharingWebApp.Repositories.Interfaces;
 
 namespace SecretMessageSharingWebApp.Repositories
 {

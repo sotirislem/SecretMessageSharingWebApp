@@ -1,4 +1,4 @@
-﻿namespace SecretMessageSharingWebApp.Services
+﻿namespace SecretMessageSharingWebApp.Services.Interfaces
 {
 	public interface IMemoryCacheService
 	{

@@ -1,4 +1,4 @@
-﻿using SecretMessageSharingWebApp.Repositories;
+﻿using SecretMessageSharingWebApp.Repositories.Interfaces;
 
 namespace SecretMessageSharingWebApp.Services
 {

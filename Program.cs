@@ -6,7 +6,9 @@ using SecretMessageSharingWebApp.Data;
 using SecretMessageSharingWebApp.Hubs;
 using SecretMessageSharingWebApp.Middlewares;
 using SecretMessageSharingWebApp.Repositories;
+using SecretMessageSharingWebApp.Repositories.Interfaces;
 using SecretMessageSharingWebApp.Services;
+using SecretMessageSharingWebApp.Services.Interfaces;
 
 // builder
 var builder = WebApplication.CreateBuilder(args);
@@ -20,6 +22,8 @@ builder.Services.AddDbContext<SecretMessagesDbContext>(options =>
 
 builder.Services.AddMemoryCache();
 builder.Services.AddSingleton<IMemoryCacheService, MemoryCacheService>();
+
+builder.Services.AddSingleton<ISecretMessageDeliveryNotificationHubService, SecretMessageDeliveryNotificationHubService>();
 
 builder.Services.AddScoped<ISecretMessagesRepository, SecretMessagesRepository>();
 builder.Services.AddScoped<ISecretMessagesService, SecretMessagesService>();

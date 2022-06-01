@@ -1,6 +1,6 @@
 ﻿using SecretMessageSharingWebApp.Models.Domain;
 
-namespace SecretMessageSharingWebApp.Services
+namespace SecretMessageSharingWebApp.Services.Interfaces
 {
 	public interface IGetLogsService
 	{
