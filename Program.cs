@@ -1,3 +1,4 @@
+using FastEndpoints;
 using Microsoft.AspNet.SignalR;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
@@ -41,7 +42,7 @@ builder.Services.AddSession(options =>
 	options.Cookie.IsEssential = true;
 });
 
-builder.Services.AddControllers();
+builder.Services.AddFastEndpoints();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
@@ -78,18 +79,18 @@ else
 }
 
 app.UseHttpsRedirection();
+
 app.UseStaticFiles();
 app.UseRouting();
 app.UseSession();
 
-app.UseExceptionHandler("/error");
-
+app.UseMiddleware<ExceptionHandlingMiddleware>();
 app.UseMiddleware<HttpRequestTimeMiddleware>();
 
-app.UseEndpoints(configure => {
-	configure.MapHub<SecretMessageDeliveryNotificationHub>(SecretMessageDeliveryNotificationHub.Url);
-	configure.MapControllers();
-});
+app.MapHub<SecretMessageDeliveryNotificationHub>(SecretMessageDeliveryNotificationHub.Url);
+
+app.UseAuthorization();
+app.UseFastEndpoints();
 
 app.MapFallbackToFile("index.html");
 
