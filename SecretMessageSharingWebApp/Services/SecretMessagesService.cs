@@ -27,7 +27,11 @@ namespace SecretMessageSharingWebApp.Services
 
 		public async Task<SecretMessage?> Retrieve(string id)
 		{
-			var secretMessageDto = await _secretMessagesRepository.Retrieve(id);
+			var secretMessageDto = await _secretMessagesRepository.Get(id);
+			if (secretMessageDto is not null && secretMessageDto.DeleteOnRetrieve)
+			{
+				_secretMessagesRepository.Delete(secretMessageDto, true);
+			}
 
 			_logger.LogInformation("SecretMessagesService:Retrieve => ID: {secretMessageId}, Exists: {secretMessageExists}.", id, (secretMessageDto is not null));
 			return secretMessageDto?.ToSecretMessage();

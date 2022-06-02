@@ -38,3 +38,9 @@ testem.log
 # System Files
 .DS_Store
 Thumbs.db
+
+# My .gitignore starts here...
+/.angular
+/src/app/models/**/*.js
+/src/app/models/**/*.map
+/src/environments/environment.prod.ts

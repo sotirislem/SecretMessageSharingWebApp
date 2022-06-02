@@ -232,12 +232,5 @@ _Pvt_Extensions
 **/.vscode
 **/.config
 **/*Deploy*
-
-ClientApp/.angular/cache
-ClientApp/node_modules
-ClientApp/src/app/models/**/*.js
-ClientApp/src/app/models/**/*.map
-ClientApp/src/environments/environment.prod.ts
-
-Properties/PublishProfiles
-Properties/ServiceDependencies
+**/Properties/PublishProfiles
+**/Properties/ServiceDependencies

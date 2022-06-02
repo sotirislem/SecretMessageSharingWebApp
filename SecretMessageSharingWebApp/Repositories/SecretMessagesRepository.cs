@@ -9,17 +9,6 @@ namespace SecretMessageSharingWebApp.Repositories
 		public SecretMessagesRepository(SecretMessagesDbContext context) : base(context)
 		{ }
 
-		public async Task<SecretMessageDto?> Retrieve(string id)
-		{
-			var secretMessageDto = await base.Get(id);
-			if (secretMessageDto is not null && secretMessageDto.DeleteOnRetrieve)
-			{
-				base.Delete(secretMessageDto, true);
-			}
-
-			return secretMessageDto;
-		}
-
 		public int DeleteOldMessages()
 		{
 			var oldMessages = _dbSet.Where(m => m.CreatedDateTime < DateTime.Now.AddHours(-1));
