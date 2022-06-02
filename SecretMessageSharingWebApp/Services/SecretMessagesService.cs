@@ -22,6 +22,7 @@ namespace SecretMessageSharingWebApp.Services
 			_secretMessagesRepository.Insert(secretMessageDto, true);
 
 			_logger.LogInformation("SecretMessagesService:Insert => ID: {secretMessageId}.", secretMessageDto.Id);
+
 			return secretMessageDto.ToSecretMessage();
 		}
 
@@ -34,6 +35,7 @@ namespace SecretMessageSharingWebApp.Services
 			}
 
 			_logger.LogInformation("SecretMessagesService:Retrieve => ID: {secretMessageId}, Exists: {secretMessageExists}.", id, (secretMessageDto is not null));
+			
 			return secretMessageDto?.ToSecretMessage();
 		}
 
@@ -48,6 +50,7 @@ namespace SecretMessageSharingWebApp.Services
 			_secretMessagesRepository.Delete(secretMessageDto, true);
 
 			_logger.LogInformation("SecretMessagesService:Delete => ID: {secretMessageId}.", secretMessageDto.Id);
+			
 			return true;
 		}
 

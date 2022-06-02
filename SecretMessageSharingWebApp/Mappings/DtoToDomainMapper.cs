@@ -1,5 +1,5 @@
 ﻿using Newtonsoft.Json;
-using SecretMessageSharingWebApp.Data.Dto;
+using SecretMessageSharingWebApp.Data.Entities;
 using SecretMessageSharingWebApp.Models.Common;
 using SecretMessageSharingWebApp.Models.Domain;
 

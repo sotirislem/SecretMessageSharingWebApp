@@ -22,6 +22,7 @@ namespace SecretMessageSharingWebApp.Services
 			_getLogsRepository.Insert(getLogDto, true);
 
 			_logger.LogInformation("GetLogsService:Insert => ID: {getLogId}.", getLogDto.Id);
+			
 			return getLogDto.ToGetLog();
 		}
 

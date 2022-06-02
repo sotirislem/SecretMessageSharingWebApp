@@ -53,7 +53,7 @@ namespace SecretMessageSharingWebApp.Endpoints
 				return;
 			}
 
-			var deliveryNotificationSent = await _secretMessageDeliveryNotificationHubService.Send(getLog.ToSecretMessageDeliveryNotification());
+			var deliveryNotificationSent = await _secretMessageDeliveryNotificationHubService.SendNotification(getLog.ToSecretMessageDeliveryNotification());
 			var response = new GetSecretMessageResponse
 			{
 				DeliveryNotificationSent = deliveryNotificationSent,

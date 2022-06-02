@@ -1,14 +1,15 @@
 using FastEndpoints;
-using Microsoft.AspNet.SignalR;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.ApplicationInsights;
+using SecretMessageSharingWebApp;
 using SecretMessageSharingWebApp.Data;
 using SecretMessageSharingWebApp.Hubs;
 using SecretMessageSharingWebApp.Middlewares;
 using SecretMessageSharingWebApp.Repositories;
 using SecretMessageSharingWebApp.Repositories.Interfaces;
 using SecretMessageSharingWebApp.Services;
+using SecretMessageSharingWebApp.Services.BackgroundServices;
 using SecretMessageSharingWebApp.Services.Interfaces;
 
 // builder
@@ -37,7 +38,7 @@ builder.Services.AddHostedService<SecretMessagesAutoCleanerBackgroundService>();
 builder.Services.AddDistributedMemoryCache();
 builder.Services.AddSession(options =>
 {
-	options.IdleTimeout = TimeSpan.FromMinutes(15);
+	options.IdleTimeout = TimeSpan.FromMinutes(Constants.SessionIdleTimeoutInMinutes);
 	options.Cookie.HttpOnly = true;
 	options.Cookie.IsEssential = true;
 });
@@ -53,16 +54,6 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
 	options.ForwardedHeaders =
 		ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
 });
-
-#pragma warning disable ASP0000
-GlobalHost.DependencyResolver.Register(
-		typeof(SecretMessageDeliveryNotificationHub),
-		() => new SecretMessageDeliveryNotificationHub(
-			builder.Services.BuildServiceProvider().GetService<ILoggerFactory>()!
-				.CreateLogger<SecretMessageDeliveryNotificationHub>()
-			)
-		);
-#pragma warning restore ASP0000
 
 // app
 var app = builder.Build();

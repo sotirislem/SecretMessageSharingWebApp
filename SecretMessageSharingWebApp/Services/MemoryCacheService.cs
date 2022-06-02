@@ -6,7 +6,6 @@ namespace SecretMessageSharingWebApp.Services
 {
 	public class MemoryCacheService : IMemoryCacheService
 	{
-		private const int ValueExpirationTimeInMinutes = 15;
 		private readonly IMemoryCache _memoryCache;
 
 		public MemoryCacheService(IMemoryCache memoryCache)
@@ -18,10 +17,10 @@ namespace SecretMessageSharingWebApp.Services
 		{
 			var cacheEntryOptions = new MemoryCacheEntryOptions()
 			{
-				AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(ValueExpirationTimeInMinutes)
+				AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(Constants.MemoryCacheValueExpirationTimeInMinutes)
 			};
 
-			var cancellationTokenSource = new CancellationTokenSource(TimeSpan.FromMinutes(ValueExpirationTimeInMinutes));
+			var cancellationTokenSource = new CancellationTokenSource(TimeSpan.FromMinutes(Constants.MemoryCacheValueExpirationTimeInMinutes));
 			cacheEntryOptions.AddExpirationToken(new CancellationChangeToken(cancellationTokenSource.Token));
 
 			_memoryCache.Set(key, value, cacheEntryOptions);

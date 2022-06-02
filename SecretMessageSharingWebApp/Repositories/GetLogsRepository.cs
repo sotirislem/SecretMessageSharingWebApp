@@ -1,5 +1,5 @@
 ﻿using SecretMessageSharingWebApp.Data;
-using SecretMessageSharingWebApp.Data.Dto;
+using SecretMessageSharingWebApp.Data.Entities;
 using SecretMessageSharingWebApp.Repositories.Interfaces;
 
 namespace SecretMessageSharingWebApp.Repositories

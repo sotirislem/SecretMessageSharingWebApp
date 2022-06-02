@@ -7,6 +7,8 @@ namespace SecretMessageSharingWebApp.Services
 {
 	public class SecretMessageDeliveryNotificationHubService : ISecretMessageDeliveryNotificationHubService
 	{
+		private readonly List<string> _activeConnections = new();
+
 		private readonly ILogger<SecretMessageDeliveryNotificationHubService> _logger;
 		private readonly IMemoryCacheService _memoryCacheService;
 		private readonly IHubContext<SecretMessageDeliveryNotificationHub, ISecretMessageDeliveryNotificationHub> _secretMessageDeliveryNotificationHub;
@@ -14,14 +16,24 @@ namespace SecretMessageSharingWebApp.Services
 		public SecretMessageDeliveryNotificationHubService(
 			ILogger<SecretMessageDeliveryNotificationHubService> logger,
 			IMemoryCacheService memoryCacheService,
-			IHubContext<SecretMessageDeliveryNotificationHub,ISecretMessageDeliveryNotificationHub> secretMessageDeliveryNotificationHub)
+			IHubContext<SecretMessageDeliveryNotificationHub, ISecretMessageDeliveryNotificationHub> secretMessageDeliveryNotificationHub)
 		{
 			_logger = logger;
 			_memoryCacheService = memoryCacheService;
 			_secretMessageDeliveryNotificationHub = secretMessageDeliveryNotificationHub;
 		}
 
-		public async Task<bool> Send(SecretMessageDeliveryNotification secretMessageDeliveryNotification)
+		public void AddConnection(string connectionId)
+		{
+			_activeConnections.Add(connectionId);
+		}
+
+		public void RemoveConnection(string connectionId)
+		{
+			_activeConnections.Remove(connectionId);
+		}
+
+		public async Task<bool> SendNotification(SecretMessageDeliveryNotification secretMessageDeliveryNotification)
 		{
 			bool notificationSent = false;
 
@@ -36,11 +48,12 @@ namespace SecretMessageSharingWebApp.Services
 
 		private async Task<bool> TrySend(string connectionId, SecretMessageDeliveryNotification secretMessageDeliveryNotification)
 		{
-			if (SecretMessageDeliveryNotificationHub.ActiveConnections.Contains(connectionId))
+			if (_activeConnections.Contains(connectionId))
 			{
 				await _secretMessageDeliveryNotificationHub.Clients.Client(connectionId).SendSecretMessageDeliveryNotification(secretMessageDeliveryNotification);
 
 				_logger.LogInformation("SecretMessageDeliveryNotificationHubService => Sent delivery notification to client: {connectionId}", connectionId);
+				
 				return true;
 			}
 

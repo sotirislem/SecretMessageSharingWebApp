@@ -1,5 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using SecretMessageSharingWebApp.Data.Dto;
+using SecretMessageSharingWebApp.Data.Entities;
 
 namespace SecretMessageSharingWebApp.Data
 {

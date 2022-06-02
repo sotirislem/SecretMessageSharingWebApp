@@ -1,4 +1,4 @@
-﻿namespace SecretMessageSharingWebApp.Data.Dto
+﻿namespace SecretMessageSharingWebApp.Data.Entities
 {
 	public class GetLogDto
 	{

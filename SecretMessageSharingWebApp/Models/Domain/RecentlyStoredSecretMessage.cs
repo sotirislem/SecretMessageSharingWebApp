@@ -2,7 +2,7 @@
 {
 	public class RecentlyStoredSecretMessage
 	{
-		public string Id { get; set; }
+		public string Id { get; init; }
 
 		public DateTime CreatedDateTime { get; set; }
 
