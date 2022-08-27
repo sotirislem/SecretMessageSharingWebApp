@@ -15,11 +15,11 @@ export class NewSecretMessageRouteGuard implements CanActivate {
 		route: ActivatedRouteSnapshot,
 		state: RouterStateSnapshot
 	): Observable<boolean | UrlTree> | Promise<boolean | UrlTree> | boolean | UrlTree {
-		const secretMsgPlainText = this.routerHelperService.getCurrentNavigationStateData('secretMsgPlainText');
+		const secretMsgObj = this.routerHelperService.getCurrentNavigationStateData('secretMsgObj');
 		const secretMsgId = this.routerHelperService.getCurrentNavigationStateData('secretMsgId');
 		const secretMsgKey = this.routerHelperService.getCurrentNavigationStateData('secretMsgKey');
 
-		if (secretMsgPlainText && secretMsgId && secretMsgKey) {
+		if (secretMsgObj && secretMsgId && secretMsgKey) {
 			return true;
 		}
 

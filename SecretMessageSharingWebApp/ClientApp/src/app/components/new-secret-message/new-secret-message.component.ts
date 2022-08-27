@@ -10,6 +10,8 @@ import { SecretMessageDeliveryNotificationHubService } from '../../services/secr
 import { Routes } from '../../../constants';
 import * as QRCode from 'qrcode';
 
+import { SecretMessage } from '../../models/secret-message.model';
+
 @Component({
 	selector: 'app-new-secret-message',
 	templateUrl: './new-secret-message.component.html',
@@ -20,6 +22,8 @@ export class NewSecretMessageComponent implements OnInit {
 	ngbTooltipTimer: any;
 
 	secretMsgPlainText: string;
+	secretMsgContainsFile: boolean;
+	secretMsgAttachedFileName: string;
 	secretMsgId: string;
 	secretMsgKey: string;
 	secretMsgUrl: string;
@@ -32,7 +36,11 @@ export class NewSecretMessageComponent implements OnInit {
 		urlHelperService: UrlHelperService,
 		secretMessageDeliveryNotificationHubService: SecretMessageDeliveryNotificationHubService
 	) {
-		this.secretMsgPlainText = routerHelperService.getCurrentNavigationStateData('secretMsgPlainText');
+		const secretMsgObj: SecretMessage = routerHelperService.getCurrentNavigationStateData('secretMsgObj');
+
+		this.secretMsgPlainText = secretMsgObj.plainText;
+		this.secretMsgContainsFile = secretMsgObj.containsFile;
+		this.secretMsgAttachedFileName = secretMsgObj.fileName;
 		this.secretMsgId = routerHelperService.getCurrentNavigationStateData('secretMsgId');
 		this.secretMsgKey = routerHelperService.getCurrentNavigationStateData('secretMsgKey');
 		this.secretMsgUrl = urlHelperService.createLocalUrlWithParams(Routes.GetSecretMessage, { id: this.secretMsgId }, this.secretMsgKey);

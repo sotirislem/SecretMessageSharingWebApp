@@ -4,6 +4,7 @@ import { DecryptionResult, SjclDecryptionResult } from '../../models/sjcl-decryp
 
 import { ApiClientService } from '../../services/api-client.service';
 import { SjclService } from '../../services/sjcl.service';
+import { FileService } from '../../services/file.service';
 
 import { ActivatedRoute } from '@angular/router';
 import { IndividualConfig, ToastrService } from 'ngx-toastr';
@@ -27,7 +28,13 @@ export class GetSecretMessageComponent {
 	messageId: string;
 	decryptionResult: SjclDecryptionResult;
 
-	constructor(route: ActivatedRoute, apiClientService: ApiClientService, private sjclService: SjclService, private toastrService: ToastrService) {
+	constructor(
+		route: ActivatedRoute,
+		apiClientService: ApiClientService,
+		private sjclService: SjclService,
+		private toastrService: ToastrService,
+		private fileService: FileService
+	) {
 		this.messageId = route.snapshot.queryParams.id;
 		const encryptionKey = route.snapshot.fragment!;
 
@@ -47,6 +54,15 @@ export class GetSecretMessageComponent {
 		});
 	}
 
+	downloadAttachment(): void {
+		if (this.decryptionResult.decryptedMsg.containsFile) {
+			const base64Blob = this.decryptionResult.decryptedMsg.base64BlobFile;
+			const saveFileName = this.decryptionResult.decryptedMsg.fileName;
+
+			this.fileService.saveBase64BlobAsFile(base64Blob, saveFileName);
+		}
+	}
+
 	private displayDeliveryNotificationSentToast(deliveryNotificationSent: boolean) {
 		const toastConfig = <IndividualConfig>{
 			timeOut: 7_000,
@@ -64,7 +80,9 @@ export class GetSecretMessageComponent {
 		const clearTimeout = 3 * (60 * 1000);
 
 		setTimeout(() => {
-			this.decryptionResult.decryptedMsg = '--- Message deleted ---';
+			this.decryptionResult.decryptedMsg.plainText = '--- Message auto deleted ---';
+			this.decryptionResult.decryptedMsg.containsFile = false;
+			this.decryptionResult.decryptedMsg.base64BlobFile = '';
 		}, clearTimeout);
 	}
 }

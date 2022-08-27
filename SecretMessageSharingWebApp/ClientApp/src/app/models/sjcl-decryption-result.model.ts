@@ -1,3 +1,5 @@
+import { SecretMessage } from "./secret-message.model"
+
 export enum DecryptionResult {
 	OK,
 	Error
@@ -5,6 +7,6 @@ export enum DecryptionResult {
 
 export type SjclDecryptionResult = {
 	result: DecryptionResult,
-	decryptedMsg: string,
+	decryptedMsg: SecretMessage,
 	errorMsg: string
 }

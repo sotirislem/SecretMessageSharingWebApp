@@ -28,3 +28,27 @@ ul {
 .toast-container.toast-top-center {
 	margin-top: 10px;
 }
+
+.transition-effect {
+	transition: all 1s ease-out;
+}
+
+.element-disabled {
+	opacity: 0.5;
+}
+.element-disabled > * {
+	cursor: not-allowed;
+}
+
+.hidden-transition {
+	transition: visibility 0.2s linear, opacity 0.2s linear;
+}
+.hidden {
+	opacity: 0;
+	visibility: hidden;
+}
+
+.word-wrap {
+	word-break: break-word;
+	overflow-wrap: anywhere;
+}

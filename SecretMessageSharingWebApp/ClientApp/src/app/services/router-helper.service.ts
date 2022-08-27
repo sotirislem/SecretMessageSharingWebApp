@@ -9,6 +9,6 @@ export class RouterHelperService {
 	constructor(private router: Router) { }
 
 	getCurrentNavigationStateData(key: string) {
-		return this.router.getCurrentNavigation()?.extras.state?.[key] as string;
+		return this.router.getCurrentNavigation()?.extras.state?.[key];
 	}
 }
