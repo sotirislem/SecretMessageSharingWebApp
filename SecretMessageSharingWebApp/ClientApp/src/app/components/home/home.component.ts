@@ -7,7 +7,7 @@ import { FileService } from '../../services/file.service';
 import { SecretMessageDeliveryNotificationHubService } from '../../services/secret-message-delivery-notification-hub.service';
 
 import { Router } from '@angular/router';
-import { Routes } from '../../../constants';
+import { Routes, Constants } from '../../../constants';
 
 import { SecretMessage } from '../../models/secret-message.model';
 
@@ -74,8 +74,8 @@ export class HomeComponent {
 		const selectedFile = fileInput.files[0];
 		const selectedFileSize = ((selectedFile.size / 1024) / 1024);
 
-		if (selectedFileSize > 10) {
-			alert('Selected file size can not exceed 10MB!');
+		if (selectedFileSize > Constants.ATTACHMENT_FILESIZE_MAX_MB) {
+			alert(`Selected file size can not exceed ${Constants.ATTACHMENT_FILESIZE_MAX_MB}MB`);
 
 			resetFileInputValues();
 			return;

@@ -10,7 +10,6 @@ namespace SecretMessageSharingWebApp.Mappings
 		{
 			return new SecretMessageDto
 			{
-				Id = Guid.NewGuid().ToString("N"),
 				DeleteOnRetrieve = true,
 				CreatedDateTime = secretMessage.CreatedDateTime,
 				CreatorIP = secretMessage.CreatorIP,
@@ -21,7 +20,7 @@ namespace SecretMessageSharingWebApp.Mappings
 
 		public static GetLogDto ToGetLogDto(this GetLog getLog)
 		{
-			return new GetLogDto
+			return new GetLogDto(getLog.SecretMessageId, getLog.RequestDateTime)
 			{
 				RequestDateTime = getLog.RequestDateTime,
 				RequestCreatorIP = getLog.RequestCreatorIP,

@@ -11,8 +11,10 @@ namespace SecretMessageSharingWebApp.Repositories
 
 		public int DeleteOldMessages()
 		{
-			var oldMessages = _dbSet.Where(m => m.CreatedDateTime < DateTime.Now.AddHours(-1));
-			if (oldMessages.Any())
+			var comparisonDateTime = DateTime.Now.AddHours(-1);
+
+			var oldMessages = _dbSet.Where(m => m.CreatedDateTime < comparisonDateTime);
+			if (oldMessages.Count() > 0)
 			{
 				_dbSet.RemoveRange(oldMessages);
 				var dbSaveResult = Save();

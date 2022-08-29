@@ -1,19 +1,22 @@
 {
-	"dependencies": {
-		"secrets1": {
-			"type": "secrets.user"
-		},
-		"mssql1": {
-			"secretStore": "LocalSecretsFile",
-			"resourceId": null,
-			"type": "mssql.local",
-			"connectionId": "ConnectionStrings:DefaultConnection"
-		},
-		"appInsights1": {
-			"secretStore": "LocalSecretsFile",
-			"resourceId": "/subscriptions/[parameters('subscriptionId')]/resourceGroups/[parameters('resourceGroupName')]/providers/microsoft.insights/components/SecretMessageSharingWebAppInsights",
-			"type": "appInsights.azure",
-			"connectionId": "APPLICATIONINSIGHTS_CONNECTION_STRING"
-		}
-	}
+  "dependencies": {
+    "mssql1": {
+      "secretStore": "LocalSecretsFile",
+      "resourceId": null,
+      "type": "mssql.local",
+      "connectionId": "ConnectionStrings:DefaultConnection"
+    },
+    "appInsights1": {
+      "secretStore": "LocalSecretsFile",
+      "resourceId": "/subscriptions/[parameters('subscriptionId')]/resourceGroups/[parameters('resourceGroupName')]/providers/microsoft.insights/components/SecretMessageSharingWebAppInsights",
+      "type": "appInsights.azure",
+      "connectionId": "APPLICATIONINSIGHTS_CONNECTION_STRING"
+    },
+    "secrets1": {
+      "secretStore": null,
+      "resourceId": null,
+      "type": "secrets.user",
+      "connectionId": null
+    }
+  }
 }

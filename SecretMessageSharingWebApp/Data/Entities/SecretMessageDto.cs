@@ -1,8 +1,11 @@
-﻿namespace SecretMessageSharingWebApp.Data.Entities
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace SecretMessageSharingWebApp.Data.Entities
 {
 	public class SecretMessageDto
 	{
-		public string Id { get; init; }
+		[Key]
+		public string Id { get; private init; }
 
 		public bool DeleteOnRetrieve { get; init; }
 
@@ -13,5 +16,11 @@
 		public string? CreatorIP { get; init; }
 
 		public string? CreatorClientInfo { get; init; }
+
+
+		public SecretMessageDto()
+		{
+			Id = Guid.NewGuid().ToString("N");
+		}
 	}
 }

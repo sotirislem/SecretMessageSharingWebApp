@@ -2,6 +2,8 @@
 <p class="my-3">
 	Each message is encrypted/decrypted locally, on browser, by using the AES-256 algorithm in GCM mode.
 	<br />
+	Message can also include a file attachment of any type as long as its size does not exceed ~1.2MB.
+	<br />
 	Remote server is only used to store the encrypted message, so it can be later retrieved by a third person.
 	<br />
 	Sender has the ability to receive a delivery notification on his browser once his message is read by a recipient.
@@ -21,7 +23,7 @@
 		</ng-template>
 
 		<ng-template ngbPanelContent>
-			Stanford Javascript Crypto Library (SJCL)<br />
+			Stanford JavaScript Crypto Library (SJCL)<br />
 			<a target="_blank" href="https://crypto.stanford.edu/sjcl/">Official Web Page</a>
 			/
 			<a target="_blank" href="https://github.com/bitwiseshiftleft/sjcl">Source code @ Github</a>
@@ -105,7 +107,17 @@
 		</ng-template>
 
 		<ng-template ngbPanelContent>
-			Angular 13+, ASP.NET Core 6.0, SQL Server with Entity Framework Core, SignalR
+			Angular 13+, ASP.NET Core 6.0, Entity Framework Core, SignalR.
+		</ng-template>
+	</ngb-panel>
+
+	<ngb-panel>
+		<ng-template ngbPanelTitle>
+			Hosting information
+		</ng-template>
+
+		<ng-template ngbPanelContent>
+			The application is hosted on Azure as a web application by using Azure App Service, and uses Azure Cosmos DB for data storage.
 		</ng-template>
 	</ngb-panel>
 </ngb-accordion>

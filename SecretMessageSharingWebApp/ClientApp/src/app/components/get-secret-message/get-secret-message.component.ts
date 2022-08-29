@@ -1,6 +1,8 @@
 import { Component } from '@angular/core';
 import { GetSecretMessageResponse } from '../../models/api/get-secret-message-response.model';
 import { DecryptionResult, SjclDecryptionResult } from '../../models/sjcl-decryption-result.model';
+import { SecretMessage } from '../../models/secret-message.model';
+import { Constants } from '../../../constants';
 
 import { ApiClientService } from '../../services/api-client.service';
 import { SjclService } from '../../services/sjcl.service';
@@ -77,12 +79,11 @@ export class GetSecretMessageComponent {
 	}
 
 	private setDecryptedMsgAutoclearTimeout() {
-		const clearTimeout = 3 * (60 * 1000);
+		const clearTimeout = Constants.AUTOCLEAR_INTERVAL_MINUTES * (60 * 1000);
 
 		setTimeout(() => {
+			this.decryptionResult.decryptedMsg = {} as SecretMessage;
 			this.decryptionResult.decryptedMsg.plainText = '--- Message auto deleted ---';
-			this.decryptionResult.decryptedMsg.containsFile = false;
-			this.decryptionResult.decryptedMsg.base64BlobFile = '';
 		}, clearTimeout);
 	}
 }

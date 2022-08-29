@@ -2,7 +2,7 @@
 {
 	public class GetLog
 	{
-		public int Id { get; init; }
+		public string Id { get; init; }
 
 		public DateTime RequestDateTime { get; set; }
 

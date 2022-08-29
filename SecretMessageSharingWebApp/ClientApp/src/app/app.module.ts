@@ -27,7 +27,7 @@ import { HttpErrorInterceptor } from './interceptors/http-error-interceptor.serv
 import { environment } from '../environments/environment';
 
 
-const appInsightsModule = (environment.production ? [AppInsightsModule] : []);
+const appInsightsModule = (environment.production && environment.applicationInsights.enable ? [AppInsightsModule] : []);
 
 @NgModule({
 	declarations: [

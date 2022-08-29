@@ -16,11 +16,20 @@ using SecretMessageSharingWebApp.Services.Interfaces;
 var builder = WebApplication.CreateBuilder(args);
 
 #if (!DEBUG)
-builder.Services.AddApplicationInsightsTelemetry(builder.Configuration["APPLICATIONINSIGHTS_CONNECTION_STRING"]);
+if (builder.Configuration["APPLICATIONINSIGHTS_CONNECTION_STRING"] is not null)
+{
+	builder.Services.AddApplicationInsightsTelemetry(builder.Configuration["APPLICATIONINSIGHTS_CONNECTION_STRING"]);
+}
 #endif
 
 builder.Services.AddDbContext<SecretMessagesDbContext>(options =>
-	options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+	//options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+	options.UseCosmos(
+		accountEndpoint: builder.Configuration["CosmosDB:Endpoint"],
+		accountKey: builder.Configuration["CosmosDB:Key"],
+		databaseName: builder.Configuration["CosmosDB:DbName"]
+	)
+);
 
 builder.Services.AddMemoryCache();
 builder.Services.AddSingleton<IMemoryCacheService, MemoryCacheService>();
@@ -57,6 +66,12 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
 
 // app
 var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+	var context = scope.ServiceProvider.GetService<SecretMessagesDbContext>();
+	context!.Database.EnsureCreated();
+}
 
 if (app.Environment.IsDevelopment())
 {

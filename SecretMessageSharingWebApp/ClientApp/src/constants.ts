@@ -1,5 +1,6 @@
 export abstract class Constants {
-
+	static readonly ATTACHMENT_FILESIZE_MAX_MB = 1.2;
+	static readonly AUTOCLEAR_INTERVAL_MINUTES = 3;
 }
 
 export abstract class Routes {

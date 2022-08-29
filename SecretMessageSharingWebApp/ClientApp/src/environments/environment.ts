@@ -11,6 +11,7 @@ export const environment = {
 	production: false,
 	apiUrl: '',
 	applicationInsights: {
+		enable: false,
 		instrumentationKey: ''
 	}
 };
