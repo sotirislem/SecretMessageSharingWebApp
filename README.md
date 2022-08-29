@@ -2,6 +2,7 @@
 
 A web app that allows you to create encrypted messages that can be securely shared with a unique recipient. \
 Each message is encrypted/decrypted locally, on browser, by using the AES-256 algorithm in GCM mode. \
+Message can also include a file attachment of any type as long as its size does not exceed ~1.2MB. \
 Remote server is only used to store the encrypted message, so it can be later retrieved by a third person. \
 Sender has the ability to receive a delivery notification on his browser once his message is read by a recipient. \
 The encryption key which is used to encrypt/decrypt a message is locally created on user's browser and never gets exposed to server. \
