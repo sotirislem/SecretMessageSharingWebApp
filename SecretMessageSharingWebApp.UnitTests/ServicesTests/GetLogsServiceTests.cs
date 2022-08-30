@@ -29,14 +29,14 @@ namespace SecretMessageSharingWebApp.UnitTests.ServicesTests
 			var getLog = _fixture.Create<GetLog>();
 
 			// Act
-			var result = _sut.CreateNewLog(getLog);
+			var result = _sut.CreateNewLog(getLog).Result;
 
 			// Assert
-			_getLogsRepository.Received().Insert(Arg.Any<GetLogDto>(), true);
+			_getLogsRepository.Received().Insert(Arg.Any<GetLogDto>());
 			_logger.ReceivedWithAnyArgs().LogInformation(default);
 
 			result.Should().BeEquivalentTo(getLog, opt => opt.Excluding(r => r.Id));
-			result.Id.Should().Be(0);
+			result.Id.Should().NotBeNullOrEmpty();
 		}
 
 		[Fact]
@@ -49,7 +49,7 @@ namespace SecretMessageSharingWebApp.UnitTests.ServicesTests
 			var recentlyStoredGetLogs = allGetLogs.TakeLast(5);
 			var recentlyStoredSecretMessagesList = recentlyStoredGetLogs.Select(m => m.SecretMessageId);
 
-			_getLogsRepository.GetAll().Returns(allGetLogs.AsQueryable());
+			_getLogsRepository.GetDbSetAsQueryable().Returns(allGetLogs.AsQueryable());
 
 			// Act
 			var result = _sut.GetRecentlyStoredSecretMessagesInfo(recentlyStoredSecretMessagesList);

@@ -45,7 +45,7 @@ namespace SecretMessageSharingWebApp.Endpoints
 				SecretMessageCreatorIP = secretMessage?.CreatorIP,
 				SecretMessageCreatorClientInfo = secretMessage?.CreatorClientInfo
 			};
-			getLog = _getLogsService.CreateNewLog(getLog);
+			getLog = await _getLogsService.CreateNewLog(getLog);
 
 			if (secretMessage is null)
 			{

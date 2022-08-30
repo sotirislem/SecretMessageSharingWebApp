@@ -8,5 +8,13 @@ namespace SecretMessageSharingWebApp.Repositories
 	{
 		public GetLogsRepository(SecretMessagesDbContext context) : base(context)
 		{ }
+
+		public async Task<int> DeleteOldLogs()
+		{
+			var comparisonDateTime = DateTime.Now.AddDays(-1);
+			var deletedLogs = await DeleteRangeBasedOnPredicate(m => m.RequestDateTime < comparisonDateTime);
+
+			return deletedLogs;
+		}
 	}
 }

@@ -2,6 +2,7 @@
 using SecretMessageSharingWebApp.Data;
 using SecretMessageSharingWebApp.Repositories;
 using SecretMessageSharingWebApp.Repositories.Interfaces;
+using System.Linq.Expressions;
 
 namespace SecretMessageSharingWebApp.Repositories
 {
@@ -21,18 +22,13 @@ namespace SecretMessageSharingWebApp.Repositories
 			return await _dbSet.FindAsync(id);
 		}
 
-		public IQueryable<TEntity> GetAll()
-		{
-			return _dbSet.AsQueryable();
-		}
-
-		public void Insert(TEntity entity, bool save = false)
+		public async Task Insert(TEntity entity, bool save = true)
 		{
 			_dbSet.Add(entity);
-			if (save) Save();
+			if (save) await Save();
 		}
 
-		public void Delete(TEntity entity, bool save = false)
+		public async Task Delete(TEntity entity, bool save = true)
 		{
 			if (_context.Entry(entity).State == EntityState.Detached)
 			{
@@ -40,12 +36,31 @@ namespace SecretMessageSharingWebApp.Repositories
 			}
 
 			_dbSet.Remove(entity);
-			if (save) Save();
+			if (save) await Save();
 		}
 
-		public int Save()
+		public async Task<int> Save()
 		{
-			return _context.SaveChanges();
+			return await _context.SaveChangesAsync();
+		}
+
+		public IQueryable<TEntity> GetDbSetAsQueryable()
+		{
+			return _dbSet.AsQueryable();
+		}
+
+		public async Task<int> DeleteRangeBasedOnPredicate(Expression<Func<TEntity, bool>> predicate)
+		{
+			var results = _dbSet.Where(predicate);
+			if (results.Count() > 0)
+			{
+				_dbSet.RemoveRange(results);
+				var dbSaveResult = await Save();
+
+				return dbSaveResult;
+			}
+
+			return 0;
 		}
 	}
 }

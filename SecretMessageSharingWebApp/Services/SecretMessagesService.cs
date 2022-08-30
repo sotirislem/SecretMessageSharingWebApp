@@ -16,10 +16,10 @@ namespace SecretMessageSharingWebApp.Services
 			_logger = logger;
 		}
 
-		public SecretMessage Store(SecretMessage secretMessage)
+		public async Task<SecretMessage> Store(SecretMessage secretMessage)
 		{
 			var secretMessageDto = secretMessage.ToSecretMessageDto();
-			_secretMessagesRepository.Insert(secretMessageDto, true);
+			await _secretMessagesRepository.Insert(secretMessageDto);
 
 			_logger.LogInformation("SecretMessagesService:Insert => ID: {secretMessageId}.", secretMessageDto.Id);
 
@@ -31,7 +31,7 @@ namespace SecretMessageSharingWebApp.Services
 			var secretMessageDto = await _secretMessagesRepository.Get(id);
 			if (secretMessageDto is not null && secretMessageDto.DeleteOnRetrieve)
 			{
-				_secretMessagesRepository.Delete(secretMessageDto, true);
+				await _secretMessagesRepository.Delete(secretMessageDto);
 			}
 
 			_logger.LogInformation("SecretMessagesService:Retrieve => ID: {secretMessageId}, Exists: {secretMessageExists}.", id, (secretMessageDto is not null));
@@ -47,7 +47,7 @@ namespace SecretMessageSharingWebApp.Services
 				return false;
 			}
 
-			_secretMessagesRepository.Delete(secretMessageDto, true);
+			await _secretMessagesRepository.Delete(secretMessageDto);
 
 			_logger.LogInformation("SecretMessagesService:Delete => ID: {secretMessageId}.", secretMessageDto.Id);
 			
@@ -56,7 +56,7 @@ namespace SecretMessageSharingWebApp.Services
 
 		public IEnumerable<RecentlyStoredSecretMessage> GetRecentlyStoredSecretMessagesInfo(IEnumerable<string> recentlyStoredSecretMessagesList)
 		{
-			return _secretMessagesRepository.GetAll()
+			return _secretMessagesRepository.GetDbSetAsQueryable()
 				.Where(secretMessageDto => recentlyStoredSecretMessagesList.Contains(secretMessageDto.Id))
 				.Select(secretMessageDto => secretMessageDto.ToRecentlyStoredSecretMessage())
 				.AsEnumerable();

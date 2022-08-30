@@ -16,10 +16,10 @@ namespace SecretMessageSharingWebApp.Services
 			_logger = logger;
 		}
 
-		public GetLog CreateNewLog(GetLog getLog)
+		public async Task<GetLog> CreateNewLog(GetLog getLog)
 		{
 			var getLogDto = getLog.ToGetLogDto();
-			_getLogsRepository.Insert(getLogDto, true);
+			await _getLogsRepository.Insert(getLogDto);
 
 			_logger.LogInformation("GetLogsService:Insert => ID: {getLogId}.", getLogDto.Id);
 			
@@ -28,7 +28,7 @@ namespace SecretMessageSharingWebApp.Services
 
 		public IEnumerable<RecentlyStoredSecretMessage> GetRecentlyStoredSecretMessagesInfo(IEnumerable<string> recentlyStoredSecretMessagesList)
 		{
-			return _getLogsRepository.GetAll()
+			return _getLogsRepository.GetDbSetAsQueryable()
 				.Where(getLogDto => recentlyStoredSecretMessagesList.Contains(getLogDto.SecretMessageId) && getLogDto.SecretMessageExisted)
 				.Select(getLogDto => getLogDto.ToRecentlyStoredSecretMessage())
 				.AsEnumerable();

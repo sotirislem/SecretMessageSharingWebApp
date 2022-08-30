@@ -42,7 +42,7 @@ builder.Services.AddScoped<ISecretMessagesService, SecretMessagesService>();
 builder.Services.AddScoped<IGetLogsRepository, GetLogsRepository>();
 builder.Services.AddScoped<IGetLogsService, GetLogsService>();
 
-builder.Services.AddHostedService<SecretMessagesAutoCleanerBackgroundService>();
+builder.Services.AddHostedService<DbAutoCleanerBackgroundService>();
 
 builder.Services.AddDistributedMemoryCache();
 builder.Services.AddSession(options =>

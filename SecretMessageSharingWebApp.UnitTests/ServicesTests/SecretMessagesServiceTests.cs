@@ -31,10 +31,10 @@ namespace SecretMessageSharingWebApp.UnitTests.ServicesTests
 				.Create();
 
 			// Act
-			var result = _sut.Store(secretMessage);
+			var result = _sut.Store(secretMessage).Result;
 
 			// Assert
-			_secretMessagesRepository.Received().Insert(Arg.Any<SecretMessageDto>(), true);
+			_secretMessagesRepository.Received().Insert(Arg.Any<SecretMessageDto>());
 			_logger.ReceivedWithAnyArgs().LogInformation(default);
 
 			result.Should().BeEquivalentTo(secretMessage, opt => opt.Excluding(r => r.Id));
@@ -45,12 +45,11 @@ namespace SecretMessageSharingWebApp.UnitTests.ServicesTests
 		public void Retrieve_ShouldReturnFoundSecretMessage_WhenExecutedAndSecretMessageExists()
 		{
 			// Arrange
-			var id = _fixture.Create<string>();
 			var secretMessageDto = _fixture.Build<SecretMessageDto>()
-				.With(x => x.Id, id)
 				.With(x => x.DeleteOnRetrieve, true)
 				.With(x => x.JsonData, JsonConvert.SerializeObject(_fixture.Create<SecretMessageData>()))
 				.Create();
+			var id = secretMessageDto.Id;
 
 			_secretMessagesRepository.Get(id).Returns(secretMessageDto);
 
@@ -59,7 +58,7 @@ namespace SecretMessageSharingWebApp.UnitTests.ServicesTests
 
 			// Assert
 			_secretMessagesRepository.Received().Get(id);
-			_secretMessagesRepository.Received().Delete(Arg.Any<SecretMessageDto>(), true);
+			_secretMessagesRepository.Received().Delete(Arg.Any<SecretMessageDto>());
 			_logger.ReceivedWithAnyArgs().LogInformation(default);
 
 			result.Should().BeEquivalentTo(secretMessageDto.ToSecretMessage());
@@ -78,7 +77,7 @@ namespace SecretMessageSharingWebApp.UnitTests.ServicesTests
 
 			// Assert
 			_secretMessagesRepository.Received().Get(id);
-			_secretMessagesRepository.DidNotReceive().Delete(Arg.Any<SecretMessageDto>(), true);
+			_secretMessagesRepository.DidNotReceive().Delete(Arg.Any<SecretMessageDto>());
 			_logger.ReceivedWithAnyArgs().LogInformation(default);
 
 			result.Should().BeNull();
@@ -88,10 +87,8 @@ namespace SecretMessageSharingWebApp.UnitTests.ServicesTests
 		public void Delete_ShouldDeleteExistingSecretMessageAndReturnTrue_WhenExecutedAndSecretMessageExists()
 		{
 			// Arrange
-			var id = _fixture.Create<string>();
-			var secretMessageDto = _fixture.Build<SecretMessageDto>()
-				.With(x => x.Id, id)
-				.Create();
+			var secretMessageDto = _fixture.Create<SecretMessageDto>();
+			var id = secretMessageDto.Id;
 
 			_secretMessagesRepository.Get(id).Returns(secretMessageDto);
 
@@ -100,7 +97,7 @@ namespace SecretMessageSharingWebApp.UnitTests.ServicesTests
 
 			// Assert
 			_secretMessagesRepository.Received().Get(id);
-			_secretMessagesRepository.Received().Delete(secretMessageDto, true);
+			_secretMessagesRepository.Received().Delete(secretMessageDto);
 			_logger.ReceivedWithAnyArgs().LogInformation(default);
 
 			result.Should().BeTrue();
@@ -119,7 +116,7 @@ namespace SecretMessageSharingWebApp.UnitTests.ServicesTests
 
 			// Assert
 			_secretMessagesRepository.Received().Get(id);
-			_secretMessagesRepository.DidNotReceive().Delete(Arg.Any<SecretMessageDto>(), true);
+			_secretMessagesRepository.DidNotReceive().Delete(Arg.Any<SecretMessageDto>());
 			_logger.DidNotReceiveWithAnyArgs().LogInformation(default);
 
 			result.Should().BeFalse();
@@ -133,7 +130,7 @@ namespace SecretMessageSharingWebApp.UnitTests.ServicesTests
 			var recentlyStoredSecretMessages = allSecretMessages.TakeLast(5);
 			var recentlyStoredSecretMessagesList = recentlyStoredSecretMessages.Select(m => m.Id);
 
-			_secretMessagesRepository.GetAll().Returns(allSecretMessages.AsQueryable());
+			_secretMessagesRepository.GetDbSetAsQueryable().Returns(allSecretMessages.AsQueryable());
 
 			// Act
 			var result = _sut.GetRecentlyStoredSecretMessagesInfo(recentlyStoredSecretMessagesList);

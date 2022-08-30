@@ -6,6 +6,6 @@
 
 		public const int SessionIdleTimeoutInMinutes = 15;
 		public const int MemoryCacheValueExpirationTimeInMinutes = 15;
-		public const int SecretMessagesAutoCleanerBackgroundServiceRunIntervalInMinutes = 10;
+		public const int DbAutoCleanerBackgroundServiceRunIntervalInMinutes = 10;
 	}
 }

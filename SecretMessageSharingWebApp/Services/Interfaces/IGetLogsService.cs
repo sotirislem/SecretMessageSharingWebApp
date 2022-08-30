@@ -4,7 +4,7 @@ namespace SecretMessageSharingWebApp.Services.Interfaces
 {
 	public interface IGetLogsService
 	{
-		GetLog CreateNewLog(GetLog getLog);
+		Task<GetLog> CreateNewLog(GetLog getLog);
 
 		IEnumerable<RecentlyStoredSecretMessage> GetRecentlyStoredSecretMessagesInfo(IEnumerable<string> recentlyStoredSecretMessagesList);
 	}

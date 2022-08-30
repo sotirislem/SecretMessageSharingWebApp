@@ -1,13 +1,19 @@
-﻿namespace SecretMessageSharingWebApp.Repositories.Interfaces
+﻿using System.Linq.Expressions;
+
+namespace SecretMessageSharingWebApp.Repositories.Interfaces
 {
     public interface IGeneralRepository<TEntity> where TEntity : class
     {
         Task<TEntity?> Get(string id);
 
-        IQueryable<TEntity> GetAll();
+        Task Insert(TEntity entity, bool save = true);
 
-        void Insert(TEntity entity, bool save = false);
+        Task Delete(TEntity entity, bool save = true);
 
-        void Delete(TEntity entity, bool save = false);
+        Task<int> Save();
+
+        IQueryable<TEntity> GetDbSetAsQueryable();
+
+        Task<int> DeleteRangeBasedOnPredicate(Expression<Func<TEntity, bool>> predicate);
     }
 }

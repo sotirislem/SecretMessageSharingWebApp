@@ -9,20 +9,12 @@ namespace SecretMessageSharingWebApp.Repositories
 		public SecretMessagesRepository(SecretMessagesDbContext context) : base(context)
 		{ }
 
-		public int DeleteOldMessages()
+		public async Task<int> DeleteOldMessages()
 		{
 			var comparisonDateTime = DateTime.Now.AddHours(-1);
+			var deletedMessages = await DeleteRangeBasedOnPredicate(m => m.CreatedDateTime < comparisonDateTime);
 
-			var oldMessages = _dbSet.Where(m => m.CreatedDateTime < comparisonDateTime);
-			if (oldMessages.Count() > 0)
-			{
-				_dbSet.RemoveRange(oldMessages);
-				var dbSaveResult = Save();
-
-				return dbSaveResult;
-			}
-
-			return 0;
+			return deletedMessages;
 		}
 	}
 }

@@ -31,7 +31,7 @@ namespace SecretMessageSharingWebApp.Endpoints
             secretMessage.CreatorIP = HttpContext.GetClientIP();
             secretMessage.CreatorClientInfo = HttpContext.GetClientInfo();
 
-            secretMessage = _secretMessagesService.Store(secretMessage);
+            secretMessage = await _secretMessagesService.Store(secretMessage);
 
             SaveSecretMessageToRecentlyStoredSecretMessagesList(secretMessage.Id);
             SaveSecretMessageCreatorSignalRConnectionIdToMemoryCache(secretMessage.Id);
