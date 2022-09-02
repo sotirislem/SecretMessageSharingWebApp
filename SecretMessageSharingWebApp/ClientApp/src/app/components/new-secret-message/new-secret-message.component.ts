@@ -19,7 +19,7 @@ import { SecretMessage } from '../../models/secret-message.model';
 })
 export class NewSecretMessageComponent implements OnInit {
 	@ViewChild('ngbTooltipElement') ngbTooltip: NgbTooltip;
-	ngbTooltipTimer: any;
+	ngbTooltipClearTimer: NodeJS.Timeout;
 
 	secretMsgPlainText: string;
 	secretMsgContainsFile: boolean;
@@ -65,16 +65,17 @@ export class NewSecretMessageComponent implements OnInit {
 	copySecretMsgUrlToClipboard() {
 		this.clipboard.copy(this.secretMsgUrl);
 
-		clearTimeout(this.ngbTooltipTimer);
-		this.ngbTooltip.open();
-		this.ngbTooltipTimer = setTimeout(() => {
+		clearTimeout(this.ngbTooltipClearTimer);
+		if (!this.ngbTooltip.isOpen()) this.ngbTooltip.open();
+
+		this.ngbTooltipClearTimer = setTimeout(() => {
 			this.ngbTooltip.close();
 		}, 5000);
 	}
 
 	receivedDeliveryNotificationsObserver(secretMessageId: string) {
 		if (secretMessageId == this.secretMsgId) {
-			this.ngbTooltip.close();
+			if (this.ngbTooltip.isOpen()) this.ngbTooltip.close();
 			this.secretMsgDelivered = true;
 		}
 	}
