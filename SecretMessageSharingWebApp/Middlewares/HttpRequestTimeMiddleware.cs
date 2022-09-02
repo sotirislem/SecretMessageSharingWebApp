@@ -1,17 +1,19 @@
-﻿namespace SecretMessageSharingWebApp.Middlewares
+﻿using SecretMessageSharingWebApp.Extensions;
+
+namespace SecretMessageSharingWebApp.Middlewares
 {
-    public interface IHttpRequestTimeFeature
+    public interface IHttpRequestDateTimeFeature
     {
-        DateTime RequestTime { get; }
+        DateTime RequestDateTime { get; }
     }
 
-    public class HttpRequestTimeFeature : IHttpRequestTimeFeature
+    public class HttpRequestDateTimeFeature : IHttpRequestDateTimeFeature
     {
-        public DateTime RequestTime { get; }
+        public DateTime RequestDateTime { get; }
 
-        public HttpRequestTimeFeature()
+        public HttpRequestDateTimeFeature()
         {
-            RequestTime = DateTime.Now;
+            RequestDateTime = DateTime.Now.ToLocalTimeZone();
         }
     }
 
@@ -26,8 +28,8 @@
 
         public Task InvokeAsync(HttpContext context)
         {
-            var httpRequestTimeFeature = new HttpRequestTimeFeature();
-            context.Features.Set<IHttpRequestTimeFeature>(httpRequestTimeFeature);
+            var httpRequestTimeFeature = new HttpRequestDateTimeFeature();
+            context.Features.Set<IHttpRequestDateTimeFeature>(httpRequestTimeFeature);
 
             return _next(context);
         }

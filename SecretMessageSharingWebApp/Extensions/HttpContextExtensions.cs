@@ -26,7 +26,7 @@ namespace SecretMessageSharingWebApp.Extensions
 
 		public static DateTime GetRequestDateTime(this HttpContext httpContext)
 		{
-			return httpContext.Features.Get<IHttpRequestTimeFeature>()!.RequestTime;
+			return httpContext.Features.Get<IHttpRequestDateTimeFeature>()!.RequestDateTime;
 		}
 
 		public static string? GetRequestHeaderValue(this HttpRequest httpRequest, string key)

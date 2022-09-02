@@ -1,5 +1,6 @@
 ﻿using SecretMessageSharingWebApp.Data;
 using SecretMessageSharingWebApp.Data.Entities;
+using SecretMessageSharingWebApp.Extensions;
 using SecretMessageSharingWebApp.Repositories.Interfaces;
 
 namespace SecretMessageSharingWebApp.Repositories
@@ -11,7 +12,7 @@ namespace SecretMessageSharingWebApp.Repositories
 
 		public async Task<int> DeleteOldLogs()
 		{
-			var comparisonDateTime = DateTime.Now.AddDays(-1);
+			var comparisonDateTime = DateTime.Now.ToLocalTimeZone().AddDays(-1);
 			var deletedLogs = await DeleteRangeBasedOnPredicate(m => m.RequestDateTime < comparisonDateTime);
 
 			return deletedLogs;

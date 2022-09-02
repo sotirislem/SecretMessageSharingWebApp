@@ -7,5 +7,7 @@
 		public const int SessionIdleTimeoutInMinutes = 15;
 		public const int MemoryCacheValueExpirationTimeInMinutes = 15;
 		public const int DbAutoCleanerBackgroundServiceRunIntervalInMinutes = 10;
+
+		public const string LocalTimeZone = "GTB Standard Time";
 	}
 }
