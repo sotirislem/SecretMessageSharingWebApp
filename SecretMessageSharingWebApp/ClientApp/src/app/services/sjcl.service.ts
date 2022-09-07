@@ -21,7 +21,7 @@ export class SjclService {
 		sjcl.random.startCollectors();
 	}
 
-	encryptMessage(secretMsgObj: SecretMessage): [secretMessageData: SecretMessageData, encryptionKey: string] {
+	encryptMessage(secretMsgObj: SecretMessage): [secretMessageData: SecretMessageData, encryptionKeyAsBase64url: string] {
 		const secretMsgSerialized = JSON.stringify(secretMsgObj);
 
 		const encryptionParams = this.generateEncryptionParams();
@@ -36,10 +36,11 @@ export class SjclService {
 			salt: salt.toString(),
 			ct: ct.toString()
 		};
-		return [secretMessageData, encryptionKey];
+		return [secretMessageData, this.convertEncryptionKeyToBase64Url(encryptionKey)];
 	}
 
-	decryptMessage(secretMessageData: SecretMessageData, encryptionKey: string): SjclDecryptionResult {
+	decryptMessage(secretMessageData: SecretMessageData, encryptionKeyAsBase64url: string): SjclDecryptionResult {
+		const encryptionKey = this.convertBase64UrlToEncryptionKey(encryptionKeyAsBase64url);
 		const cipherEncrypted = <sjcl.SjclCipherEncrypted>{
 			...this.encryptionSettings,
 			iv: secretMessageData.iv as unknown,
@@ -67,17 +68,20 @@ export class SjclService {
 	private generateEncryptionParams(): sjcl.SjclCipherEncryptParams {
 		return <sjcl.SjclCipherEncryptParams>{
 			...this.encryptionSettings,
-			iv: sjcl.random.randomWords(4),
-			salt: sjcl.random.randomWords(4)
+			iv: sjcl.random.randomWords(4),		//128 bits
+			salt: sjcl.random.randomWords(4)	//128 bits
 		};
 	}
 
-	private generateEncryptionKey(): string {
-		const randomBits = sjcl.random.randomWords(10);
-		const b64Key = sjcl.codec.base64.fromBits(randomBits);
+	private generateEncryptionKey(): sjcl.BitArray {
+		return sjcl.random.randomWords(8);		//256 bits
+	}
 
-		const urlSafeKey = b64Key.replace(/[+=\/]/g, '').substr(0, 50);
+	private convertEncryptionKeyToBase64Url(encryptionKey: sjcl.BitArray): string {
+		return sjcl.codec.base64url.fromBits(encryptionKey);
+	}
 
-		return urlSafeKey;
+	private convertBase64UrlToEncryptionKey(encryptionKeyAsBase64url: string): sjcl.BitArray {
+		return sjcl.codec.base64url.toBits(encryptionKeyAsBase64url);
 	}
 }

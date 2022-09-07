@@ -12,8 +12,6 @@
 
 		public string SecretMessageId { get; set; }
 
-		public bool SecretMessageExisted { get; set; }
-
 		public DateTime? SecretMessageCreatedDateTime { get; set; }
 
 		public string? SecretMessageCreatorIP { get; set; }

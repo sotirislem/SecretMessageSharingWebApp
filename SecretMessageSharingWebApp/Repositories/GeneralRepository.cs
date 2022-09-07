@@ -46,7 +46,7 @@ namespace SecretMessageSharingWebApp.Repositories
 
 		public IQueryable<TEntity> GetDbSetAsQueryable()
 		{
-			return _dbSet.AsQueryable();
+			return _dbSet.AsNoTracking().AsQueryable();
 		}
 
 		public async Task<int> DeleteRangeBasedOnPredicate(Expression<Func<TEntity, bool>> predicate)

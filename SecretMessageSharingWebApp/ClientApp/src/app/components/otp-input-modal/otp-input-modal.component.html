@@ -1,0 +1,78 @@
+<div class="modal-header bg-dark bg-gradient text-light">
+	<h4 id="modal-basic-title" class="modal-title">
+		Otp Required
+	</h4>
+</div>
+
+<div class="modal-body">
+	<p class="text-center word-wrap">
+		Message Id: <span class="font-weight-500">{{messageId}}</span>
+	</p>
+	<p class="text-center text-danger">
+		The message you are trying to retrieve requires an Otp
+	</p>
+	<hr />
+
+	<ng-container *ngIf="!otpSent; then otpNotSentBlock else otpSentBlock"></ng-container>
+	<ng-template #otpNotSentBlock>
+		<p>
+			By pressing the button 'Get Otp' an 8 digit password will be sent to your email, as this was provided by the creator of the message.
+			Please note that the password is only valid for 3 minutes.
+		</p>
+		<div class="mt-3 text-center">
+			<button class="btn btn-primary col-6" (click)="getOtp()">Get Otp</button>
+		</div>
+	</ng-template>
+	<ng-template #otpSentBlock>
+		<form #form="ngForm" [formGroup]="otpValidationForm" (ngSubmit)="submitOtpValidationForm()">
+			<p>
+				Enter the Otp you received in your email address.
+			</p>
+
+			<div class="mt-3">
+				<label class="form-label h6" for="otp">Otp:</label>
+				<input type="text" id="otp" class="form-control"
+					   formControlName="otpCodeFormControl"
+					   #otpCodeFormControlRef
+					   [ngClass]="{ 'is-invalid': form.submitted && otpCodeFormControl.invalid }"
+					   placeholder="********"
+					   maxlength="8"
+					   inputmode="numeric"
+					   pattern="[0-9]*"
+					   digitOnly>
+
+				<div class="form-text">
+					<ng-container *ngIf="timerRunning; then timerRunningBlock else timerExpiredBlock"></ng-container>
+					<ng-template #timerRunningBlock>
+						Expires in: {{timerExpirationTime}}
+					</ng-template>
+					<ng-template #timerExpiredBlock>
+						Sent Otp Expired | <span class="as-link" (click)="getOtp()">Resend Otp</span>
+					</ng-template>
+				</div>
+
+				<div class="invalid-feedback" *ngIf="form.submitted && otpCodeFormControl.invalid">
+					<div *ngIf="otpCodeFormControl.errors?.required">
+						Please provide an Otp.
+					</div>
+					<div *ngIf="otpCodeFormControl.errors?.minlength">
+						The code must be 8 digits long.
+					</div>
+					<div *ngIf="otpCodeFormControl.errors?.otpInvalid">
+						Entered Otp is invalid.
+					</div>
+					<div *ngIf="otpCodeFormControl.errors?.otpMaxAttemptsLimitReached">
+						You have exceeded the maximum retry attempts, please request an Otp resend.
+					</div>
+					<div *ngIf="otpCodeFormControl.errors?.otpHasExpired">
+						Previously sent Otp has expired, please request an Otp resend.
+					</div>
+				</div>
+			</div>
+
+			<div class="mt-4 text-center">
+				<button type="submit" class="btn btn-primary col-6">Submit</button>
+			</div>
+		</form>
+	</ng-template>
+</div>

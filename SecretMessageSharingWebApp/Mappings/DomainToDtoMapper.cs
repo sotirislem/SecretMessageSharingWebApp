@@ -14,7 +14,11 @@ namespace SecretMessageSharingWebApp.Mappings
 				CreatedDateTime = secretMessage.CreatedDateTime,
 				CreatorIP = secretMessage.CreatorIP,
 				CreatorClientInfo = secretMessage.CreatorClientInfo,
-				JsonData = JsonConvert.SerializeObject(secretMessage.Data)
+				JsonData = JsonConvert.SerializeObject(secretMessage.Data),
+				Otp = secretMessage.Otp.Required ? new Data.Entities.OtpSettings()
+				{
+					RecipientsEmail = secretMessage.Otp.RecipientsEmail
+				} : null
 			};
 		}
 
@@ -26,7 +30,6 @@ namespace SecretMessageSharingWebApp.Mappings
 				RequestCreatorIP = getLog.RequestCreatorIP,
 				RequestClientInfo = getLog.RequestClientInfo,
 				SecretMessageId = getLog.SecretMessageId,
-				SecretMessageExisted = getLog.SecretMessageExisted,
 				SecretMessageCreatedDateTime = getLog.SecretMessageCreatedDateTime,
 				SecretMessageCreatorIP = getLog.SecretMessageCreatorIP,
 				SecretMessageCreatorClientInfo = getLog.SecretMessageCreatorClientInfo

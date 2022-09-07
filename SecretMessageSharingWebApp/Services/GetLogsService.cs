@@ -21,15 +21,15 @@ namespace SecretMessageSharingWebApp.Services
 			var getLogDto = getLog.ToGetLogDto();
 			await _getLogsRepository.Insert(getLogDto);
 
-			_logger.LogInformation("GetLogsService:Insert => ID: {getLogId}.", getLogDto.Id);
+			_logger.LogInformation("GetLogsService:Insert => ID: {getLogId}", getLogDto.Id);
 			
 			return getLogDto.ToGetLog();
 		}
 
-		public IEnumerable<RecentlyStoredSecretMessage> GetRecentlyStoredSecretMessagesInfo(IEnumerable<string> recentlyStoredSecretMessagesList)
+		public IEnumerable<RecentlyStoredSecretMessage> GetRecentlyStoredSecretMessagesInfo(List<string> recentlyStoredSecretMessagesList)
 		{
 			return _getLogsRepository.GetDbSetAsQueryable()
-				.Where(getLogDto => recentlyStoredSecretMessagesList.Contains(getLogDto.SecretMessageId) && getLogDto.SecretMessageExisted)
+				.Where(getLogDto => recentlyStoredSecretMessagesList.Contains(getLogDto.SecretMessageId))
 				.Select(getLogDto => getLogDto.ToRecentlyStoredSecretMessage())
 				.AsEnumerable();
 		}

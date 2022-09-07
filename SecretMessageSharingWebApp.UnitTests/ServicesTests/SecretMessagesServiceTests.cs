@@ -128,7 +128,7 @@ namespace SecretMessageSharingWebApp.UnitTests.ServicesTests
 			// Arrange
 			var allSecretMessages = _fixture.CreateMany<SecretMessageDto>(10);
 			var recentlyStoredSecretMessages = allSecretMessages.TakeLast(5);
-			var recentlyStoredSecretMessagesList = recentlyStoredSecretMessages.Select(m => m.Id);
+			var recentlyStoredSecretMessagesList = recentlyStoredSecretMessages.Select(m => m.Id).ToList();
 
 			_secretMessagesRepository.GetDbSetAsQueryable().Returns(allSecretMessages.AsQueryable());
 

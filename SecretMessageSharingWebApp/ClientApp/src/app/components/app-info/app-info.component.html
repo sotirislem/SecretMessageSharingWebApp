@@ -12,6 +12,8 @@
 	<br />
 	Every generated message is removed from server upon its retrieval. Also, unread messages are automatically destroyed 1 hour after their creation timestamp.
 	<br />
+	For even more extra security, an OTP mechanism can seal the message further, allowing successful recovery only after the recipient provides a valid OTP that will be delivered to their email address.
+	<br />
 	All of the above makes message creation, transmission and retrieval extremely secure, where data breach practically becomes impossible.
 	<br />
 </p>
@@ -48,8 +50,7 @@
 		<ng-template ngbPanelContent>
 			<ul class="m-0">
 				<li>Auto-generated at run-time (on browser) by using the SJCL library's provided features</li>
-				<li>Generated key length: 50 chars in base64/url-safe format</li>
-				<li>The generated key is not directly used for encryption/decryption, but instead, it is first processed by a key derivation function (PBKDF2 with 100,000 iterations)</li>
+				<li>Generated key length: 256 bits converted to base64/url-safe format</li>
 			</ul>
 		</ng-template>
 	</ngb-panel>
@@ -119,6 +120,8 @@
 
 		<ng-template ngbPanelContent>
 			This web application is hosted on Azure by using Azure App Service, whereas, uses Azure Cosmos DB for data storage.
+			<br />
+			OTP codes are delivered by using the SendGrid email delivery platform.
 		</ng-template>
 	</ngb-panel>
 </ngb-accordion>

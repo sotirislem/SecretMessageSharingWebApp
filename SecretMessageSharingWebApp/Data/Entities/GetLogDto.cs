@@ -15,8 +15,6 @@ namespace SecretMessageSharingWebApp.Data.Entities
 
 		public string SecretMessageId { get; init; }
 
-		public bool SecretMessageExisted { get; init; }
-
 		public DateTime? SecretMessageCreatedDateTime { get; init; }
 
 		public string? SecretMessageCreatorIP { get; init; }

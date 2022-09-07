@@ -8,7 +8,7 @@ using SecretMessageSharingWebApp.Services.Interfaces;
 
 namespace SecretMessageSharingWebApp.Endpoints
 {
-	public class DeleteRecentlyStoredSecretMessageEndpoint : EndpointWithoutRequest
+	public class DeleteRecentlyStoredSecretMessageEndpoint : EndpointWithoutRequest<bool>
 	{
 		public override void Configure()
 		{

@@ -2,10 +2,10 @@
 {
 	public interface IMemoryCacheService
 	{
-		void SetValue(string key, string value);
+		void SetValue<TItem>(string key, TItem value, string keyPrefix = "");
 
-		(bool exists, string value) GetValue(string key, bool remove = true);
+		(bool exists, TItem value) GetValue<TItem>(string key, string keyPrefix = "", bool remove = true);
 
-		void RemoveValue(string key);
+		void RemoveValue(string key, string keyPrefix = "");
 	}
 }

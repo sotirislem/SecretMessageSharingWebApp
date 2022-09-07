@@ -15,7 +15,17 @@ namespace SecretMessageSharingWebApp.Mappings
 				CreatedDateTime = secretMessageDto.CreatedDateTime,
 				CreatorClientInfo = secretMessageDto.CreatorClientInfo,
 				CreatorIP = secretMessageDto.CreatorIP,
-				Data = JsonConvert.DeserializeObject<SecretMessageData>(secretMessageDto.JsonData)!
+				Data = JsonConvert.DeserializeObject<SecretMessageData>(secretMessageDto.JsonData)!,
+				Otp = secretMessageDto.Otp.ToOtpSettings()
+			};
+		}
+
+		public static Models.Domain.OtpSettings ToOtpSettings(this Data.Entities.OtpSettings? otpSettingsDto)
+		{
+			return new Models.Domain.OtpSettings
+			{
+				Required = otpSettingsDto?.Required ?? false,
+				RecipientsEmail = otpSettingsDto?.RecipientsEmail ?? string.Empty
 			};
 		}
 
@@ -28,7 +38,6 @@ namespace SecretMessageSharingWebApp.Mappings
 				RequestCreatorIP = getLogDto.RequestCreatorIP,
 				RequestClientInfo = getLogDto.RequestClientInfo,
 				SecretMessageId = getLogDto.SecretMessageId,
-				SecretMessageExisted = getLogDto.SecretMessageExisted,
 				SecretMessageCreatedDateTime = getLogDto.SecretMessageCreatedDateTime,
 				SecretMessageCreatorIP = getLogDto.SecretMessageCreatorIP,
 				SecretMessageCreatorClientInfo = getLogDto.SecretMessageCreatorClientInfo

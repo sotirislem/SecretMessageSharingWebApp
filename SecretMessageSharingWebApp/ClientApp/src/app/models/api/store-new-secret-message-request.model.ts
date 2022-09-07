@@ -1,5 +1,11 @@
 import { SecretMessageData } from "../common/secret-message-data.model";
 
 export interface StoreNewSecretMessageRequest {
-	data: SecretMessageData
+	secretMessageData: SecretMessageData;
+	otp: OtpSettings;
+}
+
+export interface OtpSettings {
+	required: boolean;
+	recipientsEmail: string;
 }

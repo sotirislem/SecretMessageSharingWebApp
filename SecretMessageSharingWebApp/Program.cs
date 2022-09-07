@@ -35,6 +35,9 @@ builder.Services.AddMemoryCache();
 builder.Services.AddSingleton<IMemoryCacheService, MemoryCacheService>();
 
 builder.Services.AddSingleton<ISecretMessageDeliveryNotificationHubService, SecretMessageDeliveryNotificationHubService>();
+builder.Services.AddSingleton<IOtpService, OtpService>();
+builder.Services.AddSingleton<IJwtService, JwtService>();
+builder.Services.AddSingleton<ISendGridEmailService, SendGridEmailService>();
 
 builder.Services.AddScoped<ISecretMessagesRepository, SecretMessagesRepository>();
 builder.Services.AddScoped<ISecretMessagesService, SecretMessagesService>();

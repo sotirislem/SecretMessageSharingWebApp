@@ -6,6 +6,6 @@ namespace SecretMessageSharingWebApp.Services.Interfaces
 	{
 		Task<GetLog> CreateNewLog(GetLog getLog);
 
-		IEnumerable<RecentlyStoredSecretMessage> GetRecentlyStoredSecretMessagesInfo(IEnumerable<string> recentlyStoredSecretMessagesList);
+		IEnumerable<RecentlyStoredSecretMessage> GetRecentlyStoredSecretMessagesInfo(List<string> recentlyStoredSecretMessagesList);
 	}
 }

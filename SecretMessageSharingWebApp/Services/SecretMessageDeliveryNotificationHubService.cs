@@ -37,7 +37,9 @@ namespace SecretMessageSharingWebApp.Services
 		{
 			bool notificationSent = false;
 
-			(var signalRConnectionIdExists, var signalRConnectionId) = _memoryCacheService.GetValue(secretMessageDeliveryNotification.MessageId);
+			(var signalRConnectionIdExists, var signalRConnectionId) 
+				= _memoryCacheService.GetValue<string>(secretMessageDeliveryNotification.MessageId, Constants.MemoryKey_SecretMessageSignalRConnectionId);
+			
 			if (signalRConnectionIdExists)
 			{
 				notificationSent = await TrySend(signalRConnectionId, secretMessageDeliveryNotification);

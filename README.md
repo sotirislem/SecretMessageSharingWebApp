@@ -6,7 +6,8 @@ Message can also include a file attachment of any type as long as its size does 
 Remote server is only used to store the encrypted message, so it can be later retrieved by a third person. \
 Sender has the ability to receive a delivery notification on his browser once his message is read by a recipient. \
 The encryption key which is used to encrypt/decrypt a message is locally created on user's browser and never gets exposed to server. \
-Every generated message is removed from server upon its retrieval. Also, unread messages are automatically destroyed 1 hour after their creation timestamp.
+Every generated message is removed from server upon its retrieval. Also, unread messages are automatically destroyed 1 hour after their creation timestamp. \
+For even more extra security, an OTP mechanism can seal the message further, allowing successful recovery only after the recipient provides a valid OTP that will be delivered to their email address.
 
 ### Made with:
 * ASP.NET Core 6
@@ -22,6 +23,4 @@ Every generated message is removed from server upon its retrieval. Also, unread 
 https://secret-message-sharing-web-app.azurewebsites.net/
 
 ## App preview
-![app-preview-image1](https://user-images.githubusercontent.com/10964246/187239788-700feff0-9ca9-45e1-a5ae-a83b314f2c46.png) \
-![app-preview-image2](https://user-images.githubusercontent.com/10964246/187239801-8e945f8d-d01d-4df0-8d39-11120335a282.png) \
-![app-preview-image3](https://user-images.githubusercontent.com/10964246/187239808-024fb3de-f08b-40bb-a808-48249c38382b.png)
+TODO: Add updated interface images

@@ -43,11 +43,9 @@ namespace SecretMessageSharingWebApp.UnitTests.ServicesTests
 		public void GetRecentlyStoredSecretMessagesInfo_ShouldReturnProperIEnumerable_WhenGivenValidRecentlyStoredSecretMessagesList()
 		{
 			// Arrange
-			var allGetLogs = _fixture.Build<GetLogDto>()
-				.With(x => x.SecretMessageExisted, true)
-				.CreateMany(10);
+			var allGetLogs = _fixture.Build<GetLogDto>().CreateMany(10);
 			var recentlyStoredGetLogs = allGetLogs.TakeLast(5);
-			var recentlyStoredSecretMessagesList = recentlyStoredGetLogs.Select(m => m.SecretMessageId);
+			var recentlyStoredSecretMessagesList = recentlyStoredGetLogs.Select(m => m.SecretMessageId).ToList();
 
 			_getLogsRepository.GetDbSetAsQueryable().Returns(allGetLogs.AsQueryable());
 

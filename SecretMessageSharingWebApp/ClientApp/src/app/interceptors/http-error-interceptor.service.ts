@@ -8,8 +8,9 @@ import {
 	HttpInterceptor,
 	HttpErrorResponse
 } from '@angular/common/http';
-import { ApiError } from '../models/api/api-error.model'
 import { ToastrService } from 'ngx-toastr';
+import { InternalApiError } from '../models/api/internal-api-error.model'
+import { BadRequestApiError } from '../models/api/bad-request-api-error.model';
 
 @Injectable()
 export class HttpErrorInterceptor implements HttpInterceptor {
@@ -24,22 +25,50 @@ export class HttpErrorInterceptor implements HttpInterceptor {
 					let toastrTitle: string = '';
 
 					if (response.status === 500) {
-						const apiError = JSON.parse(response.error) as ApiError;
+						const apiError = response.error as InternalApiError;
 
 						toastrTitle = 'API Error';
-						toastrMessage = apiError?.message;
+						toastrMessage = (apiError?.message ?? 'An unexpected internal API error occurred');
+					}
+					else if (response.status === 400) {
+						const badRequestError = response.error as BadRequestApiError;
+
+						toastrTitle = `${response.statusText} (${badRequestError.message})`;
+
+						if (badRequestError.errors) {
+							toastrMessage += "<ul>";
+							for (let errorKey in badRequestError.errors) {
+								const errorMessages = badRequestError.errors[errorKey];
+								for (let errorMessage of errorMessages) {
+									toastrMessage += '<li>' + errorMessage + '</li>';
+								}
+							}
+							toastrMessage += "</ul>";
+						}
 					}
 					else {
-						toastrTitle = `HTTP Response: ${response.statusText} (Status code: ${response.status})`;
+						toastrTitle = `${response.statusText} (${response.status})`;
 						toastrMessage = response.message;
 					}
 
 					this.toastrService.error(toastrMessage, toastrTitle, {
 						timeOut: 15_000,
-						extendedTimeOut: 0
+						extendedTimeOut: 0,
+						closeButton: true,
+						progressBar: true,
+						enableHtml: true
 					});
 					return throwError(response);
 				})
 			);
+	}
+
+	private tryJsonParse<T>(response: any): T | null {
+		try {
+			return JSON.parse(response.error) as T;
+		}
+		catch {
+			return null;
+		}
 	}
 }

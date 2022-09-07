@@ -1,9 +1,8 @@
-#secretTextArea {
+#secretMsgTextArea {
 	min-height: 100px;
 	font-size: 18px;
 }
-
-#secretTextArea::placeholder {
+#secretMsgTextArea::placeholder {
 	font-size: 16px;
 }
 

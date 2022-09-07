@@ -2,10 +2,11 @@ import { NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 import { AppRoutingModule } from './app-routing.module';
 import { HttpClientModule, HTTP_INTERCEPTORS } from '@angular/common/http';
-import { FormsModule } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { ToastrModule } from 'ngx-toastr';
+import { DigitOnlyModule } from '@uiowa/digit-only';
 import { AppInsightsModule } from '../insights/app-insights.module';
 
 import { AppRootComponent } from './components/app-root/app-root.component';
@@ -17,6 +18,7 @@ import { GetSecretMessageComponent } from './components/get-secret-message/get-s
 import { RecentlyStoredMessagesComponent } from './components/recent-stored-messages/recently-stored-messages.component';
 import { AppInfoComponent } from './components/app-info/app-info.component';
 import { MessageDeliveryDetailsModalComponent } from './components/message-delivery-details-modal/message-delivery-details-modal.component';
+import { OtpInputModalComponent } from './components/otp-input-modal/otp-input-modal.component';
 
 import { DateTimeFullPipe } from './pipes/date-time-full.pipe';
 
@@ -25,7 +27,6 @@ import { HttpHeadersInterceptor } from './interceptors/http-headers-interceptor.
 import { HttpErrorInterceptor } from './interceptors/http-error-interceptor.service';
 
 import { environment } from '../environments/environment';
-
 
 const appInsightsModule = (environment.production && environment.applicationInsights.enable ? [AppInsightsModule] : []);
 
@@ -40,16 +41,19 @@ const appInsightsModule = (environment.production && environment.applicationInsi
 		RecentlyStoredMessagesComponent,
 		AppInfoComponent,
 		DateTimeFullPipe,
-		MessageDeliveryDetailsModalComponent
+		MessageDeliveryDetailsModalComponent,
+		OtpInputModalComponent
 	],
 	imports: [
 		BrowserModule.withServerTransition({ appId: 'ng-cli-universal' }),
 		AppRoutingModule,
 		HttpClientModule,
 		FormsModule,
+		ReactiveFormsModule,
 		NgbModule,
 		BrowserAnimationsModule,
 		ToastrModule.forRoot(),
+		DigitOnlyModule,
 		...appInsightsModule
 	],
 	providers: [

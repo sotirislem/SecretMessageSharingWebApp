@@ -13,5 +13,14 @@ namespace SecretMessageSharingWebApp.Models.Domain
 		public string? CreatorIP { get; set; }
 
 		public string? CreatorClientInfo { get; set; }
+
+		public OtpSettings Otp { get; init; }
+	}
+
+	public class OtpSettings
+	{
+		public bool Required { get; init; }
+
+		public string RecipientsEmail { get; init; }
 	}
 }

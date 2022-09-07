@@ -32,7 +32,7 @@ namespace SecretMessageSharingWebApp.UnitTests.ServicesTests
 			var connectionId = _fixture.Create<string>();
 
 			_sut.AddConnection(connectionId);
-			_memoryCacheService.GetValue(secretMessageDeliveryNotification.MessageId).Returns((true, connectionId));
+			_memoryCacheService.GetValue<string>(secretMessageDeliveryNotification.MessageId, Constants.MemoryKey_SecretMessageSignalRConnectionId).Returns((true, connectionId));
 
 			// Act
 			var result = _sut.SendNotification(secretMessageDeliveryNotification).Result;
@@ -52,7 +52,7 @@ namespace SecretMessageSharingWebApp.UnitTests.ServicesTests
 			var connectionId = _fixture.Create<string>();
 
 			//_sut.AddConnection(connectionId);
-			_memoryCacheService.GetValue(secretMessageDeliveryNotification.MessageId).Returns((true, connectionId));
+			_memoryCacheService.GetValue<string>(secretMessageDeliveryNotification.MessageId, Constants.MemoryKey_SecretMessageSignalRConnectionId).Returns((true, connectionId));
 
 			// Act
 			var result = _sut.SendNotification(secretMessageDeliveryNotification).Result;
@@ -70,7 +70,7 @@ namespace SecretMessageSharingWebApp.UnitTests.ServicesTests
 			// Arrange
 			var secretMessageDeliveryNotification = _fixture.Create<SecretMessageDeliveryNotification>();
 
-			_memoryCacheService.GetValue(secretMessageDeliveryNotification.MessageId).Returns((false, null));
+			_memoryCacheService.GetValue<string>(secretMessageDeliveryNotification.MessageId, Constants.MemoryKey_SecretMessageSignalRConnectionId).Returns((false, null));
 
 			// Act
 			var result = _sut.SendNotification(secretMessageDeliveryNotification).Result;

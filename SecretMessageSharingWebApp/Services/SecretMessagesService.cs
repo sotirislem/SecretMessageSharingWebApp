@@ -21,9 +21,23 @@ namespace SecretMessageSharingWebApp.Services
 			var secretMessageDto = secretMessage.ToSecretMessageDto();
 			await _secretMessagesRepository.Insert(secretMessageDto);
 
-			_logger.LogInformation("SecretMessagesService:Insert => ID: {secretMessageId}.", secretMessageDto.Id);
+			_logger.LogInformation("SecretMessagesService:Insert => ID: {secretMessageId}", secretMessageDto.Id);
 
 			return secretMessageDto.ToSecretMessage();
+		}
+
+		public (bool exists, OtpSettings? otp) VerifyExistence(string id)
+		{
+			var result = _secretMessagesRepository.GetDbSetAsQueryable()
+				.Where(m => m.Id == id)
+				.Select(m => new { Otp = m.Otp.ToOtpSettings() })
+				.FirstOrDefault();
+
+			var exists = (result is not null);
+
+			_logger.LogInformation("SecretMessagesService:VerifyExistance => ID: {secretMessageId}, Exists: {secretMessageExists}, RequiresOtp: {secretMessageRequiresOtp}", id, exists, result?.Otp.Required);
+
+			return (exists, result?.Otp);
 		}
 
 		public async Task<SecretMessage?> Retrieve(string id)
@@ -34,7 +48,7 @@ namespace SecretMessageSharingWebApp.Services
 				await _secretMessagesRepository.Delete(secretMessageDto);
 			}
 
-			_logger.LogInformation("SecretMessagesService:Retrieve => ID: {secretMessageId}, Exists: {secretMessageExists}.", id, (secretMessageDto is not null));
+			_logger.LogInformation("SecretMessagesService:Retrieve => ID: {secretMessageId}, Exists: {secretMessageExists}", id, (secretMessageDto is not null));
 			
 			return secretMessageDto?.ToSecretMessage();
 		}
@@ -49,12 +63,12 @@ namespace SecretMessageSharingWebApp.Services
 
 			await _secretMessagesRepository.Delete(secretMessageDto);
 
-			_logger.LogInformation("SecretMessagesService:Delete => ID: {secretMessageId}.", secretMessageDto.Id);
+			_logger.LogInformation("SecretMessagesService:Delete => ID: {secretMessageId}", secretMessageDto.Id);
 			
 			return true;
 		}
 
-		public IEnumerable<RecentlyStoredSecretMessage> GetRecentlyStoredSecretMessagesInfo(IEnumerable<string> recentlyStoredSecretMessagesList)
+		public IEnumerable<RecentlyStoredSecretMessage> GetRecentlyStoredSecretMessagesInfo(List<string> recentlyStoredSecretMessagesList)
 		{
 			return _secretMessagesRepository.GetDbSetAsQueryable()
 				.Where(secretMessageDto => recentlyStoredSecretMessagesList.Contains(secretMessageDto.Id))

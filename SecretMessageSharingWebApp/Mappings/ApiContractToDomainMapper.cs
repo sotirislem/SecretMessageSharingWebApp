@@ -10,10 +10,15 @@ namespace SecretMessageSharingWebApp.Mappings
 			return new SecretMessage
 			{
 				Data = new Models.Common.SecretMessageData(
-					IV: storeNewSecretMessageRequest.Data.IV,
-					Salt: storeNewSecretMessageRequest.Data.Salt,
-					CT: storeNewSecretMessageRequest.Data.CT
-				)
+					IV: storeNewSecretMessageRequest.SecretMessageData.IV,
+					Salt: storeNewSecretMessageRequest.SecretMessageData.Salt,
+					CT: storeNewSecretMessageRequest.SecretMessageData.CT
+				),
+				Otp = new Models.Domain.OtpSettings()
+				{
+					Required = storeNewSecretMessageRequest.Otp.Required,
+					RecipientsEmail = storeNewSecretMessageRequest.Otp.RecipientsEmail.Trim()
+				}
 			};
 		}
 	}

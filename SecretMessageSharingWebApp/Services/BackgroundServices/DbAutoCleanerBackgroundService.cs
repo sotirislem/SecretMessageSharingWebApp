@@ -35,7 +35,7 @@ namespace SecretMessageSharingWebApp.Services.BackgroundServices
 
 		private async void DoWork(object? state)
 		{
-			_logger.LogInformation("DbAutoCleanerBackgroundService: Service triggered DoWork().");
+			_logger.LogInformation("DbAutoCleanerBackgroundService: Service triggered DoWork()");
 
 			using (var scope = Services.CreateScope())
 			{
@@ -51,7 +51,7 @@ namespace SecretMessageSharingWebApp.Services.BackgroundServices
 			var deletedMessages = await secretMessagesRepository.DeleteOldMessages();
 			if (deletedMessages > 0)
 			{
-				_logger.LogInformation("DbAutoCleanerBackgroundService: Deleted {deletedMessages} old message(s).", deletedMessages);
+				_logger.LogInformation("DbAutoCleanerBackgroundService: Deleted {deletedMessages} old message(s)", deletedMessages);
 			}
 		}
 
@@ -62,7 +62,7 @@ namespace SecretMessageSharingWebApp.Services.BackgroundServices
 			var deletedLogs = await getLogsRepository.DeleteOldLogs();
 			if (deletedLogs > 0)
 			{
-				_logger.LogInformation("DbAutoCleanerBackgroundService: Deleted {deletedLogs} old log(s).", deletedLogs);
+				_logger.LogInformation("DbAutoCleanerBackgroundService: Deleted {deletedLogs} old log(s)", deletedLogs);
 			}
 		}
 	}

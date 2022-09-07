@@ -29,9 +29,26 @@ namespace SecretMessageSharingWebApp.Extensions
 			return httpContext.Features.Get<IHttpRequestDateTimeFeature>()!.RequestDateTime;
 		}
 
-		public static string? GetRequestHeaderValue(this HttpRequest httpRequest, string key)
+		public static string? GetRequestHeaderValue(this HttpContext httpContext, string key)
 		{
-			return httpRequest.Headers?[key].ToString();
+			return httpContext.Request.Headers[key].FirstOrDefault();
+		}
+
+		public static string? ExtractJwtTokenFromRequestHeaders(this HttpContext httpContext)
+		{
+			var authorizationHeader = httpContext.GetRequestHeaderValue("Authorization");
+			if (authorizationHeader is null)
+			{
+				return null;
+			}
+
+			var authorizationHeaderSplitted = authorizationHeader.Split(" ");
+			if (authorizationHeaderSplitted.Length == 2 && authorizationHeaderSplitted[0] == "Bearer")
+			{
+				return authorizationHeaderSplitted[1];
+			}
+
+			return null;
 		}
 	}
 }
