@@ -1,30 +1,31 @@
 <header>
-	<nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
+	<nav class="navbar navbar-expand-lg navbar-toggleable-lg navbar-light bg-white border-bottom box-shadow mb-3">
 		<div class="container">
 
-			<a class="navbar-brand" [routerLink]="[Routes.Root]">SecretMessageSharingWebApp</a>
+			<a class="navbar-brand navbar-brand-width word-wrap" [routerLink]="[Routes.Root]">SecretMessageSharingWebApp</a>
 
 			<button class="navbar-toggler"
 					type="button"
-					data-toggle="collapse"
-					data-target=".navbar-collapse"
+					data-bs-toggle="collapse"
+					data-bs-target=".navbar-collapse"
 					aria-label="Toggle navigation"
 					[attr.aria-expanded]="isExpanded"
+					[ngClass]="{ collapsed: !isExpanded }"
 					(click)="toggle()">
-				<span class="navbar-toggler-icon"></span>
+				<span class="icon-bar"></span>
+				<span class="icon-bar"></span>
+				<span class="icon-bar"></span>
 			</button>
 
-			<div class="navbar-collapse collapse d-sm-inline-flex justify-content-end" [ngClass]="{ show: isExpanded }">
-				<ul class="navbar-nav flex-grow" (click)="collapse()">
+			<div class="navbar-collapse collapse d-lg-inline-flex justify-content-end">
+				<ul class="navbar-nav flex-grow">
 
-					<li class="nav-item"
-						[routerLinkActive]="['link-active']"
-						[routerLinkActiveOptions]="{ exact: true }">
-						<a class="nav-link text-dark" [routerLink]="[Routes.Root]">Create a Message</a>
+					<li class="nav-item" [routerLinkActive]="['link-active']">
+						<a class="nav-link text-dark" [routerLink]="[Routes.CreateSecretMessage]">Create a Message</a>
 					</li>
 
 					<li class="nav-item" [routerLinkActive]="['link-active']">
-						<a class="nav-link text-dark" [routerLink]="[Routes.RecentlyStoredMessages]">Recently stored messages</a>
+						<a class="nav-link text-dark" [routerLink]="[Routes.RecentlyStoredMessages]">Recently stored Messages</a>
 					</li>
 
 					<li class="nav-item" [routerLinkActive]="['link-active']">

@@ -2,13 +2,12 @@ import { Component, ElementRef, Input, ViewChild } from '@angular/core';
 import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
 import { FormBuilder, NgForm, ValidationErrors, Validators } from '@angular/forms';
 
-import { Constants } from '../../../constants';
-import { ApiClientService } from '../../services/api-client.service';
+import { Constants } from '../../../../constants';
+import { ApiClientService } from '../../../services/api-client.service';
 
-import { ValidateSecretMessageOtpResponse } from '../../models/api/validate-secret-message-otp-response.model';
+import { ValidateSecretMessageOtpResponse } from '../../../models/api/validate-secret-message-otp-response.model';
 
 @Component({
-	selector: 'app-otp-input-modal',
 	templateUrl: './otp-input-modal.component.html',
 	styleUrls: ['./otp-input-modal.component.css']
 })

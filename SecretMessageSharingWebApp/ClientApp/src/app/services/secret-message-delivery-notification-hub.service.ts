@@ -2,7 +2,7 @@ import { Inject, Injectable } from '@angular/core';
 import { SecretMessageDeliveryNotification } from '../models/api/secret-message-delivery-notification.model';
 import * as signalR from "@microsoft/signalr";
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
-import { MessageDeliveryDetailsModalComponent } from '../components/message-delivery-details-modal/message-delivery-details-modal.component';
+import { MessageDeliveryDetailsModalComponent } from '../components/modals/message-delivery-details-modal/message-delivery-details-modal.component';
 import { Subject } from 'rxjs';
 
 @Injectable({

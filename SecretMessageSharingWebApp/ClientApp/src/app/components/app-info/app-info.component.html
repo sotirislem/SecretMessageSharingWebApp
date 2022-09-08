@@ -69,18 +69,6 @@
 
 	<ngb-panel>
 		<ng-template ngbPanelTitle>
-			Does server collect any client data?
-		</ng-template>
-
-		<ng-template ngbPanelContent>
-			Υes, this is done purely for logging purposes.
-			The data concerns information such as client's: IP address, browser's user-agent identity.
-			Those logs are only kept for 24 hours and are automatically deleted after this period.
-		</ng-template>
-	</ngb-panel>
-
-	<ngb-panel>
-		<ng-template ngbPanelTitle>
 			For how long does the server keep stored messages?
 		</ng-template>
 
@@ -90,6 +78,18 @@
 				<li>Messages are being removed from database after retrieval</li>
 				<li>Unread messages are automatically destroyed 1 hour after their creation time</li>
 			</ul>
+		</ng-template>
+	</ngb-panel>
+
+	<ngb-panel>
+		<ng-template ngbPanelTitle>
+			Does server collect any client data?
+		</ng-template>
+
+		<ng-template ngbPanelContent>
+			Υes, this is done purely for logging purposes.
+			The data concerns information such as client's: IP address, browser's user-agent identity.
+			Those logs are only kept for 24 hours and are automatically deleted after this period.
 		</ng-template>
 	</ngb-panel>
 

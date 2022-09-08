@@ -13,12 +13,13 @@ import { AppRootComponent } from './components/app-root/app-root.component';
 import { NavMenuComponent } from './components/nav-menu/nav-menu.component';
 import { LoaderComponent } from './components/loader/loader.component';
 import { HomeComponent } from './components/home/home.component';
+import { CreateSecretMessageComponent } from './components/create-secret-message/create-secret-message.component';
 import { NewSecretMessageComponent } from './components/new-secret-message/new-secret-message.component';
 import { GetSecretMessageComponent } from './components/get-secret-message/get-secret-message.component';
 import { RecentlyStoredMessagesComponent } from './components/recent-stored-messages/recently-stored-messages.component';
 import { AppInfoComponent } from './components/app-info/app-info.component';
-import { MessageDeliveryDetailsModalComponent } from './components/message-delivery-details-modal/message-delivery-details-modal.component';
-import { OtpInputModalComponent } from './components/otp-input-modal/otp-input-modal.component';
+import { MessageDeliveryDetailsModalComponent } from './components/modals/message-delivery-details-modal/message-delivery-details-modal.component';
+import { OtpInputModalComponent } from './components/modals/otp-input-modal/otp-input-modal.component';
 
 import { DateTimeFullPipe } from './pipes/date-time-full.pipe';
 
@@ -36,6 +37,7 @@ const appInsightsModule = (environment.production && environment.applicationInsi
 		NavMenuComponent,
 		LoaderComponent,
 		HomeComponent,
+		CreateSecretMessageComponent,
 		NewSecretMessageComponent,
 		GetSecretMessageComponent,
 		RecentlyStoredMessagesComponent,

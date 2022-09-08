@@ -13,7 +13,6 @@ import * as QRCode from 'qrcode';
 import { SecretMessage } from '../../models/secret-message.model';
 
 @Component({
-	selector: 'app-new-secret-message',
 	templateUrl: './new-secret-message.component.html',
 	styleUrls: ['./new-secret-message.component.css']
 })

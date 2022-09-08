@@ -3,10 +3,9 @@ import { RecentlyStoredSecretMessage } from '../../models/api/recently-stored-se
 import { SecretMessageDeliveryNotification } from '../../models/api/secret-message-delivery-notification.model';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { ApiClientService } from '../../services/api-client.service';
-import { MessageDeliveryDetailsModalComponent } from '../message-delivery-details-modal/message-delivery-details-modal.component';
+import { MessageDeliveryDetailsModalComponent } from '../modals/message-delivery-details-modal/message-delivery-details-modal.component';
 
 @Component({
-	selector: 'app-recently-stored-messages',
 	templateUrl: './recently-stored-messages.component.html',
 	styleUrls: ['./recently-stored-messages.component.css']
 })

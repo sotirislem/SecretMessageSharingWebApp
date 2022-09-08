@@ -8,11 +8,10 @@ import { Routes } from '../../../constants';
 })
 export class NavMenuComponent {
 	readonly Routes = Routes;
+
 	isExpanded = false;
 
-	collapse() {
-		this.isExpanded = false;
-	}
+	constructor() { }
 
 	toggle() {
 		this.isExpanded = !this.isExpanded;

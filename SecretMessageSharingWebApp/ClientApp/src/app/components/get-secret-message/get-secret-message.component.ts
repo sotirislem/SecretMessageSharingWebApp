@@ -13,7 +13,7 @@ import { Constants } from '../../../constants';
 import { ApiClientService } from '../../services/api-client.service';
 import { SjclService } from '../../services/sjcl.service';
 import { FileService } from '../../services/file.service';
-import { OtpInputModalComponent } from '../otp-input-modal/otp-input-modal.component';
+import { OtpInputModalComponent } from '../modals/otp-input-modal/otp-input-modal.component';
 
 enum ComponentState {
 	LoadingMessage,
@@ -22,7 +22,6 @@ enum ComponentState {
 }
 
 @Component({
-	selector: 'app-get-secret-message',
 	templateUrl: './get-secret-message.component.html',
 	styleUrls: ['./get-secret-message.component.css']
 })
