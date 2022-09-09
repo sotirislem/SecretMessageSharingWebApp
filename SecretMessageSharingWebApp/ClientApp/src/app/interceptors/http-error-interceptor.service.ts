@@ -33,7 +33,8 @@ export class HttpErrorInterceptor implements HttpInterceptor {
 					else if (response.status === 400) {
 						const badRequestError = response.error as BadRequestApiError;
 
-						toastrTitle = `${response.statusText} (${badRequestError.message})`;
+						toastrTitle = `${response.statusText}`;
+						toastrMessage += `${badRequestError.message}</br>`
 
 						if (badRequestError.errors) {
 							toastrMessage += "<ul>";
@@ -48,7 +49,7 @@ export class HttpErrorInterceptor implements HttpInterceptor {
 					}
 					else {
 						toastrTitle = `${response.statusText} (${response.status})`;
-						toastrMessage = response.message;
+						toastrMessage = 'Request could not be processed';
 					}
 
 					this.toastrService.error(toastrMessage, toastrTitle, {
@@ -61,14 +62,5 @@ export class HttpErrorInterceptor implements HttpInterceptor {
 					return throwError(response);
 				})
 			);
-	}
-
-	private tryJsonParse<T>(response: any): T | null {
-		try {
-			return JSON.parse(response.error) as T;
-		}
-		catch {
-			return null;
-		}
 	}
 }

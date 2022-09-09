@@ -1,14 +1,15 @@
 <div class="modal-header bg-dark bg-gradient text-light">
-	<h4 id="modal-basic-title" class="modal-title">
+	<h5 id="modal-basic-title" class="modal-title">
 		Message delivery {{isNotification ? 'notification' : 'details'}}
-	</h4>
+	</h5>
 	<button type="button" aria-label="Close" class="btn-close btn btn-dark bg-light" (click)="dismiss()"></button>
 </div>
 
 <div class="modal-body">
-	<p>
+	<p class="text-center">
 		Message Id: <span class="font-weight-500">{{messageDeliveryDetails.messageId}}</span>
 	</p>
+	<hr />
 	<p *ngIf="isNotification">
 		Your message has been delivered to a recipient, please find more details below:
 	</p>

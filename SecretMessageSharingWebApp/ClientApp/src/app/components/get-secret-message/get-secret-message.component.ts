@@ -1,7 +1,7 @@
-import { Component, ViewChild } from '@angular/core';
+import { Component, TemplateRef, ViewChild } from '@angular/core';
 import { IndividualConfig, ToastrService } from 'ngx-toastr';
 import { ActivatedRoute } from '@angular/router';
-import { NgbModal, NgbTooltip } from '@ng-bootstrap/ng-bootstrap';
+import { NgbModalOptions, NgbTooltip } from '@ng-bootstrap/ng-bootstrap';
 import { Clipboard } from '@angular/cdk/clipboard';
 
 import { GetSecretMessageResponse } from '../../models/api/get-secret-message-response.model';
@@ -13,12 +13,16 @@ import { Constants } from '../../../constants';
 import { ApiClientService } from '../../services/api-client.service';
 import { SjclService } from '../../services/sjcl.service';
 import { FileService } from '../../services/file.service';
+import { ModalService } from '../../services/modal.service';
 import { OtpInputModalComponent } from '../modals/otp-input-modal/otp-input-modal.component';
+import { RouterHelperService } from '../../services/router-helper.service';
 
 enum ComponentState {
 	LoadingMessage,
 	ReadyNoMessage,
-	ReadyWithMessage
+	ReadyWithMessage,
+	Aborted,
+	Error
 }
 
 @Component({
@@ -26,6 +30,7 @@ enum ComponentState {
 	styleUrls: ['./get-secret-message.component.css']
 })
 export class GetSecretMessageComponent {
+	@ViewChild('getSecretMessageConfirmationModalBody') getSecretMessageConfirmationModalBody: TemplateRef<any>;
 	@ViewChild('ngbTooltipElement') ngbTooltip: NgbTooltip;
 	ngbTooltipClearTimer: NodeJS.Timeout;
 
@@ -33,6 +38,7 @@ export class GetSecretMessageComponent {
 	readonly DecryptionResult = DecryptionResult;
 
 	componentState: ComponentState;
+
 	messageId: string;
 	decryptionResult: SjclDecryptionResult;
 	msgAutoClearTimeoutTriggered: boolean;
@@ -40,12 +46,13 @@ export class GetSecretMessageComponent {
 
 	constructor(
 		route: ActivatedRoute,
+		private routerHelperService: RouterHelperService,
 		private apiClientService: ApiClientService,
 		private sjclService: SjclService,
 		private toastrService: ToastrService,
 		private fileService: FileService,
 		private clipboard: Clipboard,
-		private modalService: NgbModal
+		private modalService: ModalService
 	) {
 		this.messageId = route.snapshot.queryParams.id;
 		const encryptionKey = route.snapshot.fragment!;
@@ -55,19 +62,15 @@ export class GetSecretMessageComponent {
 		apiClientService.verifySecretMessage(this.messageId).subscribe((response: VerifySecretMessageResponse) => {
 			if (!response.exists) {
 				this.componentState = ComponentState.ReadyNoMessage;
+				return;
 			}
-			else if (!response.requiresOtp) {
-				this.getSecretMessage(encryptionKey);
-			}
-			else {
-				const modal = this.modalService.open(OtpInputModalComponent, { centered: true, backdrop: 'static' });
-				modal.componentInstance.messageId = this.messageId;
 
-				modal.result.then((token: string) => {
-					this.getSecretMessage(encryptionKey, token);
-				});
-			}
-		});
+			this.tryGetSecretMessage(encryptionKey, response.requiresOtp!);
+		}, (error) => { this.componentState = ComponentState.Error; });
+	}
+
+	reload() {
+		this.routerHelperService.reloadCurrentPage();
 	}
 
 	downloadAttachment(): void {
@@ -92,20 +95,53 @@ export class GetSecretMessageComponent {
 		}, 5000);
 	}
 
-	private getSecretMessage(encryptionKey: string, token?: string) {
-		this.apiClientService.getSecretMessage(this.messageId, token).subscribe((response: GetSecretMessageResponse) => {
-			if (!response) return;
-
-			this.decryptionResult = this.sjclService.decryptMessage(response.data, encryptionKey);
-
-			this.componentState = ComponentState.ReadyWithMessage;
-			if (this.decryptionResult.result === DecryptionResult.OK) {
-				this.convertDecryptedMsgPlainTextToHtml();
-				this.setDecryptedMsgAutoclearTimeout();
+	private tryGetSecretMessage(encryptionKey: string, requiresOtp: boolean) {
+		this.modalService.openConfirmationModal(
+			this.getSecretMessageConfirmationModalBody,
+			'Message Retrieve Confirmation'
+		).then((confirm) => {
+			if (!confirm) {
+				this.componentState = ComponentState.Aborted;
+				return;
 			}
 
-			this.displayDeliveryNotificationSentToast(response.deliveryNotificationSent);
+			if (requiresOtp) {
+				this.openOtpInputModal(encryptionKey);
+			} else {
+				this.getSecretMessage(encryptionKey);
+			}
 		});
+	}
+
+	private openOtpInputModal(encryptionKey: string) {
+		this.modalService.openModal<string>(
+			OtpInputModalComponent,
+			{ messageId: this.messageId },
+			<NgbModalOptions>{ centered: true, backdrop: 'static' }
+		).then((token: string) => {
+			if (token) {
+				this.getSecretMessage(encryptionKey, token);
+			} else {
+				this.componentState = ComponentState.Error;
+			}
+		});
+	}
+
+	private getSecretMessage(encryptionKey: string, token?: string) {
+		setTimeout(() => {
+			this.apiClientService.getSecretMessage(this.messageId, token).subscribe((response: GetSecretMessageResponse) => {
+				this.componentState = ComponentState.ReadyWithMessage;
+
+				this.decryptionResult = this.sjclService.decryptMessage(response.data, encryptionKey);
+
+				if (this.decryptionResult.result === DecryptionResult.OK) {
+					this.convertDecryptedMsgPlainTextToHtml();
+					this.setDecryptedMsgAutoclearTimeout();
+				}
+
+				this.displayDeliveryNotificationSentToast(response.deliveryNotificationSent);
+			}, (error) => { this.componentState = ComponentState.Error; });
+		}, 500);
 	}
 
 	private convertDecryptedMsgPlainTextToHtml(): void {

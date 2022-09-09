@@ -1,9 +1,10 @@
 import { Inject, Injectable } from '@angular/core';
-import { SecretMessageDeliveryNotification } from '../models/api/secret-message-delivery-notification.model';
 import * as signalR from "@microsoft/signalr";
-import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
-import { MessageDeliveryDetailsModalComponent } from '../components/modals/message-delivery-details-modal/message-delivery-details-modal.component';
 import { Subject } from 'rxjs';
+import { NgbModalOptions } from '@ng-bootstrap/ng-bootstrap';
+import { ModalService } from './modal.service';
+import { MessageDeliveryDetailsModalComponent } from '../components/modals/message-delivery-details-modal/message-delivery-details-modal.component';
+import { SecretMessageDeliveryNotification } from '../models/api/secret-message-delivery-notification.model';
 
 @Injectable({
 	providedIn: 'root'
@@ -18,7 +19,7 @@ export class SecretMessageDeliveryNotificationHubService {
 
 	receivedDeliveryNotificationsObservable = this.receivedDeliveryNotifications.asObservable();
 
-	constructor(@Inject('API_URL') apiUrl: string, private modalService: NgbModal) {
+	constructor(@Inject('API_URL') apiUrl: string, private modalService: ModalService) {
 		const url = `${apiUrl}/${this.hubUrl}`;
 
 		this.hubConnection = new signalR.HubConnectionBuilder()
@@ -51,9 +52,11 @@ export class SecretMessageDeliveryNotificationHubService {
 		this.hubConnection.on(this.hubMethodName, (response: SecretMessageDeliveryNotification) => {
 			this.receivedDeliveryNotifications.next(response.messageId);
 
-			const modal = this.modalService.open(MessageDeliveryDetailsModalComponent, { centered: true });
-			modal.componentInstance.messageDeliveryDetails = response;
-			modal.componentInstance.isNotification = true;
+			this.modalService.openModal(
+				MessageDeliveryDetailsModalComponent,
+				{ isNotification: true, messageDeliveryDetails: response },
+				<NgbModalOptions>{ centered: true }
+			);
 
 			if (--this.pendingNotifications == 0) {
 				this.terminateHubConnection();

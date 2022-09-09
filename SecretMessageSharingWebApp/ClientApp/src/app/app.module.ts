@@ -20,6 +20,7 @@ import { RecentlyStoredMessagesComponent } from './components/recent-stored-mess
 import { AppInfoComponent } from './components/app-info/app-info.component';
 import { MessageDeliveryDetailsModalComponent } from './components/modals/message-delivery-details-modal/message-delivery-details-modal.component';
 import { OtpInputModalComponent } from './components/modals/otp-input-modal/otp-input-modal.component';
+import { GenericConfirmationModalComponent } from './components/modals/generic-confirmation-modal/generic-confirmation-modal.component';
 
 import { DateTimeFullPipe } from './pipes/date-time-full.pipe';
 
@@ -44,7 +45,8 @@ const appInsightsModule = (environment.production && environment.applicationInsi
 		AppInfoComponent,
 		DateTimeFullPipe,
 		MessageDeliveryDetailsModalComponent,
-		OtpInputModalComponent
+		OtpInputModalComponent,
+		GenericConfirmationModalComponent
 	],
 	imports: [
 		BrowserModule.withServerTransition({ appId: 'ng-cli-universal' }),

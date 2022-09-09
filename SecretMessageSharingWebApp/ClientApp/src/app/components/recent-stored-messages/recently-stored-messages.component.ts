@@ -1,9 +1,9 @@
-import { Component, OnInit } from '@angular/core';
+import { Component } from '@angular/core';
 import { RecentlyStoredSecretMessage } from '../../models/api/recently-stored-secret-messages-response.model';
 import { SecretMessageDeliveryNotification } from '../../models/api/secret-message-delivery-notification.model';
-import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { ApiClientService } from '../../services/api-client.service';
 import { MessageDeliveryDetailsModalComponent } from '../modals/message-delivery-details-modal/message-delivery-details-modal.component';
+import { ModalService } from '../../services/modal.service';
 
 @Component({
 	templateUrl: './recently-stored-messages.component.html',
@@ -12,7 +12,7 @@ import { MessageDeliveryDetailsModalComponent } from '../modals/message-delivery
 export class RecentlyStoredMessagesComponent {
 	recentlyStoredSecretMessages: RecentlyStoredSecretMessage[];
 
-	constructor(private apiClient: ApiClientService, private modalService: NgbModal) {
+	constructor(private apiClient: ApiClientService, private modalService: ModalService) {
 		this.apiClient.getRecentlyStoredSecretMessages().subscribe((response) => {
 			this.recentlyStoredSecretMessages = response.recentlyStoredSecretMessages;
 		});
@@ -23,12 +23,11 @@ export class RecentlyStoredMessagesComponent {
 			messageId: msg.id,
 			messageCreatedOn: msg.createdDateTime,
 			messageDeliveredOn: msg.deliveryDetails!.deliveredAt,
-			recipientIP: msg.deliveryDetails?.recipientIP,
-			recipientClientInfo: msg.deliveryDetails?.recipientClientInfo
+			recipientIP: msg.deliveryDetails!.recipientIP,
+			recipientClientInfo: msg.deliveryDetails!.recipientClientInfo
 		};
 
-		const modal = this.modalService.open(MessageDeliveryDetailsModalComponent);
-		modal.componentInstance.messageDeliveryDetails = messageDeliveryDetails;
+		this.modalService.openModal(MessageDeliveryDetailsModalComponent, { isNotification: false, messageDeliveryDetails });
 	}
 
 	deleteStoredMessage(msg: RecentlyStoredSecretMessage) {

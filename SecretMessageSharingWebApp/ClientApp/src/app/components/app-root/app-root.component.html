@@ -1,11 +1,22 @@
 <app-loader></app-loader>
 
-<header>
-    <app-nav-menu></app-nav-menu>
-</header>
+<body class="d-flex flex-column h-100">
+    <header>
+        <app-nav-menu></app-nav-menu>
+    </header>
 
-<main class="flex-shrink-0">
-    <div class="container">
-        <router-outlet></router-outlet>
-    </div>
-</main>
+    <main class="flex-shrink-0 mb-5">
+        <div class="container">
+            <router-outlet></router-outlet>
+        </div>
+    </main>
+
+    <footer class="footer mt-auto py-2 bg-light bg-gradient">
+        <div class="container text-center text-muted">
+            Created by <a target="_blank" href="https://www.linkedin.com/in/sotiris-lemousias/">Sotiris Lemousias</a>
+            <span class="m-hide"> / </span>
+            <span class="m-show"><br /></span>
+            Source code available @ <a target="_blank" href="https://github.com/sotirislem/SecretMessageSharingWebApp">GitHub</a>
+        </div>
+    </footer>
+</body>

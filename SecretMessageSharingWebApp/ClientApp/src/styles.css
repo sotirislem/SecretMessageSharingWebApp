@@ -44,6 +44,7 @@ ul {
 
 .toast-container .ngx-toastr {
 	width: fit-content !important;
+	max-width: 350px !important;
 }
 .toast-container.toast-top-center {
 	margin-top: 10px;
