@@ -13,7 +13,14 @@ export class RouterHelperService {
 	}
 
 	reloadCurrentPage() {
+		const shouldReuseRoute = this.router.routeReuseStrategy.shouldReuseRoute;
+		const onSameUrlNavigation = this.router.onSameUrlNavigation;
+
 		this.router.routeReuseStrategy.shouldReuseRoute = () => false;
-		this.router.navigateByUrl(this.router.url);
+		this.router.onSameUrlNavigation = 'reload';
+		this.router.navigateByUrl(this.router.url).finally(() => {
+			this.router.routeReuseStrategy.shouldReuseRoute = shouldReuseRoute;
+			this.router.onSameUrlNavigation = onSameUrlNavigation;
+		});
 	}
 }
