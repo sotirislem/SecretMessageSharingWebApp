@@ -42,7 +42,7 @@
 					   digitOnly>
 
 				<div class="form-text">
-					<ng-container *ngIf="timerRunning; then timerRunningBlock else timerExpiredBlock"></ng-container>
+					<ng-container *ngIf="timerActive; then timerRunningBlock else timerExpiredBlock"></ng-container>
 					<ng-template #timerRunningBlock>
 						Expires in: {{timerExpirationTime}}
 					</ng-template>

@@ -3,6 +3,18 @@
 		width: calc(100% - 72px);
 		white-space: normal;
 	}
+
+	.navbar-collapse {
+		overflow: hidden;
+		transition: all 0.5s ease;
+	}
+	.navbar-collapse.collapse {
+		display: block !important;
+		max-height: 0;
+	}
+	.navbar-collapse.show {
+		max-height: 120px;
+	}
 }
 
 .box-shadow {
@@ -31,16 +43,4 @@
 }
 .navbar-toggler:not(.collapsed) span.icon-bar:nth-child(3) {
 	transform: translate(15%, 33%) rotate(-45deg);
-}
-
-.navbar-collapse {
-	overflow: hidden;
-	transition: all 0.5s ease;
-}
-.navbar-collapse.collapse {
-	display: block !important;
-	max-height: 0;
-}
-.navbar-collapse.show {
-	max-height: 120px;
 }

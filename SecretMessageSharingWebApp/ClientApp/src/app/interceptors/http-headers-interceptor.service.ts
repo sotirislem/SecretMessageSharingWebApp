@@ -16,10 +16,10 @@ export class HttpHeadersInterceptor implements HttpInterceptor {
 
 	intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
 
-		if (this.secretMessageDeliveryNotificationHubService.hubConnectionInitialized) {
+		if (this.secretMessageDeliveryNotificationHubService.hubConnectionId) {
 			req = req.clone({
 				headers: new HttpHeaders({
-					'SignalR-ConnectionId': this.secretMessageDeliveryNotificationHubService.hubConnectionId!
+					'SignalR-ConnectionId': this.secretMessageDeliveryNotificationHubService.hubConnectionId
 				})
 			});
 		}

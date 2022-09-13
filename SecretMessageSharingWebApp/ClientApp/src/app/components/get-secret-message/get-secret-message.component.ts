@@ -149,14 +149,16 @@ export class GetSecretMessageComponent {
 	}
 
 	private setDecryptedMsgAutoclearTimeout() {
-		const clearTimeout = Constants.AUTOCLEAR_INTERVAL_MINUTES * (60 * 1000);
+		const worker = new Worker(new URL('./message-autoclear-timeout.worker', import.meta.url));
 
-		setTimeout(() => {
-			this.msgAutoClearTimeoutTriggered = true;
+		worker.onmessage = ({ data }) => {
+			if (data.clear) {
+				this.msgAutoClearTimeoutTriggered = true;
 
-			this.decryptionResult.decryptedMsg = {} as SecretMessage
-			this.secretMessageTextAsHtml = '--- Message auto deleted ---';
-		}, clearTimeout);
+				this.decryptionResult.decryptedMsg = {} as SecretMessage
+				this.secretMessageTextAsHtml = '--- Message auto deleted ---';
+			}
+		};
 	}
 
 	private displayDeliveryNotificationSentToast(deliveryNotificationSent: boolean) {

@@ -4,7 +4,6 @@ import { FormBuilder, FormControl, FormGroup } from '@angular/forms';
 import { SjclService } from '../../services/sjcl.service';
 import { ApiClientService } from '../../services/api-client.service';
 import { FileService } from '../../services/file.service';
-import { SecretMessageDeliveryNotificationHubService } from '../../services/secret-message-delivery-notification-hub.service';
 
 import { Router } from '@angular/router';
 import { Routes, Constants } from '../../../constants';
@@ -34,8 +33,7 @@ export class CreateSecretMessageComponent {
 		private router: Router,
 		private sjclService: SjclService,
 		private apiClientService: ApiClientService,
-		private fileService: FileService,
-		private secretMessageDeliveryNotificationHubService: SecretMessageDeliveryNotificationHubService
+		private fileService: FileService
 	) { }
 
 	get secretMsgPlainTextFormControl() { return this.newSecretMessageForm.controls.secretMsgPlainTextFormControl }
@@ -76,8 +74,6 @@ export class CreateSecretMessageComponent {
 	}
 
 	async createSecretMessage() {
-		await this.secretMessageDeliveryNotificationHubService.initHubConnection();
-
 		const secretMsgObj = <SecretMessage>{
 			plainText: this.secretMsgPlainText.trim(),
 			containsFile: this.includeAttachedFile,

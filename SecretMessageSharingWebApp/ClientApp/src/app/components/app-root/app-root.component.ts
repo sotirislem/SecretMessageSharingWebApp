@@ -1,4 +1,5 @@
 import { Component } from '@angular/core';
+import { SecretMessageDeliveryNotificationHubService } from '../../services/secret-message-delivery-notification-hub.service';
 
 @Component({
 	selector: 'app-root',
@@ -7,5 +8,6 @@ import { Component } from '@angular/core';
 })
 export class AppRootComponent {
 
-	constructor() { }
+	constructor(secretMessageDeliveryNotificationHubService: SecretMessageDeliveryNotificationHubService) { }
+
 }

@@ -19,9 +19,8 @@ export class OtpInputModalComponent {
 
 	otpSent: boolean;
 
-	timer: NodeJS.Timer;
-	timerExpirationTime: string;
-	timerRemainingSeconds: number = NaN;
+	expirationTimerWorker: Worker | null = null;
+	timerExpirationTime: string = '';
 
 	otpValidationForm = this.formBuilder.group({
 		otpCodeFormControl: ['',
@@ -38,12 +37,10 @@ export class OtpInputModalComponent {
 	get otpCodeFormControl() { return this.otpValidationForm.controls.otpCodeFormControl }
 	get otpCode(): string { return this.otpCodeFormControl.value }
 
-	get timerActive(): boolean { return !isNaN(this.timerRemainingSeconds) }
-	get timerFinished(): boolean { return this.timerRemainingSeconds == 0 }
-	get timerRunning(): boolean { return this.timerActive && !this.timerFinished }
+	get timerActive(): boolean { return this.expirationTimerWorker !== null }
 
 	getOtp() {
-		if (this.otpSent && this.timerRunning) return;
+		if (this.otpSent && this.timerActive) return;
 
 		this.apiClientService.acquireSecretMessageOtp(this.messageId).subscribe((response) => {
 			this.otpSent = response;
@@ -60,10 +57,10 @@ export class OtpInputModalComponent {
 	}
 
 	submitOtpValidationForm() {
-		if (this.otpValidationForm.invalid)
+		if (this.otpValidationForm.invalid || !this.timerActive)
 			return;
 
-		if (this.otpCode.length === 0) {
+		if (!this.otpCode) {
 			this.otpCodeFormControl.setErrors({ required: true });
 			return;
 		}
@@ -92,40 +89,30 @@ export class OtpInputModalComponent {
 	}
 
 	private startExpirationTimer() {
-		if (this.timerRunning) return;
+		if (this.timerActive) return;
 
-		this.timerRemainingSeconds = Constants.OTP_EXPIRATION_MINUTES * 60;
+		this.timerExpirationTime = `0${Constants.OTP_EXPIRATION_MINUTES}:00`;
 
-		const timerFunc = () => {
-			--this.timerRemainingSeconds;
+		this.expirationTimerWorker = new Worker(new URL('./expiration-timer.worker', import.meta.url));
+		
+		this.expirationTimerWorker.onmessage = ({ data }) => {
+			const { timerRemainingSeconds, timerExpirationTime }: { timerRemainingSeconds: number; timerExpirationTime: string } = data;
 
-			const m = Math.floor(this.timerRemainingSeconds / 60);
-			const s = this.timerRemainingSeconds - (m * 60);
+			this.timerExpirationTime = timerExpirationTime;
 
-			const minutes = m < 10 ? "0" + m : m;
-			const seconds = s < 10 ? "0" + s : s;
-
-			this.timerExpirationTime = minutes + ":" + seconds;
-
-			if (this.timerRemainingSeconds == 0) {
-				clearInterval(this.timer);
-				!this.otpCodeFormControl.hasError('otpMaxAttemptsLimitReached') && this.otpCodeFormControl.setErrors({ otpHasExpired: true });
+			if (timerRemainingSeconds == 0) {
+				this.stopExpirationTimer();
 			}
 		};
-
-		timerFunc();
-		this.timer = setInterval(timerFunc, 1000);
 	}
 
 	private stopExpirationTimer() {
-		if (!this.timerRunning) return;
-
-		clearInterval(this.timer);
-		this.timerRemainingSeconds = 0;
+		this.expirationTimerWorker?.terminate();
+		this.expirationTimerWorker = null;
 	}
 
 	private otpHasExpiredValidator(): ValidationErrors | null {
-		const otpHasExpired = this.timerFinished;
+		const otpHasExpired = !this.timerActive;
 		return otpHasExpired ? { otpHasExpired: true } : null;
 	}
 }
