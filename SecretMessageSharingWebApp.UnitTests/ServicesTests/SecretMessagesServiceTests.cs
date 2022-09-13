@@ -42,6 +42,77 @@ namespace SecretMessageSharingWebApp.UnitTests.ServicesTests
 		}
 
 		[Fact]
+		public void VerifyExistence_ShouldReturnTrueWithOtpSettings_WhenExecutedAndSecretMessageExistsAndOtpIsRequired()
+		{
+			// Arrange
+			var secretMessageDto = _fixture.Build<SecretMessageDto>()
+				.With(x => x.Otp, new Data.Entities.OtpSettings() { RecipientsEmail = "example@example.com" })
+				.Create();
+
+			_secretMessagesRepository.GetDbSetAsQueryable().Returns(new List<SecretMessageDto>()
+			{
+				secretMessageDto
+			}.AsQueryable());
+
+			// Act
+			var result = _sut.VerifyExistence(secretMessageDto.Id);
+
+			// Assert
+			_secretMessagesRepository.Received().GetDbSetAsQueryable();
+			_logger.ReceivedWithAnyArgs().LogInformation(default);
+
+			result.exists.Should().BeTrue();
+			result.otp.Should().NotBeNull();
+			result.otp?.Required.Should().BeTrue();
+			result.otp?.RecipientsEmail.Should().Be("example@example.com");
+		}
+
+		[Fact]
+		public void VerifyExistence_ShouldReturnTrueWithOtpSettings_WhenExecutedAndSecretMessageExistsAndOtpIsNotRequired()
+		{
+			// Arrange
+			var secretMessageDto = _fixture.Build<SecretMessageDto>()
+				.Without(x => x.Otp)
+				.Create();
+
+			_secretMessagesRepository.GetDbSetAsQueryable().Returns(new List<SecretMessageDto>()
+			{
+				secretMessageDto
+			}.AsQueryable());
+
+			// Act
+			var result = _sut.VerifyExistence(secretMessageDto.Id);
+
+			// Assert
+			_secretMessagesRepository.Received().GetDbSetAsQueryable();
+			_logger.ReceivedWithAnyArgs().LogInformation(default);
+
+			result.exists.Should().BeTrue();
+			result.otp.Should().NotBeNull();
+			result.otp?.Required.Should().BeFalse();
+			result.otp?.RecipientsEmail.Should().BeEmpty();
+		}
+
+		[Fact]
+		public void VerifyExistence_ShouldReturnFalseWithoutOtpSettings_WhenExecutedAndSecretMessageDoesNotExists()
+		{
+			// Arrange
+			var id = _fixture.Create<string>();
+
+			_secretMessagesRepository.GetDbSetAsQueryable().Returns(new List<SecretMessageDto>().AsQueryable());
+
+			// Act
+			var result = _sut.VerifyExistence(id);
+
+			// Assert
+			_secretMessagesRepository.Received().GetDbSetAsQueryable();
+			_logger.ReceivedWithAnyArgs().LogInformation(default);
+
+			result.exists.Should().BeFalse();
+			result.otp.Should().BeNull();
+		}
+
+		[Fact]
 		public void Retrieve_ShouldReturnFoundSecretMessage_WhenExecutedAndSecretMessageExists()
 		{
 			// Arrange

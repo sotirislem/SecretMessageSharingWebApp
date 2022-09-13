@@ -1,8 +1,6 @@
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 using SecretMessageSharingWebApp.Data.Entities;
 using SecretMessageSharingWebApp.Mappings;
-using SecretMessageSharingWebApp.Models.Common;
 using SecretMessageSharingWebApp.Models.Domain;
 using SecretMessageSharingWebApp.Repositories.Interfaces;
 using SecretMessageSharingWebApp.Services;
