@@ -21,7 +21,11 @@ namespace SecretMessageSharingWebApp.Data
 
 		protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
 		{
-			optionsBuilder.LogTo(Console.WriteLine, LogLevel.Information);
+			var logLevel = LogLevel.Information;
+#if (!DEBUG)
+			logLevel = LogLevel.Warning;
+#endif
+			optionsBuilder.LogTo(Console.WriteLine, logLevel);
 		}
 
 		public DbSet<SecretMessageDto> SecretMessages { get; set; }

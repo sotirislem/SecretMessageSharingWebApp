@@ -12,7 +12,7 @@ namespace SecretMessageSharingWebApp.Validators
 
             RuleFor(x => x.OtpCode)
                 .NotEmpty()
-                .Length(8);
+                .Length(Constants.OtpSize);
         }
     }
 }

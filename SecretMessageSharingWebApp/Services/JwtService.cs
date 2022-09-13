@@ -1,4 +1,5 @@
 ﻿using Microsoft.IdentityModel.Tokens;
+using SecretMessageSharingWebApp.Configuration;
 using SecretMessageSharingWebApp.Services.Interfaces;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -8,21 +9,19 @@ namespace SecretMessageSharingWebApp.Services
 {
 	public class JwtService : IJwtService
 	{
-		private readonly IConfiguration _configuration;
+		private readonly JwtConfigurationSettings _jwtConfigurationSettings;
 		private readonly JwtSecurityTokenHandler _tokenHandler = new();
 
-		private readonly TimeSpan DefaultExpirationTimespan = TimeSpan.FromMinutes(1);
-
-		public JwtService(IConfiguration configuration)
+		public JwtService(JwtConfigurationSettings jwtConfigurationSettings)
 		{
-			_configuration = configuration;
+			_jwtConfigurationSettings = jwtConfigurationSettings;
 		}
 
 		public string GenerateToken(List<Claim> claims, TimeSpan? expirationTimespan = null)
 		{
 			if (expirationTimespan is null)
 			{
-				expirationTimespan = DefaultExpirationTimespan;
+				expirationTimespan = TimeSpan.FromMinutes(Constants.JwtDefaultExpirationMinutes);
 			}
 			
 			var signingCredentials = new SigningCredentials(GetSigningSecurityKey(), SecurityAlgorithms.HmacSha256Signature);
@@ -69,8 +68,7 @@ namespace SecretMessageSharingWebApp.Services
 
 		private SecurityKey GetSigningSecurityKey()
 		{
-			var jwtSigningKey = _configuration["JwtSigningKey"];
-			var jwtSigningKeyBytes = Encoding.UTF8.GetBytes(jwtSigningKey);
+			var jwtSigningKeyBytes = Encoding.UTF8.GetBytes(_jwtConfigurationSettings.SigningKey);
 			var securityKey = new SymmetricSecurityKey(jwtSigningKeyBytes);
 			return securityKey;
 		}

@@ -3,7 +3,9 @@ using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.ApplicationInsights;
 using SecretMessageSharingWebApp;
+using SecretMessageSharingWebApp.Configuration;
 using SecretMessageSharingWebApp.Data;
+using SecretMessageSharingWebApp.Extensions;
 using SecretMessageSharingWebApp.Hubs;
 using SecretMessageSharingWebApp.Middlewares;
 using SecretMessageSharingWebApp.Repositories;
@@ -22,12 +24,16 @@ if (builder.Configuration["APPLICATIONINSIGHTS_CONNECTION_STRING"] is not null)
 }
 #endif
 
-builder.Services.AddDbContext<SecretMessagesDbContext>(options =>
+builder.Services.BindConfigurationSettings<CosmosDbConfigurationSettings>(builder.Configuration.GetSection("CosmosDb"));
+builder.Services.BindConfigurationSettings<SendGridConfigurationSettings>(builder.Configuration.GetSection("SendGrid"));
+builder.Services.BindConfigurationSettings<JwtConfigurationSettings>(builder.Configuration.GetSection("Jwt"));
+
+builder.Services.AddDbContext<SecretMessagesDbContext>((serviceProvider, options) =>
 	//options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 	options.UseCosmos(
-		accountEndpoint: builder.Configuration["CosmosDB:Endpoint"],
-		accountKey: builder.Configuration["CosmosDB:Key"],
-		databaseName: builder.Configuration["CosmosDB:DbName"]
+		accountEndpoint: serviceProvider.GetRequiredService<CosmosDbConfigurationSettings>().Endpoint,
+		accountKey: serviceProvider.GetRequiredService<CosmosDbConfigurationSettings>().ApiKey,
+		databaseName: serviceProvider.GetRequiredService<CosmosDbConfigurationSettings>().DbName
 	)
 );
 
