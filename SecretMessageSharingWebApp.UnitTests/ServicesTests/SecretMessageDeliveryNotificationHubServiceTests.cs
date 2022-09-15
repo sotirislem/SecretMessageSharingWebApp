@@ -25,14 +25,15 @@ namespace SecretMessageSharingWebApp.UnitTests.ServicesTests
 		}
 
 		[Fact]
-		public void Send_ShouldSuccessfullySendADeliveryNotification_WhenCreatorsSignalRConnectionIdExistsInMemoryAndHisConnectionIsAlive()
+		public void SendNotification_ShouldSuccessfullySendADeliveryNotification_WhenCreatorsClientIdExistsInMemoryAndHisConnectionIsAlive()
 		{
 			// Arrange
 			var secretMessageDeliveryNotification = _fixture.Create<SecretMessageDeliveryNotification>();
 			var connectionId = _fixture.Create<string>();
+			var clientId = _fixture.Create<string>();
 
-			_sut.AddConnection(connectionId);
-			_memoryCacheService.GetValue<string>(secretMessageDeliveryNotification.MessageId, Constants.MemoryKey_SecretMessageSignalRConnectionId).Returns((true, connectionId));
+			_sut.AddConnection(connectionId, clientId);
+			_memoryCacheService.GetValue<string>(secretMessageDeliveryNotification.MessageId, Constants.MemoryKey_SecretMessageCreatorClientId).Returns((true, clientId));
 
 			// Act
 			var result = _sut.SendNotification(secretMessageDeliveryNotification).Result;
@@ -45,16 +46,18 @@ namespace SecretMessageSharingWebApp.UnitTests.ServicesTests
 		}
 
 		[Fact]
-		public void Send_ShouldNotSendADeliveryNotification_WhenCreatorsSignalRConnectionIdExistsInMemoryButHisConnectionIsNotAlive()
+		public void SendNotification_ShouldNotSendADeliveryNotification_WhenCreatorsClientIdExistsInMemoryButHisConnectionIsNotAlive()
 		{
 			// Arrange
 			var secretMessageDeliveryNotification = _fixture.Create<SecretMessageDeliveryNotification>();
 			var connectionId = _fixture.Create<string>();
+			var clientId = _fixture.Create<string>();
 
-			//_sut.AddConnection(connectionId);
-			_memoryCacheService.GetValue<string>(secretMessageDeliveryNotification.MessageId, Constants.MemoryKey_SecretMessageSignalRConnectionId).Returns((true, connectionId));
+			_sut.AddConnection(connectionId, clientId);
+			_memoryCacheService.GetValue<string>(secretMessageDeliveryNotification.MessageId, Constants.MemoryKey_SecretMessageCreatorClientId).Returns((true, clientId));
 
 			// Act
+			_sut.RemoveConnection(clientId);
 			var result = _sut.SendNotification(secretMessageDeliveryNotification).Result;
 
 			// Assert
@@ -65,12 +68,12 @@ namespace SecretMessageSharingWebApp.UnitTests.ServicesTests
 		}
 
 		[Fact]
-		public void Send_ShouldNotSendADeliveryNotification_WhenCreatorsSignalRConnectionDoesNotExistsInMemoryRegardlessTheConnectionStatus()
+		public void SendNotification_ShouldNotSendADeliveryNotification_WhenCreatorsClientIdDoesNotExistsInMemoryRegardlessTheConnectionStatus()
 		{
 			// Arrange
 			var secretMessageDeliveryNotification = _fixture.Create<SecretMessageDeliveryNotification>();
 
-			_memoryCacheService.GetValue<string>(secretMessageDeliveryNotification.MessageId, Constants.MemoryKey_SecretMessageSignalRConnectionId).Returns((false, null));
+			_memoryCacheService.GetValue<string>(secretMessageDeliveryNotification.MessageId, Constants.MemoryKey_SecretMessageCreatorClientId).Returns((false, null));
 
 			// Act
 			var result = _sut.SendNotification(secretMessageDeliveryNotification).Result;
@@ -80,6 +83,49 @@ namespace SecretMessageSharingWebApp.UnitTests.ServicesTests
 			_logger.DidNotReceiveWithAnyArgs().LogInformation(default);
 
 			result.Should().BeFalse();
+		}
+
+		[Fact]
+		public void SendNotification_ShouldSaveNotificationToMemoryCacheQueueForFutureDelivery_WhenNotificationCannotBeSend()
+		{
+			// Arrange
+			var secretMessageDeliveryNotification = _fixture.Create<SecretMessageDeliveryNotification>();
+			var connectionId = _fixture.Create<string>();
+			var clientId = _fixture.Create<string>();
+
+			_memoryCacheService.GetValue<string>(secretMessageDeliveryNotification.MessageId, Constants.MemoryKey_SecretMessageCreatorClientId).Returns((true, clientId));
+			_memoryCacheService.GetValue<Queue<SecretMessageDeliveryNotification>>(clientId, Constants.MemoryKey_SecretMessageDeliveryNotificationQueue).Returns((false, null));
+
+			// Act
+			var result = _sut.SendNotification(secretMessageDeliveryNotification).Result;
+
+			// Assert
+			result.Should().BeFalse();
+			_memoryCacheService.Received().SetValue(clientId, Arg.Is<Queue<SecretMessageDeliveryNotification>>(x => x.Count > 0), Constants.MemoryKey_SecretMessageDeliveryNotificationQueue);
+		}
+
+		[Fact]
+		public void SendAnyPendingSecretMessageDeliveryNotificationFromMemoryCacheQueue_ShouldSendEveryPendingNotification_WhenExecuted()
+		{
+			// Arrange
+			var pendingSecretMessageDeliveryNotifications = _fixture.CreateMany<SecretMessageDeliveryNotification>(5);
+
+			var connectionId = _fixture.Create<string>();
+			var clientId = _fixture.Create<string>();
+
+			_sut.AddConnection(connectionId, clientId);
+
+			var inMemomyQueue = new Queue<SecretMessageDeliveryNotification>(pendingSecretMessageDeliveryNotifications);
+			_memoryCacheService.GetValue<Queue<SecretMessageDeliveryNotification>>(clientId, Constants.MemoryKey_SecretMessageDeliveryNotificationQueue).Returns((true, inMemomyQueue));
+
+			// Act
+			_ = _sut.SendAnyPendingSecretMessageDeliveryNotificationFromMemoryCacheQueue(clientId);
+
+			// Assert
+			foreach (var notification in inMemomyQueue)
+			{
+				_secretMessageDeliveryNotificationHub.Clients.Client(connectionId).Received().SendSecretMessageDeliveryNotification(notification);
+			}
 		}
 	}
 }

@@ -7,7 +7,7 @@ namespace SecretMessageSharingWebApp.Services
 {
 	public class SecretMessageDeliveryNotificationHubService : ISecretMessageDeliveryNotificationHubService
 	{
-		private readonly List<string> _activeConnections = new();
+		private readonly Dictionary<string, string> _activeClients = new();
 
 		private readonly ILogger<SecretMessageDeliveryNotificationHubService> _logger;
 		private readonly IMemoryCacheService _memoryCacheService;
@@ -23,43 +23,79 @@ namespace SecretMessageSharingWebApp.Services
 			_secretMessageDeliveryNotificationHub = secretMessageDeliveryNotificationHub;
 		}
 
-		public void AddConnection(string connectionId)
+		public void AddConnection(string connectionId, string clientId)
 		{
-			_activeConnections.Add(connectionId);
+			_activeClients.Add(clientId, connectionId);
 		}
 
-		public void RemoveConnection(string connectionId)
+		public void RemoveConnection(string clientId)
 		{
-			_activeConnections.Remove(connectionId);
+			_activeClients.Remove(clientId);
+		}
+
+		public async Task SendAnyPendingSecretMessageDeliveryNotificationFromMemoryCacheQueue(string clientId)
+		{
+			var memoryResult = _memoryCacheService.GetValue<Queue<SecretMessageDeliveryNotification>>(clientId, Constants.MemoryKey_SecretMessageDeliveryNotificationQueue);
+			if (memoryResult.exists)
+			{
+				var queue = memoryResult.value;
+				while (queue.Count > 0)
+				{
+					var notification = queue.Dequeue();
+					await TrySend(clientId, notification, saveToMemoryCacheQueueOnFailure: false);
+				}
+			}
 		}
 
 		public async Task<bool> SendNotification(SecretMessageDeliveryNotification secretMessageDeliveryNotification)
 		{
 			bool notificationSent = false;
 
-			(var signalRConnectionIdExists, var signalRConnectionId) 
-				= _memoryCacheService.GetValue<string>(secretMessageDeliveryNotification.MessageId, Constants.MemoryKey_SecretMessageSignalRConnectionId);
+			(var clientIdExists, var clientId) 
+				= _memoryCacheService.GetValue<string>(secretMessageDeliveryNotification.MessageId, Constants.MemoryKey_SecretMessageCreatorClientId);
 			
-			if (signalRConnectionIdExists)
+			if (clientIdExists)
 			{
-				notificationSent = await TrySend(signalRConnectionId, secretMessageDeliveryNotification);
+				notificationSent = await TrySend(clientId, secretMessageDeliveryNotification);
 			}
 
 			return notificationSent;
 		}
 
-		private async Task<bool> TrySend(string connectionId, SecretMessageDeliveryNotification secretMessageDeliveryNotification)
+		private async Task<bool> TrySend(string clientId, SecretMessageDeliveryNotification secretMessageDeliveryNotification, bool saveToMemoryCacheQueueOnFailure = true)
 		{
-			if (_activeConnections.Contains(connectionId))
+			if (_activeClients.ContainsKey(clientId))
 			{
-				await _secretMessageDeliveryNotificationHub.Clients.Client(connectionId).SendSecretMessageDeliveryNotification(secretMessageDeliveryNotification);
+				await _secretMessageDeliveryNotificationHub.Clients.Client(_activeClients[clientId]).SendSecretMessageDeliveryNotification(secretMessageDeliveryNotification);
 
-				_logger.LogInformation("SecretMessageDeliveryNotificationHubService => Sent delivery notification to client: {connectionId}", connectionId);
+				_logger.LogInformation("SecretMessageDeliveryNotificationHubService => Sent delivery notification to client: {clientId}", clientId);
 				
 				return true;
 			}
 
+			if (saveToMemoryCacheQueueOnFailure)
+			{
+				SaveNotificationToMemoryCacheQueueForFutureDelivery(clientId, secretMessageDeliveryNotification);
+			}
 			return false;
+		}
+
+		private void SaveNotificationToMemoryCacheQueueForFutureDelivery(string clientId, SecretMessageDeliveryNotification secretMessageDeliveryNotification)
+		{
+			var memoryResult = _memoryCacheService.GetValue<Queue<SecretMessageDeliveryNotification>>(clientId, Constants.MemoryKey_SecretMessageDeliveryNotificationQueue);
+
+			Queue<SecretMessageDeliveryNotification> secretMessageDeliveryNotificationQueue;
+			if (memoryResult.exists)
+			{
+				secretMessageDeliveryNotificationQueue = memoryResult.value;
+			}
+			else
+			{
+				secretMessageDeliveryNotificationQueue = new();
+			}
+
+			secretMessageDeliveryNotificationQueue.Enqueue(secretMessageDeliveryNotification);
+			_memoryCacheService.SetValue(clientId, secretMessageDeliveryNotificationQueue, Constants.MemoryKey_SecretMessageDeliveryNotificationQueue);
 		}
 	}
 }

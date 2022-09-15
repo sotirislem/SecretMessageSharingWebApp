@@ -65,7 +65,11 @@ builder.Services.AddFastEndpoints();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-builder.Services.AddSignalR();
+builder.Services.AddSignalR(hubOptions =>
+{
+	hubOptions.KeepAliveInterval = TimeSpan.FromSeconds(7);
+	hubOptions.ClientTimeoutInterval = TimeSpan.FromSeconds(15);
+});
 
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
 {

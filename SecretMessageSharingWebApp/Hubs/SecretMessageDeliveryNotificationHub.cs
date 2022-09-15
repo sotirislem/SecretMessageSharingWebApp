@@ -26,24 +26,44 @@ namespace SecretMessageSharingWebApp.Hubs
 
         public override Task OnConnectedAsync()
         {
-            _secretMessageDeliveryNotificationHubService.AddConnection(Context.ConnectionId);
+            var clientId = GetClientId();
+            if (string.IsNullOrEmpty(clientId))
+			{
+                Context.Abort();
+                return Task.CompletedTask;
+            }
 
-            _logger.LogInformation("SecretMessageDeliveryNotificationHub => New connection, ID: {connectionId}", Context.ConnectionId);
+            _secretMessageDeliveryNotificationHubService.AddConnection(Context.ConnectionId, clientId);
+            _logger.LogInformation("SecretMessageDeliveryNotificationHub => New connection, ID: {connectionId}, Client: {clientId}", Context.ConnectionId, clientId);
+            
+            _secretMessageDeliveryNotificationHubService.SendAnyPendingSecretMessageDeliveryNotificationFromMemoryCacheQueue(clientId);
 
             return base.OnConnectedAsync();
         }
 
         public override Task OnDisconnectedAsync(Exception? exception)
         {
-            _secretMessageDeliveryNotificationHubService.RemoveConnection(Context.ConnectionId);
+            var clientId = GetClientId();
+            if (!string.IsNullOrEmpty(clientId))
+            {
+                _secretMessageDeliveryNotificationHubService.RemoveConnection(clientId);
+                _logger.LogInformation("SecretMessageDeliveryNotificationHub => Connection terminated, ID: {connectionId}, Client: {clientId}", Context.ConnectionId, clientId);
+            }
 
-            _logger.LogInformation("SecretMessageDeliveryNotificationHub => Connection terminated, ID: {connectionId}", Context.ConnectionId);
             if (exception is not null)
 			{
                 _logger.LogError("SecretMessageDeliveryNotificationHub => Exception: {exceptionMessage}", exception.GetAllErrorMessages());
             }
 
             return base.OnDisconnectedAsync(exception);
+        }
+
+        private string? GetClientId()
+		{
+            return Context.GetHttpContext()?.Request.Query
+                .Where(x => x.Key == "client_id")
+                .Select(x => x.Value.ToString())
+                .FirstOrDefault();
         }
     }
 }

@@ -12,7 +12,8 @@ import './extensions/string.extensions';
 
 const providers = [
 	{ provide: 'BASE_URL', useFactory: getBaseUrl, deps: [] },
-	{ provide: 'API_URL', useFactory: getApiUrl, deps: [] }
+	{ provide: 'API_URL', useFactory: getApiUrl, deps: [] },
+	{ provide: 'CLIENT_ID', useFactory: getClientId, deps: [] }
 ];
 
 if (environment.production) {
@@ -27,7 +28,7 @@ platformBrowserDynamic(providers).bootstrapModule(AppModule)
 	.catch(err => console.log(err));
 
 
-// Helper functions
+// providers => Factory functions
 function getBaseUrl(): string {
 	const baseUrl = document.getElementsByTagName('base')[0].href;
 	return trimUrlEndSlash(baseUrl);
@@ -38,6 +39,11 @@ function getApiUrl(): string {
 	return trimUrlEndSlash(apiUrl);
 }
 
+function getClientId(): string {
+	return crypto.randomUUID();
+}
+
+// Helper functions
 function trimUrlEndSlash(url: string): string {
 	if (url.slice(-1) == '/') {
 		return url.slice(0, -1);

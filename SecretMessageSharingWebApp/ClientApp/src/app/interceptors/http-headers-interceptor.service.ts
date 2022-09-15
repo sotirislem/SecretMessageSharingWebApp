@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import {
 	HttpRequest,
@@ -12,17 +12,18 @@ import { SecretMessageDeliveryNotificationHubService } from '../services/secret-
 @Injectable()
 export class HttpHeadersInterceptor implements HttpInterceptor {
 
-	constructor(private secretMessageDeliveryNotificationHubService: SecretMessageDeliveryNotificationHubService) { }
+	constructor(
+		@Inject('CLIENT_ID') private clientId: string,
+		private secretMessageDeliveryNotificationHubService: SecretMessageDeliveryNotificationHubService)
+	{ }
 
 	intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
 
-		if (this.secretMessageDeliveryNotificationHubService.hubConnectionId) {
-			req = req.clone({
-				headers: new HttpHeaders({
-					'SignalR-ConnectionId': this.secretMessageDeliveryNotificationHubService.hubConnectionId
-				})
-			});
-		}
+		req = req.clone({
+			headers: new HttpHeaders({
+				'Client-Id': this.clientId
+			})
+		});
 
 		return next.handle(req);
 	}

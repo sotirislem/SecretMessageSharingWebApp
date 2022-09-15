@@ -27,7 +27,11 @@ namespace SecretMessageSharingWebApp.Endpoints
 
         public override async Task HandleAsync(StoreNewSecretMessageRequest req, CancellationToken ct)
 		{
-
+			var clientId = HttpContext.GetRequestHeaderValue("Client-Id");
+			if (string.IsNullOrEmpty(clientId))
+			{
+				ThrowError("Request.Headers: 'Client-Id' is missing");
+			}
 
 			var secretMessage = req.ToSecretMessage();
             secretMessage.CreatedDateTime = HttpContext.GetRequestDateTime();
@@ -37,18 +41,14 @@ namespace SecretMessageSharingWebApp.Endpoints
             secretMessage = await _secretMessagesService.Store(secretMessage);
 
             SaveSecretMessageToRecentlyStoredSecretMessagesList(secretMessage.Id);
-            SaveSecretMessageCreatorSignalRConnectionIdToMemoryCache(secretMessage.Id);
+            SaveSecretMessageCreatorClientIdToMemoryCache(secretMessage.Id, clientId);
 
 			await SendCreatedAtAsync("/api/secret-messages/get", new { id = secretMessage.Id }, secretMessage.Id, cancellation: ct);
         }
 
-		private void SaveSecretMessageCreatorSignalRConnectionIdToMemoryCache(string secretMessageId)
+		private void SaveSecretMessageCreatorClientIdToMemoryCache(string secretMessageId, string clientId)
 		{
-			var signalRConnectionId = HttpContext.GetRequestHeaderValue("SignalR-ConnectionId");
-			if (!string.IsNullOrEmpty(signalRConnectionId))
-			{
-				_memoryCacheService.SetValue(secretMessageId, signalRConnectionId, Constants.MemoryKey_SecretMessageSignalRConnectionId);
-			}
+			_memoryCacheService.SetValue(secretMessageId, clientId, Constants.MemoryKey_SecretMessageCreatorClientId);
 		}
 
 		private void SaveSecretMessageToRecentlyStoredSecretMessagesList(string secretMessageId)
