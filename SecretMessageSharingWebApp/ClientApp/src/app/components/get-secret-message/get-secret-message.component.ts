@@ -8,7 +8,6 @@ import { GetSecretMessageResponse } from '../../models/api/get-secret-message-re
 import { DecryptionResult, SjclDecryptionResult } from '../../models/sjcl-decryption-result.model';
 import { SecretMessage } from '../../models/secret-message.model';
 import { VerifySecretMessageResponse } from '../../models/api/verify-secret-message-response.model';
-import { Constants } from '../../../constants';
 
 import { ApiClientService } from '../../services/api-client.service';
 import { SjclService } from '../../services/sjcl.service';
@@ -155,7 +154,7 @@ export class GetSecretMessageComponent {
 			if (data.clear) {
 				this.msgAutoClearTimeoutTriggered = true;
 
-				this.decryptionResult.decryptedMsg = {} as SecretMessage
+				this.decryptionResult.decryptedMsg = {} as SecretMessage;
 				this.secretMessageTextAsHtml = '--- Message auto deleted ---';
 			}
 		};
