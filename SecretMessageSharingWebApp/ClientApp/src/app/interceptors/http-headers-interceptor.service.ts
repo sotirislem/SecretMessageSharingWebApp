@@ -7,22 +7,17 @@ import {
 	HttpInterceptor,
     HttpHeaders
 } from '@angular/common/http';
-import { SecretMessageDeliveryNotificationHubService } from '../services/secret-message-delivery-notification-hub.service';
 
 @Injectable()
 export class HttpHeadersInterceptor implements HttpInterceptor {
 
-	constructor(
-		@Inject('CLIENT_ID') private clientId: string,
-		private secretMessageDeliveryNotificationHubService: SecretMessageDeliveryNotificationHubService)
+	constructor(@Inject('CLIENT_ID') private clientId: string)
 	{ }
 
 	intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
 
 		req = req.clone({
-			headers: new HttpHeaders({
-				'Client-Id': this.clientId
-			})
+			headers: req.headers.set('Client-Id', this.clientId)
 		});
 
 		return next.handle(req);
