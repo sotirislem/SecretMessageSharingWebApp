@@ -20,22 +20,23 @@
 	}
 }
 
-a {
-  color: #0366d6;
+header {
+	position: sticky;
+	top: 0;
+	z-index: 99;
 }
 
-code {
-  color: #e01a76;
+nav {
+	box-shadow: 0 .25rem .75rem rgba(0, 0, 0, .05);
 }
 
 ul {
 	padding-left: 1.5rem !important;
 }
 
-.btn-primary {
-	color: #fff;
-	background-color: #1b6ec2;
-	border-color: #1861ac;
+.word-wrap {
+	word-break: break-word;
+	overflow-wrap: anywhere;
 }
 
 .font-weight-500 {
@@ -50,15 +51,15 @@ ul {
 	margin-top: 10px;
 }
 
-.transition-effect {
-	transition: all 1s ease-out;
-}
-
 .element-disabled {
 	opacity: 0.5;
 }
 .element-disabled > * {
 	cursor: not-allowed;
+}
+
+.transition-effect {
+	transition: all 1s ease-out;
 }
 
 .hidden-transition {
@@ -67,11 +68,6 @@ ul {
 .hidden {
 	opacity: 0;
 	visibility: hidden;
-}
-
-.word-wrap {
-	word-break: break-word;
-	overflow-wrap: anywhere;
 }
 
 span.as-link {

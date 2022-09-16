@@ -58,6 +58,10 @@ function registerHandlers() {
 }
 
 async function startHubConnection() {
+	if (hubConnection.state !== signalR.HubConnectionState.Disconnected) {
+		return;
+	}
+
 	await hubConnection
 		.start()
 		.then(() => {

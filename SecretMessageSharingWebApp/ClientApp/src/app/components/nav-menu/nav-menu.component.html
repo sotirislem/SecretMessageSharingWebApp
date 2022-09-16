@@ -1,41 +1,43 @@
-<header>
-	<nav class="navbar navbar-expand-lg navbar-toggleable-lg navbar-light bg-white border-bottom box-shadow mb-3">
-		<div class="container">
+<nav class="navbar navbar-expand-lg navbar-toggleable-lg navbar-light bg-white border-bottom mb-3">
+	<div class="container">
 
-			<a class="navbar-brand navbar-brand-width word-wrap" (click)="collapse()"
-			   [routerLink]="[Routes.Root]">SecretMessageSharingWebApp</a>
+		<a class="navbar-brand word-wrap" [routerLink]="[Routes.Root]" (click)="collapse()">
+			<img src="/assets/favicon.png" width="48" height="48">
+			SecretMessageSharingWebApp
+		</a>
 
-			<button class="navbar-toggler"
-					type="button"
-					aria-label="Toggle navigation"
-					[attr.aria-expanded]="isExpanded"
-					[ngClass]="{ collapsed: !isExpanded }"
-					(click)="toggle()">
-				<span class="icon-bar"></span>
-				<span class="icon-bar"></span>
-				<span class="icon-bar"></span>
-			</button>
+		<button class="navbar-toggler" type="button"
+				aria-label="Toggle navigation"
+				[attr.aria-expanded]="isExpanded"
+				[ngClass]="{ collapsed: !isExpanded }"
+				(click)="toggle()">
+			<span class="icon-bar"></span>
+			<span class="icon-bar"></span>
+			<span class="icon-bar"></span>
+		</button>
 
-			<div class="navbar-collapse collapse d-lg-inline-flex justify-content-end" [ngClass]="{ 'show': isExpanded }">
-				<ul class="navbar-nav flex-grow">
+		<div class="navbar-collapse collapse d-lg-inline-flex justify-content-end" [ngClass]="{ 'show': isExpanded }">
+			<ul class="navbar-nav flex-grow">
 
-					<li class="nav-item" [routerLinkActive]="['link-active']">
-						<a class="nav-link text-dark"
-							[routerLink]="[Routes.Root + Routes.CreateSecretMessage]">Create a Message</a>
-					</li>
+				<li class="nav-item" [routerLinkActive]="['link-active']">
+					<a class="nav-link text-dark" [routerLink]="[Routes.Root + Routes.CreateSecretMessage]">
+						Create a Message
+					</a>
+				</li>
 
-					<li class="nav-item" [routerLinkActive]="['link-active']">
-						<a class="nav-link text-dark"
-							[routerLink]="[Routes.Root + Routes.RecentlyStoredMessages]">Recently stored Messages</a>
-					</li>
+				<li class="nav-item" [routerLinkActive]="['link-active']">
+					<a class="nav-link text-dark" [routerLink]="[Routes.Root + Routes.RecentlyStoredMessages]">
+						Recently stored Messages
+					</a>
+				</li>
 
-					<li class="nav-item" [routerLinkActive]="['link-active']">
-						<a class="nav-link text-dark"
-							[routerLink]="[Routes.Root + Routes.AppInfo]">App Info</a>
-					</li>
+				<li class="nav-item" [routerLinkActive]="['link-active']">
+					<a class="nav-link text-dark" [routerLink]="[Routes.Root + Routes.AppInfo]">
+						App Info
+					</a>
+				</li>
 
-				</ul>
-			</div>
+			</ul>
 		</div>
-	</nav>
-</header>
+	</div>
+</nav>
