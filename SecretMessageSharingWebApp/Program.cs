@@ -67,7 +67,7 @@ builder.Services.AddSwaggerGen();
 
 builder.Services.AddSignalR(hubOptions =>
 {
-	hubOptions.KeepAliveInterval = TimeSpan.FromSeconds(7);
+	hubOptions.KeepAliveInterval = TimeSpan.FromSeconds(10);
 	hubOptions.ClientTimeoutInterval = TimeSpan.FromSeconds(15);
 });
 

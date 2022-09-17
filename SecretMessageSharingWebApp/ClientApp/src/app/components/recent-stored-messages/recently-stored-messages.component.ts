@@ -12,7 +12,10 @@ import { ModalService } from '../../services/modal.service';
 export class RecentlyStoredMessagesComponent {
 	recentlyStoredSecretMessages: RecentlyStoredSecretMessage[];
 
-	constructor(private apiClient: ApiClientService, private modalService: ModalService) {
+	constructor(
+		private apiClient: ApiClientService,
+		private modalService: ModalService
+	) {
 		this.apiClient.getRecentlyStoredSecretMessages().subscribe((response) => {
 			this.recentlyStoredSecretMessages = response.recentlyStoredSecretMessages;
 		});

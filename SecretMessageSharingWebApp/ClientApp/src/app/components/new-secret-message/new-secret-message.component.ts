@@ -20,9 +20,7 @@ export class NewSecretMessageComponent implements OnInit {
 	@ViewChild('ngbTooltipElement') ngbTooltip: NgbTooltip;
 	ngbTooltipClearTimer: NodeJS.Timeout;
 
-	secretMsgPlainText: string;
-	secretMsgContainsFile: boolean;
-	secretMsgAttachedFileName: string;
+	secretMsgObj: SecretMessage;
 	secretMsgId: string;
 	secretMsgKey: string;
 	secretMsgUrl: string;
@@ -35,13 +33,10 @@ export class NewSecretMessageComponent implements OnInit {
 		urlHelperService: UrlHelperService,
 		secretMessageDeliveryNotificationHubService: SecretMessageDeliveryNotificationHubService
 	) {
-		const secretMsgObj: SecretMessage = routerHelperService.getCurrentNavigationStateData('secretMsgObj');
-
-		this.secretMsgPlainText = secretMsgObj.plainText;
-		this.secretMsgContainsFile = secretMsgObj.containsFile;
-		this.secretMsgAttachedFileName = secretMsgObj.fileName;
+		this.secretMsgObj = routerHelperService.getCurrentNavigationStateData('secretMsgObj');
 		this.secretMsgId = routerHelperService.getCurrentNavigationStateData('secretMsgId');
 		this.secretMsgKey = routerHelperService.getCurrentNavigationStateData('secretMsgKey');
+
 		this.secretMsgUrl = urlHelperService.createLocalUrlWithParams(Routes.GetSecretMessage, { id: this.secretMsgId }, this.secretMsgKey);
 
 		secretMessageDeliveryNotificationHubService.receivedDeliveryNotificationsObservable.subscribe(

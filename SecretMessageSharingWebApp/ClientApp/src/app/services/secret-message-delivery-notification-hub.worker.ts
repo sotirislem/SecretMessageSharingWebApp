@@ -36,7 +36,7 @@ function createHubConnection(apiUrl: string, clientId: string) {
 		.configureLogging(signalR.LogLevel.Warning)
 		.build();
 
-	hubConnection.keepAliveIntervalInMilliseconds = 7 * 1000;
+	hubConnection.keepAliveIntervalInMilliseconds = 10 * 1000;
 	hubConnection.serverTimeoutInMilliseconds = 15 * 1000;
 
 	registerHandlers();

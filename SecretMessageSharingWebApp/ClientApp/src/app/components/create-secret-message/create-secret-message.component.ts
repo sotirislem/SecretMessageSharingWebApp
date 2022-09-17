@@ -22,6 +22,9 @@ export class CreateSecretMessageComponent {
 
 	newSecretMessageForm = this.formBuilder.group({
 		secretMsgPlainTextFormControl: [''],
+		includeUsernameAndPasswordFormControl: [false],
+		usernameFormControl: [{ value: '', disabled: true }],
+		passwordFormControl: [{ value: '', disabled: true }],
 		includeAttachedFileFormControl: [false],
 		attachedFileFormControl: [{ value: null, disabled: true }],
 		secretMsgRequiresOtpFormControl: [false],
@@ -38,14 +41,40 @@ export class CreateSecretMessageComponent {
 
 	get secretMsgPlainTextFormControl() { return this.newSecretMessageForm.controls.secretMsgPlainTextFormControl }
 	get secretMsgPlainText(): string { return this.secretMsgPlainTextFormControl.value }
+
+	get includeUsernameAndPasswordFormControl() { return this.newSecretMessageForm.controls.includeUsernameAndPasswordFormControl }
+	get includeUsernameAndPassword(): boolean { return this.includeUsernameAndPasswordFormControl.value }
+
+	get usernameFormControl() { return this.newSecretMessageForm.controls.usernameFormControl }
+	get username(): string { return this.usernameFormControl.value }
+
+	get passwordFormControl() { return this.newSecretMessageForm.controls.passwordFormControl }
+	get password(): string { return this.passwordFormControl.value }
+
 	get includeAttachedFileFormControl() { return this.newSecretMessageForm.controls.includeAttachedFileFormControl }
 	get includeAttachedFile(): boolean { return this.includeAttachedFileFormControl.value }
+
 	get attachedFileFormControl() { return this.newSecretMessageForm.controls.attachedFileFormControl }
 	get attachedFileName(): string { return this.attachedFileFormControl.value }
+
 	get secretMsgRequiresOtpFormControl() { return this.newSecretMessageForm.controls.secretMsgRequiresOtpFormControl }
 	get secretMsgRequiresOtp(): boolean { return this.secretMsgRequiresOtpFormControl.value }
+
 	get secretMsgOtpRecipientsEmailFormControl() { return this.newSecretMessageForm.controls.secretMsgOtpRecipientsEmailFormControl }
 	get secretMsgOtpRecipientsEmail(): string { return this.secretMsgOtpRecipientsEmailFormControl.value }
+
+	includeUsernameAndPasswordCheckboxToggle() {
+		this.usernameFormControl.setValue('');
+		this.passwordFormControl.setValue('');
+
+		if (this.includeUsernameAndPassword) {
+			this.usernameFormControl.enable();
+			this.passwordFormControl.enable();
+		} else {
+			this.usernameFormControl.disable();
+			this.passwordFormControl.disable();
+		}
+	}
 
 	includeAttachedFileCheckboxToggle() {
 		this.resetAttachedFile();
@@ -77,8 +106,11 @@ export class CreateSecretMessageComponent {
 		const secretMsgObj = <SecretMessage>{
 			plainText: this.secretMsgPlainText.trim(),
 			containsFile: this.includeAttachedFile,
+			fileName: this.attachedFile?.name ?? null,
 			base64BlobFile: this.includeAttachedFile ? await this.fileService.readFileAsBase64Blob(this.attachedFile!) : null,
-			fileName: this.attachedFile?.name ?? null
+			containsUsernameAndPassword: this.includeUsernameAndPassword,
+			username: this.username.trim(),
+			password: this.password.trim()
 		};
 
 		setTimeout(() => {

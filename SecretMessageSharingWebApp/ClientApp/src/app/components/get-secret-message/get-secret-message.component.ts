@@ -30,8 +30,6 @@ enum ComponentState {
 })
 export class GetSecretMessageComponent {
 	@ViewChild('getSecretMessageConfirmationModalBody') getSecretMessageConfirmationModalBody: TemplateRef<any>;
-	@ViewChild('ngbTooltipElement') ngbTooltip: NgbTooltip;
-	ngbTooltipClearTimer: NodeJS.Timeout;
 
 	readonly ComponentState = ComponentState;
 	readonly DecryptionResult = DecryptionResult;
@@ -81,17 +79,28 @@ export class GetSecretMessageComponent {
 		}
 	}
 
+	copyUsernameToClipboard() {
+		if (this.msgAutoClearTimeoutTriggered) return;
+
+		this.clipboard.copy(this.decryptionResult.decryptedMsg.username);
+	}
+
+	copyPasswordToClipboard() {
+		if (this.msgAutoClearTimeoutTriggered) return;
+
+		this.clipboard.copy(this.decryptionResult.decryptedMsg.password);
+	}
+
 	copyMessageContentToClipboard() {
 		if (this.msgAutoClearTimeoutTriggered) return;
 
-		this.clipboard.copy(this.decryptionResult.decryptedMsg.plainText);
+		let msgContent = this.decryptionResult.decryptedMsg.plainText;
+		if (this.decryptionResult.decryptedMsg.containsUsernameAndPassword) {
+			msgContent += `\r\nUsername: ${this.decryptionResult.decryptedMsg.username}`;
+			msgContent += `\r\nPassword: ${this.decryptionResult.decryptedMsg.password}`;
+		}
 
-		clearTimeout(this.ngbTooltipClearTimer);
-		if (!this.ngbTooltip.isOpen()) this.ngbTooltip.open();
-
-		this.ngbTooltipClearTimer = setTimeout(() => {
-			this.ngbTooltip.close();
-		}, 5000);
+		this.clipboard.copy(msgContent);
 	}
 
 	private tryGetSecretMessage(encryptionKey: string, requiresOtp: boolean) {
