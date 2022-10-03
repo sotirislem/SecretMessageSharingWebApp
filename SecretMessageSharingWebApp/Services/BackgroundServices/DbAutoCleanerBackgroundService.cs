@@ -1,69 +1,72 @@
 ﻿using SecretMessageSharingWebApp.Repositories.Interfaces;
 
-namespace SecretMessageSharingWebApp.Services.BackgroundServices
+namespace SecretMessageSharingWebApp.Services.BackgroundServices;
+
+public sealed class DbAutoCleanerBackgroundService : BackgroundService
 {
-	public class DbAutoCleanerBackgroundService : BackgroundService
+	public IServiceProvider Services { get; }
+
+	private readonly ILogger<DbAutoCleanerBackgroundService> _logger;
+	private readonly PeriodicTimer _timer;
+
+	public DbAutoCleanerBackgroundService(IServiceProvider services, ILogger<DbAutoCleanerBackgroundService> logger)
 	{
-		public IServiceProvider Services { get; }
+		Services = services;
+		_logger = logger;
 
-		private readonly ILogger<DbAutoCleanerBackgroundService> _logger;
-		private Timer _timer = null!;
+		_timer = new(TimeSpan.FromMinutes(Constants.DbAutoCleanerBackgroundServiceRunIntervalInMinutes));
+	}
 
-		public DbAutoCleanerBackgroundService(IServiceProvider services, ILogger<DbAutoCleanerBackgroundService> logger)
+	protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+	{
+		_logger.LogInformation("DbAutoCleanerBackgroundService: Service running...");
+
+		do
 		{
-			Services = services;
-			_logger = logger;
+			await DoWorkAsync();
 		}
+		while (await _timer.WaitForNextTickAsync(stoppingToken) && !stoppingToken.IsCancellationRequested);
+	}
 
-		protected override Task ExecuteAsync(CancellationToken stoppingToken)
+	public override async Task StopAsync(CancellationToken stoppingToken)
+	{
+		_logger.LogInformation("DbAutoCleanerBackgroundService: Service is stopping...");
+
+		_timer.Dispose();
+
+		await base.StopAsync(stoppingToken);
+	}
+
+	private async Task DoWorkAsync()
+	{
+		_logger.LogInformation("DbAutoCleanerBackgroundService: Service triggered DoWorkAsync()");
+
+		using (var scope = Services.CreateScope())
 		{
-			_logger.LogInformation("DbAutoCleanerBackgroundService: Service running...");
-
-			_timer = new Timer(DoWork, null, TimeSpan.Zero, TimeSpan.FromMinutes(Constants.DbAutoCleanerBackgroundServiceRunIntervalInMinutes));
-
-			return Task.CompletedTask;
+			await DeleteOldSecretMessages(scope);
+			await DeleteOldGetLogs(scope);
 		}
+	}
 
-		public override async Task StopAsync(CancellationToken stoppingToken)
+	private async Task DeleteOldSecretMessages(IServiceScope scope)
+	{
+		var secretMessagesRepository = scope.ServiceProvider.GetRequiredService<ISecretMessagesRepository>();
+
+		var deletedMessages = await secretMessagesRepository.DeleteOldMessages();
+		if (deletedMessages > 0)
 		{
-			_logger.LogInformation("DbAutoCleanerBackgroundService: Service is stopping...");
-
-			_timer?.Change(Timeout.Infinite, 0);
-
-			await base.StopAsync(stoppingToken);
+			_logger.LogInformation("DbAutoCleanerBackgroundService: Deleted {deletedMessages} old message(s)", deletedMessages);
 		}
+	}
 
-		private async void DoWork(object? state)
+	private async Task DeleteOldGetLogs(IServiceScope scope)
+	{
+		var getLogsRepository = scope.ServiceProvider.GetRequiredService<IGetLogsRepository>();
+
+		var deletedLogs = await getLogsRepository.DeleteOldLogs();
+		if (deletedLogs > 0)
 		{
-			_logger.LogInformation("DbAutoCleanerBackgroundService: Service triggered DoWork()");
-
-			using (var scope = Services.CreateScope())
-			{
-				await DeleteOldSecretMessages(scope);
-				await DeleteOldGetLogs(scope);
-			}
-		}
-
-		private async Task DeleteOldSecretMessages(IServiceScope scope)
-		{
-			var secretMessagesRepository = scope.ServiceProvider.GetRequiredService<ISecretMessagesRepository>();
-
-			var deletedMessages = await secretMessagesRepository.DeleteOldMessages();
-			if (deletedMessages > 0)
-			{
-				_logger.LogInformation("DbAutoCleanerBackgroundService: Deleted {deletedMessages} old message(s)", deletedMessages);
-			}
-		}
-
-		private async Task DeleteOldGetLogs(IServiceScope scope)
-		{
-			var getLogsRepository = scope.ServiceProvider.GetRequiredService<IGetLogsRepository>();
-
-			var deletedLogs = await getLogsRepository.DeleteOldLogs();
-			if (deletedLogs > 0)
-			{
-				_logger.LogInformation("DbAutoCleanerBackgroundService: Deleted {deletedLogs} old log(s)", deletedLogs);
-			}
+			_logger.LogInformation("DbAutoCleanerBackgroundService: Deleted {deletedLogs} old log(s)", deletedLogs);
 		}
 	}
 }

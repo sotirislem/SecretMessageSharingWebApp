@@ -1,16 +1,15 @@
 ﻿using Microsoft.Extensions.Options;
 
-namespace SecretMessageSharingWebApp.Extensions
-{
-	public static class ServiceCollectionExtentions
-	{
-        public static void BindConfigurationSettings<T>(this IServiceCollection services, IConfiguration configuration) where T : class
-        {
-            services.AddOptions<T>()
-                .Bind(configuration)
-                .ValidateDataAnnotations();
+namespace SecretMessageSharingWebApp.Extensions;
 
-            services.AddTransient(resolver => resolver.GetRequiredService<IOptions<T>>().Value);
-        }
-    }
+public static class ServiceCollectionExtentions
+{
+	public static void BindConfigurationSettings<TOptions>(this IServiceCollection services, IConfiguration configuration) where TOptions : class
+	{
+		services.AddOptions<TOptions>()
+			.Bind(configuration)
+			.ValidateDataAnnotations();
+
+		services.AddTransient(resolver => resolver.GetRequiredService<IOptions<TOptions>>().Value);
+	}
 }

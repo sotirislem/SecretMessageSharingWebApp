@@ -2,17 +2,16 @@
 using FluentValidation;
 using SecretMessageSharingWebApp.Models.Api.Requests;
 
-namespace SecretMessageSharingWebApp.Validators
-{
-    public class ValidateSecretMessageOtpRequestValidator : Validator<ValidateSecretMessageOtpRequest>
-    {
-        public ValidateSecretMessageOtpRequestValidator()
-        {
-            RuleLevelCascadeMode = CascadeMode.Stop;
+namespace SecretMessageSharingWebApp.Validators;
 
-            RuleFor(x => x.OtpCode)
-                .NotEmpty()
-                .Length(Constants.OtpSize);
-        }
-    }
+public sealed class ValidateSecretMessageOtpRequestValidator : Validator<ValidateSecretMessageOtpRequest>
+{
+	public ValidateSecretMessageOtpRequestValidator()
+	{
+		RuleLevelCascadeMode = CascadeMode.Stop;
+
+		RuleFor(x => x.OtpCode)
+			.NotEmpty()
+			.Length(Constants.OtpSize);
+	}
 }

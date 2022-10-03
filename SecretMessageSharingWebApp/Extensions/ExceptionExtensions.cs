@@ -1,30 +1,30 @@
 ﻿using System.Text;
 
-namespace SecretMessageSharingWebApp.Extensions
+namespace SecretMessageSharingWebApp.Extensions;
+
+public static class ExceptionExtensions
 {
-	public static class ExceptionExtensions
+	public static string GetAllErrorMessages(this Exception ex)
 	{
-        public static string GetAllErrorMessages(this Exception ex)
-        {
-            if (ex is null)
-                throw new ArgumentNullException("ex");
+		if (ex is null)
+			throw new ArgumentNullException(nameof(ex));
 
-            StringBuilder sb = new StringBuilder();
+		StringBuilder sb = new StringBuilder();
 
-            do
-            {
-                if (!string.IsNullOrEmpty(ex.Message))
-                {
-                    if (sb.Length > 0)
-                        sb.Append(" => ");
+		do
+		{
+			if (!string.IsNullOrEmpty(ex.Message))
+			{
+				if (sb.Length > 0)
+					sb.Append(" => ");
 
-                    sb.Append(ex.Message);
-                }
+				sb.Append(ex.Message);
+			}
 
-                ex = ex.InnerException!;
-            } while (ex is not null);
+			ex = ex.InnerException!;
+		}
+		while (ex is not null);
 
-            return sb.ToString();
-        }
-    }
+		return sb.ToString();
+	}
 }

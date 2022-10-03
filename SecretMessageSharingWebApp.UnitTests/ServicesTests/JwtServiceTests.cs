@@ -1,68 +1,71 @@
-using SecretMessageSharingWebApp.Models.Domain;
 using SecretMessageSharingWebApp.Services;
+using SecretMessageSharingWebApp.Services.Interfaces;
 using System.Security.Claims;
 
-namespace SecretMessageSharingWebApp.UnitTests.ServicesTests
+namespace SecretMessageSharingWebApp.UnitTests.ServicesTests;
+
+public sealed class JwtServiceTests
 {
-	public class JwtServiceTests
+	private readonly JwtService _sut;
+	private readonly Fixture _fixture = new();
+
+	private readonly IDateTimeProviderService _dateTimeProviderService = Substitute.For<IDateTimeProviderService>();
+
+	public JwtServiceTests()
 	{
-		private readonly JwtService _sut;
-		private readonly Fixture _fixture = new();
+		_sut = new JwtService(new() { SigningKey = _fixture.Create<string>() }, _dateTimeProviderService);
 
-		public JwtServiceTests()
+		_dateTimeProviderService.UtcNow().Returns(DateTime.UtcNow);
+	}
+
+	[Fact]
+	public void ValidateToken_ShouldReturnJwtSecurityToken_WhenTokenIsValid()
+	{
+		// Arrange
+		var guid = Guid.NewGuid().ToString();
+		var claims = new List<Claim>()
 		{
-			_sut = new JwtService(new() { SigningKey = _fixture.Create<string>() });
-		}
+			new("id", guid)
+		};
+		var token = _sut.GenerateToken(claims);
 
-		[Fact]
-		public void ValidateToken_ShouldReturnJwtSecurityToken_WhenTokenIsValid()
+		// Act
+		var result = _sut.ValidateToken(token);
+
+		// Assert
+		result.Should().NotBeNull();
+		result?.Claims.FirstOrDefault()?.Type.Should().Be("id");
+		result?.Claims.FirstOrDefault()?.Value.Should().Be(guid);
+	}
+
+	[Fact]
+	public void ValidateToken_ShouldReturnNull_WhenTokenIsExpired()
+	{
+		// Arrange
+		var guid = Guid.NewGuid().ToString();
+		var claims = new List<Claim>()
 		{
-			// Arrange
-			var guid = Guid.NewGuid().ToString();
-			var claims = new List<Claim>()
-			{
-				new("id", guid)
-			};
-			var token = _sut.GenerateToken(claims);
+			new("id", guid)
+		};
+		var token = _sut.GenerateToken(claims, TimeSpan.Zero);
 
-			// Act
-			var result = _sut.ValidateToken(token);
+		// Act
+		var result = _sut.ValidateToken(token);
 
-			// Assert
-			result.Should().NotBeNull();
-			result?.Claims.FirstOrDefault()?.Type.Should().Be("id");
-			result?.Claims.FirstOrDefault()?.Value.Should().Be(guid);
-		}
+		// Assert
+		result.Should().BeNull();
+	}
 
-		[Fact]
-		public void ValidateToken_ShouldReturnNull_WhenTokenIsExpired()
-		{
-			// Arrange
-			var guid = Guid.NewGuid().ToString();
-			var claims = new List<Claim>()
-			{
-				new("id", guid)
-			};
-			var token = _sut.GenerateToken(claims, TimeSpan.Zero);
+	[Fact]
+	public void ValidateToken_ShouldReturnNull_WhenTokenIsInvalid()
+	{
+		// Arrange
+		var token = _fixture.Create<string>();
 
-			// Act
-			var result = _sut.ValidateToken(token);
+		// Act
+		var result = _sut.ValidateToken(token);
 
-			// Assert
-			result.Should().BeNull();
-		}
-
-		[Fact]
-		public void ValidateToken_ShouldReturnNull_WhenTokenIsInvalid()
-		{
-			// Arrange
-			var token = _fixture.Create<string>();
-
-			// Act
-			var result = _sut.ValidateToken(token);
-
-			// Assert
-			result.Should().BeNull();
-		}
+		// Assert
+		result.Should().BeNull();
 	}
 }

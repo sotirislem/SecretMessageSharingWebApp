@@ -1,7 +1,6 @@
-﻿namespace SecretMessageSharingWebApp.Services.Interfaces
+﻿namespace SecretMessageSharingWebApp.Services.Interfaces;
+
+public interface ISendGridEmailService
 {
-	public interface ISendGridEmailService
-	{
-		Task<bool> SendOtp(string messageId, string otpCode, string recipientsEmail);
-	}
+	Task<bool> SendOtp(string messageId, string otpCode, string recipientsEmail);
 }

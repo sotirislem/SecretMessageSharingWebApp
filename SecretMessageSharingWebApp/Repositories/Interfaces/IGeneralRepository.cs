@@ -1,19 +1,18 @@
 ﻿using System.Linq.Expressions;
 
-namespace SecretMessageSharingWebApp.Repositories.Interfaces
+namespace SecretMessageSharingWebApp.Repositories.Interfaces;
+
+public interface IGeneralRepository<TEntity> where TEntity : class
 {
-    public interface IGeneralRepository<TEntity> where TEntity : class
-    {
-        Task<TEntity?> Get(string id);
+	Task<TEntity?> Get(string id);
 
-        Task Insert(TEntity entity, bool save = true);
+	Task Insert(TEntity entity, bool save = true);
 
-        Task Delete(TEntity entity, bool save = true);
+	Task Delete(TEntity entity, bool save = true);
 
-        Task<int> Save();
+	Task<int> Save();
 
-        IQueryable<TEntity> GetDbSetAsQueryable();
+	IQueryable<TEntity> GetDbSetAsQueryable();
 
-        Task<int> DeleteRangeBasedOnPredicate(Expression<Func<TEntity, bool>> predicate);
-    }
+	Task<int> DeleteRangeBasedOnPredicate(Expression<Func<TEntity, bool>> predicate);
 }

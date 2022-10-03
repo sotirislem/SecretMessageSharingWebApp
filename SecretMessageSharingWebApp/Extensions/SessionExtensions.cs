@@ -1,24 +1,29 @@
-﻿using Newtonsoft.Json;
+﻿using System.Text.Json;
 
-namespace SecretMessageSharingWebApp.Extensions
+namespace SecretMessageSharingWebApp.Extensions;
+
+public static class SessionExtensions
 {
-    public static class SessionExtensions
-    {
-        public static void SetObject(this ISession session, string key, object value)
-        {
-            session.SetString(key, JsonConvert.SerializeObject(value));
-        }
+	public static void SetObject(this ISession session, string key, object value)
+	{
+		session.SetString(key, JsonSerializer.Serialize(value));
+	}
 
-        public static T? GetObject<T>(this ISession session, string key)
-        {
-            var value = session.GetString(key);
-            if (value is not null)
+	public static T? GetObject<T>(this ISession session, string key)
+	{
+		var value = session.GetString(key);
+		if (value is not null)
+		{
+			try
 			{
-                return JsonConvert.DeserializeObject<T>(value);
+				return JsonSerializer.Deserialize<T>(value);
+			}
+			catch
+			{
+				return default;
+			}
+		}
 
-            }
-
-            return default;
-        }
-    }
+		return default;
+	}
 }

@@ -1,11 +1,10 @@
 ﻿using SecretMessageSharingWebApp.Models.Domain;
 
-namespace SecretMessageSharingWebApp.Services.Interfaces
-{
-	public interface IGetLogsService
-	{
-		Task<GetLog> CreateNewLog(GetLog getLog);
+namespace SecretMessageSharingWebApp.Services.Interfaces;
 
-		IEnumerable<RecentlyStoredSecretMessage> GetRecentlyStoredSecretMessagesInfo(List<string> recentlyStoredSecretMessagesList);
-	}
+public interface IGetLogsService
+{
+	Task<GetLog> CreateNewLog(GetLog getLog);
+
+	IEnumerable<RecentlyStoredSecretMessage> GetRecentlyStoredSecretMessagesInfo(List<string> recentlyStoredSecretMessagesList);
 }

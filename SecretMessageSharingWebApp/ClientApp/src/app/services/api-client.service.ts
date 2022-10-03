@@ -17,31 +17,31 @@ export class ApiClientService {
 	private readonly baseApiUrl: string;
 
 	constructor(@Inject('API_URL') apiUrl: string, private httpClient: HttpClient) {
-		this.baseApiUrl = `${apiUrl}/api`;
+		this.baseApiUrl = `${apiUrl}/api/secret-messages`;
 	}
 
 	storeSecretMessage(request: StoreNewSecretMessageRequest): Observable<string> {
-		const url = this.getApiUrl('secret-messages/store');
+		const url = this.getApiUrl();
 		return this.httpClient.post<string>(url, request);
 	}
 
 	verifySecretMessage(id: string): Observable<VerifySecretMessageResponse> {
-		const url = this.getApiUrl('secret-messages/verify/' + id);
+		const url = this.getApiUrl('verify/' + id);
 		return this.httpClient.get<VerifySecretMessageResponse>(url);
 	}
 
 	acquireSecretMessageOtp(id: string): Observable<boolean> {
-		const url = this.getApiUrl('secret-messages/acquire-otp/' + id);
-		return this.httpClient.post<boolean>(url, null);
+		const url = this.getApiUrl('otp/' + id);
+		return this.httpClient.get<boolean>(url);
 	}
 
 	validateSecretMessageOtp(id: string, otpCode: string): Observable<ValidateSecretMessageOtpResponse> {
-		const url = this.getApiUrl('secret-messages/validate-otp/' + id);
+		const url = this.getApiUrl('otp/' + id);
 		return this.httpClient.post<ValidateSecretMessageOtpResponse>(url, <ValidateSecretMessageOtpRequest>{ otpCode });
 	}
 
 	getSecretMessage(id: string, token?: string): Observable<GetSecretMessageResponse> {
-		const url = this.getApiUrl('secret-messages/get/' + id);
+		const url = this.getApiUrl(id);
 
 		let headers = new HttpHeaders();
 		if (token) {
@@ -52,16 +52,20 @@ export class ApiClientService {
 	}
 
 	getRecentlyStoredSecretMessages(): Observable<RecentlyStoredSecretMessagesResponse> {
-		const url = this.getApiUrl('secret-messages/getRecentlyStoredSecretMessages');
+		const url = this.getApiUrl();
 		return this.httpClient.get<RecentlyStoredSecretMessagesResponse>(url);
 	}
 
 	deleteRecentlyStoredSecretMessage(id: string): Observable<boolean> {
-		const url = this.getApiUrl('secret-messages/deleteRecentlyStoredSecretMessage/' + id);
+		const url = this.getApiUrl(id);
 		return this.httpClient.delete<boolean>(url);
 	}
 
-	private getApiUrl(apiPath: string) {
-		return `${this.baseApiUrl}/${apiPath}`;
+	private getApiUrl(apiPath: string = "") {
+		if (apiPath) {
+			return `${this.baseApiUrl}/${apiPath}`;
+		}
+
+		return this.baseApiUrl;
 	}
 }

@@ -1,37 +1,36 @@
-﻿using SecretMessageSharingWebApp.Extensions;
+﻿using SecretMessageSharingWebApp.Services.Interfaces;
 
-namespace SecretMessageSharingWebApp.Middlewares
+namespace SecretMessageSharingWebApp.Middlewares;
+
+public interface IHttpRequestDateTimeFeature
 {
-    public interface IHttpRequestDateTimeFeature
-    {
-        DateTime RequestDateTime { get; }
-    }
+	DateTime RequestDateTime { get; init; }
+}
 
-    public class HttpRequestDateTimeFeature : IHttpRequestDateTimeFeature
-    {
-        public DateTime RequestDateTime { get; }
+public sealed class HttpRequestDateTimeFeature : IHttpRequestDateTimeFeature
+{
+	public DateTime RequestDateTime { get; init; }
+}
 
-        public HttpRequestDateTimeFeature()
-        {
-            RequestDateTime = DateTime.Now.ToLocalTimeZone();
-        }
-    }
+public sealed class HttpRequestTimeMiddleware
+{
+	private readonly RequestDelegate _next;
+	private readonly IDateTimeProviderService _dateTimeProviderService;
 
-    public class HttpRequestTimeMiddleware
-    {
-        private readonly RequestDelegate _next;
+	public HttpRequestTimeMiddleware(RequestDelegate next, IDateTimeProviderService dateTimeProviderService)
+	{
+		_next = next;
+		_dateTimeProviderService = dateTimeProviderService;
+	}
 
-        public HttpRequestTimeMiddleware(RequestDelegate next)
-        {
-            _next = next;
-        }
+	public Task InvokeAsync(HttpContext context)
+	{
+		var httpRequestTimeFeature = new HttpRequestDateTimeFeature()
+		{
+			RequestDateTime = _dateTimeProviderService.LocalNow()
+		};
+		context.Features.Set<IHttpRequestDateTimeFeature>(httpRequestTimeFeature);
 
-        public Task InvokeAsync(HttpContext context)
-        {
-            var httpRequestTimeFeature = new HttpRequestDateTimeFeature();
-            context.Features.Set<IHttpRequestDateTimeFeature>(httpRequestTimeFeature);
-
-            return _next(context);
-        }
-    }
+		return _next(context);
+	}
 }

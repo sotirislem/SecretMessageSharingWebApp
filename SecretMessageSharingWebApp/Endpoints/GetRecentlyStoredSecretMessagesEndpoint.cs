@@ -1,58 +1,55 @@
 ﻿using FastEndpoints;
 using SecretMessageSharingWebApp.Extensions;
 using SecretMessageSharingWebApp.Mappings;
-using SecretMessageSharingWebApp.Models.Api.Requests;
 using SecretMessageSharingWebApp.Models.Api.Responses;
-using SecretMessageSharingWebApp.Models.Domain;
 using SecretMessageSharingWebApp.Services.Interfaces;
 
-namespace SecretMessageSharingWebApp.Endpoints
+namespace SecretMessageSharingWebApp.Endpoints;
+
+public sealed class GetRecentlyStoredSecretMessagesEndpoint : EndpointWithoutRequest<RecentlyStoredSecretMessagesResponse>
 {
-	public class GetRecentlyStoredSecretMessagesEndpoint : EndpointWithoutRequest<RecentlyStoredSecretMessagesResponse>
+	public override void Configure()
 	{
-		public override void Configure()
-		{
-			Verbs(Http.GET);
-			Routes("/api/secret-messages/getRecentlyStoredSecretMessages");
-			AllowAnonymous();
-		}
+		Verbs(Http.GET);
+		Routes(Constants.ApiRoutes.GetRecentlyStoredSecretMessages);
+		AllowAnonymous();
+	}
 
-		private readonly ISecretMessagesService _secretMessagesService;
-		private readonly IGetLogsService _getLogsService;
+	private readonly ISecretMessagesService _secretMessagesService;
+	private readonly IGetLogsService _getLogsService;
 
-		public GetRecentlyStoredSecretMessagesEndpoint(ISecretMessagesService secretMessagesService, IGetLogsService getLogsService)
-		{
-			_secretMessagesService = secretMessagesService;
-			_getLogsService = getLogsService;
-		}
+	public GetRecentlyStoredSecretMessagesEndpoint(ISecretMessagesService secretMessagesService, IGetLogsService getLogsService)
+	{
+		_secretMessagesService = secretMessagesService;
+		_getLogsService = getLogsService;
+	}
 
-		public override async Task HandleAsync(CancellationToken ct)
+	public override async Task HandleAsync(CancellationToken ct)
         {
-			var recentStoredSecretMessagesList = GetRecentlyStoredSecretMessagesList();
-			if (!recentStoredSecretMessagesList.Any())
-			{
-				await SendAsync(new RecentlyStoredSecretMessagesResponse(), cancellation: ct);
-				return;
-			}
-
-			var resultsPartA = _secretMessagesService.GetRecentlyStoredSecretMessagesInfo(recentStoredSecretMessagesList);
-			var resultsPartB = _getLogsService.GetRecentlyStoredSecretMessagesInfo(recentStoredSecretMessagesList);
-
-			var recentlyStoredSecretMessages = resultsPartA.Union(resultsPartB)
-				.OrderByDescending(x => x.CreatedDateTime)
-				.Select(x => x.ToApiRecentlyStoredSecretMessage())
-				.ToList();
-
-			var response = new RecentlyStoredSecretMessagesResponse()
-			{
-				RecentlyStoredSecretMessages = recentlyStoredSecretMessages
-			};
-			await SendAsync(response, cancellation: ct);
-		}
-
-		private List<string> GetRecentlyStoredSecretMessagesList()
+		var recentStoredSecretMessagesList = GetRecentlyStoredSecretMessagesList();
+		if (!recentStoredSecretMessagesList.Any())
 		{
-			return HttpContext.Session.GetObject<List<string>>(Constants.SessionKey_RecentlyStoredSecretMessagesList) ?? new();
+			await SendAsync(new RecentlyStoredSecretMessagesResponse(), cancellation: ct);
+			return;
 		}
+
+		var resultsPartA = _secretMessagesService.GetRecentlyStoredSecretMessagesInfo(recentStoredSecretMessagesList);
+		var resultsPartB = _getLogsService.GetRecentlyStoredSecretMessagesInfo(recentStoredSecretMessagesList);
+
+		var recentlyStoredSecretMessages = resultsPartA.Union(resultsPartB)
+			.OrderByDescending(x => x.CreatedDateTime)
+			.Select(x => x.ToApiRecentlyStoredSecretMessage())
+			.ToList();
+
+		var response = new RecentlyStoredSecretMessagesResponse()
+		{
+			RecentlyStoredSecretMessages = recentlyStoredSecretMessages
+		};
+		await SendAsync(response, cancellation: ct);
+	}
+
+	private List<string> GetRecentlyStoredSecretMessagesList()
+	{
+		return HttpContext.Session.GetObject<List<string>>(Constants.SessionKey_RecentlyStoredSecretMessagesList) ?? new();
 	}
 }

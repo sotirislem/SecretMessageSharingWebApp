@@ -3,35 +3,34 @@ using SecretMessageSharingWebApp.Mappings;
 using SecretMessageSharingWebApp.Services.Interfaces;
 using SecretMessageSharingWebApp.Repositories.Interfaces;
 
-namespace SecretMessageSharingWebApp.Services
+namespace SecretMessageSharingWebApp.Services;
+
+public sealed class GetLogsService : IGetLogsService
 {
-	public class GetLogsService : IGetLogsService
+	private readonly ILogger<GetLogsService> _logger;
+	private readonly IGetLogsRepository _getLogsRepository;
+
+	public GetLogsService(IGetLogsRepository getLogsRepository, ILogger<GetLogsService> logger)
 	{
-		private readonly ILogger<GetLogsService> _logger;
-		private readonly IGetLogsRepository _getLogsRepository;
+		_getLogsRepository = getLogsRepository;
+		_logger = logger;
+	}
 
-		public GetLogsService(IGetLogsRepository getLogsRepository, ILogger<GetLogsService> logger)
-		{
-			_getLogsRepository = getLogsRepository;
-			_logger = logger;
-		}
+	public async Task<GetLog> CreateNewLog(GetLog getLog)
+	{
+		var getLogDto = getLog.ToGetLogDto();
+		await _getLogsRepository.Insert(getLogDto);
 
-		public async Task<GetLog> CreateNewLog(GetLog getLog)
-		{
-			var getLogDto = getLog.ToGetLogDto();
-			await _getLogsRepository.Insert(getLogDto);
+		_logger.LogInformation("GetLogsService:Insert => ID: {getLogId}", getLogDto.Id);
 
-			_logger.LogInformation("GetLogsService:Insert => ID: {getLogId}", getLogDto.Id);
-			
-			return getLogDto.ToGetLog();
-		}
+		return getLogDto.ToGetLog();
+	}
 
-		public IEnumerable<RecentlyStoredSecretMessage> GetRecentlyStoredSecretMessagesInfo(List<string> recentlyStoredSecretMessagesList)
-		{
-			return _getLogsRepository.GetDbSetAsQueryable()
-				.Where(getLogDto => recentlyStoredSecretMessagesList.Contains(getLogDto.SecretMessageId))
-				.Select(getLogDto => getLogDto.ToRecentlyStoredSecretMessage())
-				.AsEnumerable();
-		}
+	public IEnumerable<RecentlyStoredSecretMessage> GetRecentlyStoredSecretMessagesInfo(List<string> recentlyStoredSecretMessagesList)
+	{
+		return _getLogsRepository.GetDbSetAsQueryable()
+			.Where(getLogDto => recentlyStoredSecretMessagesList.Contains(getLogDto.SecretMessageId))
+			.Select(getLogDto => getLogDto.ToRecentlyStoredSecretMessage())
+			.AsEnumerable();
 	}
 }

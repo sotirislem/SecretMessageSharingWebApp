@@ -1,70 +1,70 @@
-﻿using Newtonsoft.Json;
+﻿using System.Text.Json;
 using SecretMessageSharingWebApp.Data.Entities;
 using SecretMessageSharingWebApp.Models.Common;
 using SecretMessageSharingWebApp.Models.Domain;
 
-namespace SecretMessageSharingWebApp.Mappings
+namespace SecretMessageSharingWebApp.Mappings;
+
+public static class DtoToDomainMapper
 {
-	public static class DtoToDomainMapper
+	public static SecretMessage ToSecretMessage(this SecretMessageDto secretMessageDto)
 	{
-		public static SecretMessage ToSecretMessage(this SecretMessageDto secretMessageDto)
+		return new SecretMessage
 		{
-			return new SecretMessage
-			{
-				Id = secretMessageDto.Id,
-				CreatedDateTime = secretMessageDto.CreatedDateTime,
-				CreatorClientInfo = secretMessageDto.CreatorClientInfo,
-				CreatorIP = secretMessageDto.CreatorIP,
-				Data = JsonConvert.DeserializeObject<SecretMessageData>(secretMessageDto.JsonData)!,
-				Otp = secretMessageDto.Otp.ToOtpSettings()
-			};
-		}
+			Id = secretMessageDto.Id,
+			CreatedDateTime = secretMessageDto.CreatedDateTime,
+			CreatorClientInfo = secretMessageDto.CreatorClientInfo,
+			CreatorIP = secretMessageDto.CreatorIP,
+			Data = JsonSerializer.Deserialize<SecretMessageData>(secretMessageDto.JsonData)!,
+			Otp = secretMessageDto.Otp.ToOtpSettings()
+		};
+	}
 
-		public static Models.Domain.OtpSettings ToOtpSettings(this Data.Entities.OtpSettings? otpSettingsDto)
+	public static Models.Domain.OtpSettings ToOtpSettings(this Data.Entities.OtpSettings? otpSettingsDto)
+	{
+		return new Models.Domain.OtpSettings
 		{
-			return new Models.Domain.OtpSettings
-			{
-				Required = otpSettingsDto?.Required ?? false,
-				RecipientsEmail = otpSettingsDto?.RecipientsEmail ?? string.Empty
-			};
-		}
+			Required = otpSettingsDto?.Required ?? false,
+			RecipientsEmail = otpSettingsDto?.RecipientsEmail ?? string.Empty
+		};
+	}
 
-		public static GetLog ToGetLog(this GetLogDto getLogDto)
+	public static GetLog ToGetLog(this GetLogDto getLogDto)
+	{
+		return new GetLog
 		{
-			return new GetLog
-			{
-				Id = getLogDto.Id,
-				RequestDateTime = getLogDto.RequestDateTime,
-				RequestCreatorIP = getLogDto.RequestCreatorIP,
-				RequestClientInfo = getLogDto.RequestClientInfo,
-				SecretMessageId = getLogDto.SecretMessageId,
-				SecretMessageCreatedDateTime = getLogDto.SecretMessageCreatedDateTime,
-				SecretMessageCreatorIP = getLogDto.SecretMessageCreatorIP,
-				SecretMessageCreatorClientInfo = getLogDto.SecretMessageCreatorClientInfo
-			};
-		}
+			Id = getLogDto.Id,
+			RequestDateTime = getLogDto.RequestDateTime,
+			RequestCreatorIP = getLogDto.RequestCreatorIP,
+			RequestClientInfo = getLogDto.RequestClientInfo,
+			SecretMessageId = getLogDto.SecretMessageId,
+			SecretMessageCreatedDateTime = getLogDto.SecretMessageCreatedDateTime,
+			SecretMessageCreatorIP = getLogDto.SecretMessageCreatorIP,
+			SecretMessageCreatorClientInfo = getLogDto.SecretMessageCreatorClientInfo
+		};
+	}
 
-		public static RecentlyStoredSecretMessage ToRecentlyStoredSecretMessage(this SecretMessageDto secretMessageDto)
+	public static RecentlyStoredSecretMessage ToRecentlyStoredSecretMessage(this SecretMessageDto secretMessageDto)
+	{
+		return new RecentlyStoredSecretMessage
 		{
-			return new RecentlyStoredSecretMessage
-			{
-				Id = secretMessageDto.Id,
-				CreatedDateTime = secretMessageDto.CreatedDateTime
-			};
-		}
+			Id = secretMessageDto.Id,
+			CreatedDateTime = secretMessageDto.CreatedDateTime
+		};
+	}
 
-		public static RecentlyStoredSecretMessage ToRecentlyStoredSecretMessage(this GetLogDto getLogDto)
+	public static RecentlyStoredSecretMessage ToRecentlyStoredSecretMessage(this GetLogDto getLogDto)
+	{
+		return new RecentlyStoredSecretMessage
 		{
-			return new RecentlyStoredSecretMessage
+			Id = getLogDto.SecretMessageId,
+			CreatedDateTime = getLogDto.SecretMessageCreatedDateTime!.Value,
+			DeliveryDetails = new DeliveryDetails
 			{
-				Id = getLogDto.SecretMessageId,
-				CreatedDateTime = getLogDto.SecretMessageCreatedDateTime!.Value,
-				DeliveryDetails = new DeliveryDetails {
-					DeliveredAt = getLogDto.RequestDateTime,
-					RecipientIP = getLogDto.RequestCreatorIP,
-					RecipientClientInfo = getLogDto.RequestClientInfo
-				}
-			};
-		}
+				DeliveredAt = getLogDto.RequestDateTime,
+				RecipientIP = getLogDto.RequestCreatorIP,
+				RecipientClientInfo = getLogDto.RequestClientInfo
+			}
+		};
 	}
 }

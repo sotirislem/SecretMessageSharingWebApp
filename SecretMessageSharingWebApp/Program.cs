@@ -40,6 +40,7 @@ builder.Services.AddDbContext<SecretMessagesDbContext>((serviceProvider, options
 builder.Services.AddMemoryCache();
 builder.Services.AddSingleton<IMemoryCacheService, MemoryCacheService>();
 
+builder.Services.AddSingleton<IDateTimeProviderService, DateTimeProviderService>();
 builder.Services.AddSingleton<ISecretMessageDeliveryNotificationHubService, SecretMessageDeliveryNotificationHubService>();
 builder.Services.AddSingleton<IOtpService, OtpService>();
 builder.Services.AddSingleton<IJwtService, JwtService>();

@@ -1,21 +1,20 @@
 ﻿using SecretMessageSharingWebApp.Data;
 using SecretMessageSharingWebApp.Data.Entities;
-using SecretMessageSharingWebApp.Extensions;
 using SecretMessageSharingWebApp.Repositories.Interfaces;
+using SecretMessageSharingWebApp.Services.Interfaces;
 
-namespace SecretMessageSharingWebApp.Repositories
+namespace SecretMessageSharingWebApp.Repositories;
+
+public sealed class SecretMessagesRepository : GeneralRepository<SecretMessageDto>, ISecretMessagesRepository
 {
-	public class SecretMessagesRepository : GeneralRepository<SecretMessageDto>, ISecretMessagesRepository
+	public SecretMessagesRepository(SecretMessagesDbContext context, IDateTimeProviderService dateTimeProviderService) : base(context, dateTimeProviderService)
+	{ }
+
+	public async Task<int> DeleteOldMessages()
 	{
-		public SecretMessagesRepository(SecretMessagesDbContext context) : base(context)
-		{ }
+		var comparisonDateTime = _dateTimeProviderService.LocalNow().AddHours(-1);
+		var deletedMessages = await DeleteRangeBasedOnPredicate(m => m.CreatedDateTime < comparisonDateTime);
 
-		public async Task<int> DeleteOldMessages()
-		{
-			var comparisonDateTime = DateTime.Now.ToLocalTimeZone().AddHours(-1);
-			var deletedMessages = await DeleteRangeBasedOnPredicate(m => m.CreatedDateTime < comparisonDateTime);
-
-			return deletedMessages;
-		}
+		return deletedMessages;
 	}
 }
