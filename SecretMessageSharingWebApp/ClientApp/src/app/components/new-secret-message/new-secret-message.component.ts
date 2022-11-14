@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild } from '@angular/core';
+import { Component, OnDestroy, OnInit, ViewChild } from '@angular/core';
 
 import { Clipboard } from '@angular/cdk/clipboard';
 import { NgbTooltip } from '@ng-bootstrap/ng-bootstrap'
@@ -11,12 +11,13 @@ import { Routes } from '../../../constants';
 import * as QRCode from 'qrcode';
 
 import { SecretMessage } from '../../models/secret-message.model';
+import { Subject, takeUntil } from 'rxjs';
 
 @Component({
 	templateUrl: './new-secret-message.component.html',
 	styleUrls: ['./new-secret-message.component.css']
 })
-export class NewSecretMessageComponent implements OnInit {
+export class NewSecretMessageComponent implements OnInit, OnDestroy {
 	@ViewChild('ngbTooltipElement') ngbTooltip: NgbTooltip;
 	ngbTooltipClearTimer: NodeJS.Timeout;
 
@@ -26,6 +27,8 @@ export class NewSecretMessageComponent implements OnInit {
 	secretMsgUrl: string;
 	secretMsgDelivered: boolean;
 	qrCodeCanvas: HTMLCanvasElement;
+
+	componentDestroyed$: Subject<boolean> = new Subject();
 
 	constructor(
 		private clipboard: Clipboard,
@@ -39,14 +42,19 @@ export class NewSecretMessageComponent implements OnInit {
 
 		this.secretMsgUrl = urlHelperService.createLocalUrlWithParams(Routes.GetSecretMessage, { id: this.secretMsgId }, this.secretMsgKey);
 
-		secretMessageDeliveryNotificationHubService.receivedDeliveryNotificationsObservable.subscribe(
-			(secretMessageId) => this.receivedDeliveryNotificationsObserver(secretMessageId)
-		);
+		secretMessageDeliveryNotificationHubService.receivedDeliveryNotificationsObservable$
+			.pipe(takeUntil(this.componentDestroyed$))
+			.subscribe((secretMessageId) => this.receivedDeliveryNotificationsObserver(secretMessageId));
 	}
 
 	ngOnInit(): void {
 		this.qrCodeCanvas = document.getElementById('qrCodeCanvas') as HTMLCanvasElement;
 		QRCode.toCanvas(this.qrCodeCanvas, this.secretMsgUrl);
+	}
+
+	ngOnDestroy(): void {
+		this.componentDestroyed$.next(true);
+		this.componentDestroyed$.complete();
 	}
 
 	saveQrCodeToFile(): void {

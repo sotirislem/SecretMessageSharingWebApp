@@ -14,7 +14,9 @@ export class SecretMessageDeliveryNotificationHubService {
 	private readonly hubWorker: Worker;
 
 	private _hubConnectionId: string | null;
-	private receivedDeliveryNotifications: Subject<string> = new Subject();
+	private receivedDeliveryNotifications$: Subject<string> = new Subject();
+
+	readonly receivedDeliveryNotificationsObservable$ = this.receivedDeliveryNotifications$.asObservable();
 
 	constructor(
 		@Inject('API_URL') apiUrl: string,
@@ -43,8 +45,6 @@ export class SecretMessageDeliveryNotificationHubService {
 		this.addVisibilityChangeEventListener();
 	}
 
-	receivedDeliveryNotificationsObservable = this.receivedDeliveryNotifications.asObservable();
-
 	get hubConnectionId(): string | null {
 		return this._hubConnectionId;
 	}
@@ -60,7 +60,7 @@ export class SecretMessageDeliveryNotificationHubService {
 	}
 
 	private handleIncomingNotification(secretMessageDeliveryNotification: SecretMessageDeliveryNotification) {
-		this.receivedDeliveryNotifications.next(secretMessageDeliveryNotification.messageId);
+		this.receivedDeliveryNotifications$.next(secretMessageDeliveryNotification.messageId);
 
 		this.modalService.openModal(
 			MessageDeliveryDetailsModalComponent,
