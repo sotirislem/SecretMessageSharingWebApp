@@ -20,13 +20,13 @@ export class CreateSecretMessageComponent {
 	formSubmitted: boolean
 	attachedFile: File | null;
 
-	newSecretMessageForm = this.formBuilder.group({
+	newSecretMessageForm = this.formBuilder.nonNullable.group({
 		secretMsgPlainTextFormControl: [''],
 		includeUsernameAndPasswordFormControl: [false],
 		usernameFormControl: [{ value: '', disabled: true }],
 		passwordFormControl: [{ value: '', disabled: true }],
 		includeAttachedFileFormControl: [false],
-		attachedFileFormControl: [{ value: null, disabled: true }],
+		attachedFileFormControl: new FormControl({ value: '', disabled: true }),
 		secretMsgRequiresOtpFormControl: [false],
 		secretMsgOtpRecipientsEmailFormControl: [{ value: '', disabled: true }]
 	});
@@ -55,7 +55,7 @@ export class CreateSecretMessageComponent {
 	get includeAttachedFile(): boolean { return this.includeAttachedFileFormControl.value }
 
 	get attachedFileFormControl() { return this.newSecretMessageForm.controls.attachedFileFormControl }
-	get attachedFileName(): string { return this.attachedFileFormControl.value }
+	get attachedFileName(): string | null { return this.attachedFileFormControl.value }
 
 	get secretMsgRequiresOtpFormControl() { return this.newSecretMessageForm.controls.secretMsgRequiresOtpFormControl }
 	get secretMsgRequiresOtp(): boolean { return this.secretMsgRequiresOtpFormControl.value }

@@ -7,26 +7,28 @@ Remote server is only used to store the encrypted message, so it can be later re
 Sender has the ability to receive a delivery notification on his browser once his message is read by a recipient. \
 The encryption key which is used to encrypt/decrypt a message is locally created on user's browser and never gets exposed to server. \
 Every generated message is removed from server upon its retrieval. Also, unread messages are automatically destroyed 1 hour after their creation timestamp. \
-For even more extra security, an OTP mechanism can seal the message further, allowing successful recovery only after the recipient provides a valid OTP that will be delivered to their email address.
+For even more security, an OTP mechanism can seal the message further, allowing successful recovery only after the recipient provides a valid OTP that will be delivered to their email address.
 
 ### Made with:
-* ASP.NET Core 6
+* Angular 14
+* .NET 7
 * Entity Framework Core
-* Angular 13
 
-### Core Libraries used:
+### Libraries used:
 * FastEndpoints (instead of MVC Controllers)
 * SignalR (for delivery notifications)
 * Stanford JavaScript Crypto Library (for local in-browser encryption)
 
-### Publish URL:
-https://secret-message-sharing-web-app.azurewebsites.net/
+### Hosting:
+The App is hosted on Azure by using Azure App Service, whereas, uses Azure Cosmos DB for data storage.
+OTP codes are delivered by using the SendGrid email delivery platform.
+#### Publish URL: https://secret-message-sharing-web-app.azurewebsites.net/
 
 ## App preview
-![Screenshot 2022-09-09 170543](https://user-images.githubusercontent.com/10964246/189373567-09c32895-dc89-4c9d-99b9-8ea36631558e.png)
-![Screenshot 2022-09-09 170649](https://user-images.githubusercontent.com/10964246/189373571-aafa18d9-23ba-47ae-87bb-f38107a69eca.png)
-![Screenshot 2022-09-09 170713](https://user-images.githubusercontent.com/10964246/189371661-a0b28e65-e8cd-44ca-8dd6-e6e5dad4ca14.png)
-![Screenshot 2022-09-09 170725](https://user-images.githubusercontent.com/10964246/189371672-9f71bddd-37f7-46ed-9023-4d14895eecb1.png)
-![Screenshot 2022-09-09 170749](https://user-images.githubusercontent.com/10964246/189371663-26a9ec9f-b410-4fad-b85b-94e8e1e554b2.png) \
-![Screenshot 2022-09-09 170837](https://user-images.githubusercontent.com/10964246/189371673-b08d9c3b-ac4a-493b-8873-1583c66b3e5f.png) \
-![Screenshot 2022-09-09 171145](https://user-images.githubusercontent.com/10964246/189371665-06169fd9-d596-4af1-9d08-86c4053c4878.png)
+![1](https://user-images.githubusercontent.com/10964246/201693909-a9cd86ad-2f0a-404c-a03a-001a1849877e.png) \
+![2](https://user-images.githubusercontent.com/10964246/201693921-7980e653-d204-4095-8d78-2ee57a577e36.png) \
+![3](https://user-images.githubusercontent.com/10964246/201693927-9d948265-99ba-40d5-a808-2f3495ad20c3.png) \
+![4](https://user-images.githubusercontent.com/10964246/201693931-f0fc4d27-df73-4b68-902c-b105ae78ab2d.png) \
+![5](https://user-images.githubusercontent.com/10964246/201693950-f5f85347-9096-4c8a-946c-064e483856a6.png) \
+![6](https://user-images.githubusercontent.com/10964246/201693956-f319cc50-b8a4-4f0c-a3a3-6db9c1128fd4.png) \
+![7](https://user-images.githubusercontent.com/10964246/201693969-3ce97fe1-786e-477b-b036-eda357ea62d5.png)

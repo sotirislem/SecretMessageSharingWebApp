@@ -22,7 +22,7 @@ export class OtpInputModalComponent {
 	expirationTimerWorker: Worker | null = null;
 	timerExpirationTime: string = '';
 
-	otpValidationForm = this.formBuilder.group({
+	otpValidationForm = this.formBuilder.nonNullable.group({
 		otpCodeFormControl: ['',
 			[this.otpHasExpiredValidator.bind(this)]
 		]
