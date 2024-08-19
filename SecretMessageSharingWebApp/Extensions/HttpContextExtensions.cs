@@ -7,7 +7,7 @@ public static class HttpContextExtensions
 {
 	public static string? GetClientInfo(this HttpContext httpContext)
 	{
-		var userAgent = httpContext.Request.Headers["User-Agent"];
+		var userAgent = httpContext.Request.Headers.UserAgent;
 		if (string.IsNullOrWhiteSpace(userAgent))
 		{
 			return null;
