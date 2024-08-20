@@ -2,7 +2,7 @@
 
 namespace SecretMessageSharingWebApp.Models.Api.Responses;
 
-public sealed class GetSecretMessageResponse
+public sealed record GetSecretMessageResponse
 {
 	public SecretMessageData Data { get; init; }
 

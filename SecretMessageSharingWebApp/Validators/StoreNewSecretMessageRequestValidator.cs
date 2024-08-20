@@ -23,8 +23,10 @@ public sealed class StoreNewSecretMessageRequestValidator : Validator<StoreNewSe
 		{
 			RuleFor(x => x.Otp.RecipientsEmail)
 				.NotEmpty()
-				.Matches(@"[\w.]+@[a-zA-Z_-]+?(?:\.[a-zA-Z]{2,6})+")
+				.EmailAddress()
 				.When(x => x.Otp.Required);
 		});
+
+		RuleFor(x => x.EncryptionKeySha256).NotEmpty();
 	}
 }

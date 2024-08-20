@@ -2,77 +2,94 @@
 using SecretMessageSharingWebApp.Mappings;
 using SecretMessageSharingWebApp.Services.Interfaces;
 using SecretMessageSharingWebApp.Repositories.Interfaces;
+using SecretMessageSharingWebApp.Extensions;
+using SecretMessageSharingWebApp.Models.Common;
 
 namespace SecretMessageSharingWebApp.Services;
 
-public sealed class SecretMessagesService : ISecretMessagesService
+public sealed class SecretMessagesService(
+	ILogger<SecretMessagesService> logger,
+	IMemoryCacheService memoryCacheService,
+	IHttpContextAccessor httpContextAccessor,
+	ISecretMessagesRepository secretMessagesRepository) : ISecretMessagesService
 {
-	private readonly ILogger<SecretMessagesService> _logger;
-	private readonly ISecretMessagesRepository _secretMessagesRepository;
-
-	public SecretMessagesService(ISecretMessagesRepository secretMessagesRepository, ILogger<SecretMessagesService> logger)
+	public async Task<SecretMessage> Store(SecretMessage secretMessage, string clientId)
 	{
-		_secretMessagesRepository = secretMessagesRepository;
-		_logger = logger;
+		var secretMessageEntity = secretMessage.ToEntity();
+
+		await secretMessagesRepository.Insert(secretMessageEntity);
+
+		SaveSecretMessageToRecentlyStoredSecretMessagesList(secretMessageEntity.Id);
+		SaveSecretMessageCreatorClientIdToMemoryCache(secretMessageEntity.Id, clientId);
+
+		logger.LogInformation("SecretMessagesService:Insert => ID: {secretMessageId}", secretMessageEntity.Id);
+
+		return secretMessageEntity.ToDomain();
 	}
 
-	public async Task<SecretMessage> Store(SecretMessage secretMessage)
+	public async Task<(bool exists, OtpSettings? otpSettings)> Exists(string id)
 	{
-		var secretMessageDto = secretMessage.ToSecretMessageDto();
-		await _secretMessagesRepository.Insert(secretMessageDto);
+		var secretMessageEntity = await secretMessagesRepository.GetById(id);
 
-		_logger.LogInformation("SecretMessagesService:Insert => ID: {secretMessageId}", secretMessageDto.Id);
+		var exists = secretMessageEntity is not null;
+		var otpSettings = secretMessageEntity?.Otp.ToDomain();
 
-		return secretMessageDto.ToSecretMessage();
-	}
-
-	public (bool exists, OtpSettings? otp) VerifyExistence(string id)
-	{
-		var result = _secretMessagesRepository.GetDbSetAsQueryable()
-			.Where(m => m.Id == id)
-			.Select(m => new { Otp = m.Otp.ToOtpSettings() })
-			.FirstOrDefault();
-
-		var exists = (result is not null);
-
-		_logger.LogInformation("SecretMessagesService:VerifyExistance => ID: {secretMessageId}, Exists: {secretMessageExists}, RequiresOtp: {secretMessageRequiresOtp}", id, exists, result?.Otp.Required);
-
-		return (exists, result?.Otp);
+		return (exists, otpSettings);
 	}
 
 	public async Task<SecretMessage?> Retrieve(string id)
 	{
-		var secretMessageDto = await _secretMessagesRepository.Get(id);
-		if (secretMessageDto is not null && secretMessageDto.DeleteOnRetrieve)
+		var secretMessageEntity = await secretMessagesRepository.GetById(id);
+
+		var secretMessageExists = secretMessageEntity is not null;
+		if (secretMessageExists)
 		{
-			await _secretMessagesRepository.Delete(secretMessageDto);
+			await secretMessagesRepository.Delete(secretMessageEntity!);
 		}
 
-		_logger.LogInformation("SecretMessagesService:Retrieve => ID: {secretMessageId}, Exists: {secretMessageExists}", id, (secretMessageDto is not null));
+		logger.LogInformation("SecretMessagesService:Retrieve => ID: {secretMessageId}, Exists: {secretMessageExists}",
+			id, secretMessageExists);
 
-		return secretMessageDto?.ToSecretMessage();
+		return secretMessageEntity?.ToDomain();
 	}
 
 	public async Task<bool> Delete(string id)
 	{
-		var secretMessageDto = await _secretMessagesRepository.Get(id);
-		if (secretMessageDto is null)
+		var secretMessageEntity = await secretMessagesRepository.GetById(id);
+
+		var deleted = false;
+
+		if (secretMessageEntity is not null)
 		{
-			return false;
+			var deleteResult = await secretMessagesRepository.Delete(secretMessageEntity);
+			deleted = deleteResult > 0;
 		}
 
-		await _secretMessagesRepository.Delete(secretMessageDto);
+		logger.LogInformation("SecretMessagesService:Delete => ID: {secretMessageId}, Deleted: {deleted}", id, deleted);
 
-		_logger.LogInformation("SecretMessagesService:Delete => ID: {secretMessageId}", secretMessageDto.Id);
-
-		return true;
+		return deleted;
 	}
 
-	public IEnumerable<RecentlyStoredSecretMessage> GetRecentlyStoredSecretMessagesInfo(List<string> recentlyStoredSecretMessagesList)
+	public async Task<List<RecentlyStoredSecretMessage>> GetRecentlyStoredSecretMessagesInfo(List<string> recentlyStoredSecretMessagesList)
 	{
-		return _secretMessagesRepository.GetDbSetAsQueryable()
-			.Where(secretMessageDto => recentlyStoredSecretMessagesList.Contains(secretMessageDto.Id))
-			.Select(secretMessageDto => secretMessageDto.ToRecentlyStoredSecretMessage())
-			.AsEnumerable();
+		return (await secretMessagesRepository
+			.SelectEntitiesWhere(secretMessageEntity => recentlyStoredSecretMessagesList.Contains(secretMessageEntity.Id)))
+			.Select(secretMessageEntity => secretMessageEntity.ToRecentlyStoredSecretMessage())
+			.ToList();
+	}
+
+	private void SaveSecretMessageCreatorClientIdToMemoryCache(string secretMessageId, string clientId)
+	{
+		memoryCacheService.SetValue(secretMessageId, clientId, Constants.MemoryKeys.SecretMessageCreatorClientId);
+	}
+
+	private void SaveSecretMessageToRecentlyStoredSecretMessagesList(string secretMessageId)
+	{
+		var session = httpContextAccessor.HttpContext!.Session;
+
+		var recentlyStoredSecretMessagesList = session.GetObject<List<string>>(Constants.SessionKeys.RecentlyStoredSecretMessagesList) ?? [];
+		recentlyStoredSecretMessagesList.Add(secretMessageId);
+
+		session.SetObject(Constants.SessionKeys.RecentlyStoredSecretMessagesList, recentlyStoredSecretMessagesList);
 	}
 }

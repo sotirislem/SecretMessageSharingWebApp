@@ -7,45 +7,51 @@ using System.Text;
 
 namespace SecretMessageSharingWebApp.Services;
 
-public sealed class JwtService : IJwtService
+public sealed class JwtService(
+	JwtConfigurationSettings jwtConfigurationSettings,
+	ILogger<JwtService> logger,
+	IDateTimeProviderService dateTimeProviderService) : IJwtService
 {
-	private readonly IDateTimeProviderService _dateTimeProviderService;
-	private readonly JwtConfigurationSettings _jwtConfigurationSettings;
 	private readonly JwtSecurityTokenHandler _tokenHandler = new();
 
-	public JwtService(JwtConfigurationSettings jwtConfigurationSettings, IDateTimeProviderService dateTimeProviderService)
+	public string GenerateToken(string messageId)
 	{
-		_jwtConfigurationSettings = jwtConfigurationSettings;
-		_dateTimeProviderService = dateTimeProviderService;
-	}
+		var expireDateTime = dateTimeProviderService
+			.UtcNow()
+			.Add(TimeSpan.FromMinutes(Constants.JwtTokenExpirationMinutes));
 
-	public string GenerateToken(List<Claim> claims, TimeSpan? expirationTimespan = null)
-	{
-		if (expirationTimespan is null)
+		var claims = new List<Claim>
 		{
-			expirationTimespan = TimeSpan.FromMinutes(Constants.JwtDefaultExpirationMinutes);
-		}
-
-		var expireDateTime = _dateTimeProviderService.UtcNow().Add((TimeSpan)expirationTimespan);
+			new Claim(type: "messageId", value: messageId)
+		};
 
 		var signingCredentials = new SigningCredentials(GetSigningSecurityKey(), SecurityAlgorithms.HmacSha256Signature);
 		var jwtSecurityToken = new JwtSecurityToken(
-			issuer: null,
+			issuer: Constants.AppName,
 			audience: null,
 			claims: claims,
 			notBefore: null,
 			expires: expireDateTime,
 			signingCredentials);
 
-		var token = _tokenHandler.WriteToken(jwtSecurityToken);
-		return token;
+		try
+		{
+			var jwtToken = _tokenHandler.WriteToken(jwtSecurityToken);
+			return jwtToken;
+		}
+		catch (Exception ex)
+		{
+			logger.LogError(ex, "JwtToken generation failed");
+
+			throw new InvalidOperationException("JwtToken generation failed", ex);
+		}
 	}
 
-	public JwtSecurityToken? ValidateToken(string? token)
+	public bool ValidateToken(string? token, string messageId)
 	{
 		if (string.IsNullOrEmpty(token))
 		{
-			return null;
+			return false;
 		}
 
 		try
@@ -54,25 +60,31 @@ public sealed class JwtService : IJwtService
 			{
 				ValidateIssuerSigningKey = true,
 				IssuerSigningKey = GetSigningSecurityKey(),
-				ValidateIssuer = false,
+				ValidateIssuer = true,
+				ValidIssuer = Constants.AppName,
 				ValidateAudience = false,
 				ClockSkew = TimeSpan.Zero
 			};
 
-			_tokenHandler.ValidateToken(token, tokenValidationParameters, out SecurityToken validatedToken);
+			_tokenHandler.ValidateToken(token, tokenValidationParameters, out SecurityToken securityToken);
 
-			var jwtToken = (JwtSecurityToken)validatedToken;
-			return jwtToken;
+			JwtSecurityToken jwtToken = (JwtSecurityToken)securityToken;
+
+			var jwtTokenClaimsAreValid = jwtToken.Claims.Any(claim => claim.Type == "messageId" && claim.Value == messageId);
+
+			return jwtTokenClaimsAreValid;
 		}
-		catch
+		catch (Exception ex)
 		{
-			return null;
+			logger.LogError(ex, "JwtToken validation failed");
+
+			return false;
 		}
 	}
 
 	private SecurityKey GetSigningSecurityKey()
 	{
-		var jwtSigningKeyBytes = Encoding.UTF8.GetBytes(_jwtConfigurationSettings.SigningKey);
+		var jwtSigningKeyBytes = Encoding.UTF8.GetBytes(jwtConfigurationSettings.SigningKey);
 		var securityKey = new SymmetricSecurityKey(jwtSigningKeyBytes);
 		return securityKey;
 	}

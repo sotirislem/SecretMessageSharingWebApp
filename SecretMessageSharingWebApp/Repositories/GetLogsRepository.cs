@@ -5,16 +5,18 @@ using SecretMessageSharingWebApp.Services.Interfaces;
 
 namespace SecretMessageSharingWebApp.Repositories;
 
-public sealed class GetLogsRepository : GeneralRepository<GetLogDto>, IGetLogsRepository
+public sealed class GetLogsRepository : GeneralRepository<GetLogEntity>, IGetLogsRepository
 {
-	public GetLogsRepository(SecretMessagesDbContext context, IDateTimeProviderService dateTimeProviderService) : base(context, dateTimeProviderService)
+	public GetLogsRepository(SecretMessagesDbContext context, IDateTimeProviderService dateTimeProviderService)
+		: base(context, dateTimeProviderService)
 	{ }
 
 	public async Task<int> DeleteOldLogs()
 	{
-		var comparisonDateTime = _dateTimeProviderService.LocalNow().AddDays(-1);
-		var deletedLogs = await DeleteRangeBasedOnPredicate(m => m.RequestDateTime < comparisonDateTime);
+		var comparisonDateTime = _dateTimeProviderService.LocalNow()
+			.AddDays(Constants.DeleteOldLogsAfterDays * -1);
 
+		var deletedLogs = await DeleteRangeBasedOnPredicate(m => m.RequestDateTime < comparisonDateTime);
 		return deletedLogs;
 	}
 }

@@ -37,10 +37,8 @@ export class RecentlyStoredMessagesComponent {
 		var deleteConfirmation = confirm(`Are you sure you want delete stored SecretMessage with Id: '${msg.id}' ?`);
 		if (!deleteConfirmation) return;
 
-		this.apiClient.deleteRecentlyStoredSecretMessage(msg.id).subscribe((deleted) => {
-			if (deleted) {
-				this.recentlyStoredSecretMessages = this.recentlyStoredSecretMessages.filter(o => o !== msg);
-			}
+		this.apiClient.deleteRecentlyStoredSecretMessage(msg.id).subscribe(() => {
+			this.recentlyStoredSecretMessages = this.recentlyStoredSecretMessages.filter(o => o !== msg);
 		});
 	}
 }

@@ -1,6 +1,6 @@
 ﻿namespace SecretMessageSharingWebApp.Models.Domain;
 
-public sealed class GetLog
+public sealed record GetLog
 {
 	public string Id { get; init; }
 

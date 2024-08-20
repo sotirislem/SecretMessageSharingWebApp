@@ -48,6 +48,8 @@ builder.Services.AddSingleton<ISendGridEmailService, SendGridEmailService>();
 
 builder.Services.AddScoped<ISecretMessagesRepository, SecretMessagesRepository>();
 builder.Services.AddScoped<ISecretMessagesService, SecretMessagesService>();
+builder.Services.AddScoped<IRecentlyStoredMessagesService, RecentlyStoredMessagesService>();
+builder.Services.AddScoped<ISecretMessagesManager, SecretMessagesManager>();
 
 builder.Services.AddScoped<IGetLogsRepository, GetLogsRepository>();
 builder.Services.AddScoped<IGetLogsService, GetLogsService>();
@@ -78,13 +80,19 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
 		ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
 });
 
+builder.Services.AddTransient<HttpRequestTimeMiddleware>();
+builder.Services.AddExceptionHandler<GlobalExceptionHandlerMiddleware>();
+builder.Services.AddProblemDetails();
+
+builder.Services.AddHttpContextAccessor();
+
 // app
 var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())
 {
-	var context = scope.ServiceProvider.GetService<SecretMessagesDbContext>();
-	context!.Database.EnsureCreated();
+	var context = scope.ServiceProvider.GetService<SecretMessagesDbContext>()!;
+	context.Database.EnsureCreated();
 }
 
 if (app.Environment.IsDevelopment())
@@ -104,8 +112,8 @@ app.UseStaticFiles();
 app.UseRouting();
 app.UseSession();
 
-app.UseMiddleware<ExceptionHandlingMiddleware>();
 app.UseMiddleware<HttpRequestTimeMiddleware>();
+app.UseExceptionHandler();
 
 app.MapHub<SecretMessageDeliveryNotificationHub>(SecretMessageDeliveryNotificationHub.Url);
 

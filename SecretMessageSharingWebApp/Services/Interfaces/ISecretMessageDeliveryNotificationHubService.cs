@@ -4,11 +4,11 @@ namespace SecretMessageSharingWebApp.Services.Interfaces;
 
 public interface ISecretMessageDeliveryNotificationHubService
 {
-	void AddConnection(string connectionId, string clientId);
+	void AddConnection(string clientId, string connectionId);
 
 	void RemoveConnection(string clientId);
 
-	Task SendAnyPendingSecretMessageDeliveryNotificationFromMemoryCacheQueue(string clientId);
-
 	Task<bool> SendNotification(SecretMessageDeliveryNotification secretMessageDeliveryNotification);
+
+	Task SendAnyPendingSecretMessageDeliveryNotificationFromMemoryCacheQueue(string clientId);
 }

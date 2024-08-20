@@ -1,6 +1,6 @@
 ﻿namespace SecretMessageSharingWebApp.Models.Api.Responses;
 
-public sealed class VerifySecretMessageResponse
+public sealed record VerifySecretMessageResponse
 {
 	public string Id { get; init; }
 

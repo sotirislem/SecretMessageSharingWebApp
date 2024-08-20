@@ -11,18 +11,11 @@ public interface ISecretMessageDeliveryNotificationHub
 	Task SendSecretMessageDeliveryNotification(SecretMessageDeliveryNotification secretMessageDeliveryNotification);
 }
 
-public sealed class SecretMessageDeliveryNotificationHub : Hub<ISecretMessageDeliveryNotificationHub>
+public sealed class SecretMessageDeliveryNotificationHub(
+	ILogger<SecretMessageDeliveryNotificationHub> logger,
+	ISecretMessageDeliveryNotificationHubService secretMessageDeliveryNotificationHubService) : Hub<ISecretMessageDeliveryNotificationHub>
 {
 	public const string Url = "signalr/secret-message-delivery-notification-hub";
-
-	private readonly ILogger<SecretMessageDeliveryNotificationHub> _logger;
-	private readonly ISecretMessageDeliveryNotificationHubService _secretMessageDeliveryNotificationHubService;
-
-	public SecretMessageDeliveryNotificationHub(ILogger<SecretMessageDeliveryNotificationHub> logger, ISecretMessageDeliveryNotificationHubService secretMessageDeliveryNotificationHubService)
-	{
-		_logger = logger;
-		_secretMessageDeliveryNotificationHubService = secretMessageDeliveryNotificationHubService;
-	}
 
 	public override Task OnConnectedAsync()
 	{
@@ -33,10 +26,10 @@ public sealed class SecretMessageDeliveryNotificationHub : Hub<ISecretMessageDel
 			return Task.CompletedTask;
 		}
 
-		_secretMessageDeliveryNotificationHubService.AddConnection(Context.ConnectionId, clientId);
-		_logger.LogInformation("SecretMessageDeliveryNotificationHub => New connection, ID: {connectionId}, Client: {clientId}", Context.ConnectionId, clientId);
+		secretMessageDeliveryNotificationHubService.AddConnection(clientId, Context.ConnectionId);
+		secretMessageDeliveryNotificationHubService.SendAnyPendingSecretMessageDeliveryNotificationFromMemoryCacheQueue(clientId);
 
-		_secretMessageDeliveryNotificationHubService.SendAnyPendingSecretMessageDeliveryNotificationFromMemoryCacheQueue(clientId);
+		logger.LogInformation("SecretMessageDeliveryNotificationHub => New connection, ID: {connectionId}, Client: {clientId}", Context.ConnectionId, clientId);
 
 		return base.OnConnectedAsync();
 	}
@@ -46,13 +39,13 @@ public sealed class SecretMessageDeliveryNotificationHub : Hub<ISecretMessageDel
 		var clientId = GetClientId();
 		if (!string.IsNullOrEmpty(clientId))
 		{
-			_secretMessageDeliveryNotificationHubService.RemoveConnection(clientId);
-			_logger.LogInformation("SecretMessageDeliveryNotificationHub => Connection terminated, ID: {connectionId}, Client: {clientId}", Context.ConnectionId, clientId);
+			secretMessageDeliveryNotificationHubService.RemoveConnection(clientId);
+			logger.LogInformation("SecretMessageDeliveryNotificationHub => Connection terminated, ID: {connectionId}, Client: {clientId}", Context.ConnectionId, clientId);
 		}
 
 		if (exception is not null)
 		{
-			_logger.LogError("SecretMessageDeliveryNotificationHub => Exception: {exceptionMessage}", exception.GetAllErrorMessages());
+			logger.LogError(exception, "SecretMessageDeliveryNotificationHub => Exception: {exceptionMessage}", exception.GetAllErrorMessages());
 		}
 
 		return base.OnDisconnectedAsync(exception);

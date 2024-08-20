@@ -1,6 +1,6 @@
 ﻿namespace SecretMessageSharingWebApp.Models.Api.Responses;
 
-public sealed class SecretMessageDeliveryNotification
+public sealed record SecretMessageDeliveryNotification
 {
 	public string MessageId { get; init; }
 

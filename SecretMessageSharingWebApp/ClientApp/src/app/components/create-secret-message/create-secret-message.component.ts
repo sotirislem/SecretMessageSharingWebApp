@@ -114,17 +114,18 @@ export class CreateSecretMessageComponent {
 		};
 
 		setTimeout(() => {
-			const [secretMessageData, encryptionKey] = this.sjclService.encryptMessage(secretMsgObj);
+			const encryptionResult = this.sjclService.encryptMessage(secretMsgObj);
 
 			const request = <StoreNewSecretMessageRequest>{
-				secretMessageData: secretMessageData,
+				secretMessageData: encryptionResult.secretMessageData,
 				otp: <OtpSettings>{
 					required: this.secretMsgRequiresOtp,
 					recipientsEmail: this.secretMsgOtpRecipientsEmail.trim()
-				}
+				},
+				encryptionKeySha256: encryptionResult.encryptionKeySha256
 			};
 			this.apiClientService.storeSecretMessage(request).subscribe(secretMsgId => {
-				this.navigateToNewSecretMessagePage(secretMsgObj, secretMsgId, encryptionKey);
+				this.navigateToNewSecretMessagePage(secretMsgObj, secretMsgId, encryptionResult.encryptionKeyAsBase64url);
 			});
 		}, 500);
 	}

@@ -26,7 +26,7 @@
 		<form #form="ngForm" [formGroup]="otpValidationForm" (ngSubmit)="submitOtpValidationForm()">
 			<p>
 				Enter the OTP you received in your email address.<br />
-				Please note that the code is only valid for 3 minutes.
+				Please note that the code is only valid for 3 minutes (3 submit attempts).
 			</p>
 
 			<div class="mt-3">
@@ -60,9 +60,6 @@
 					</div>
 					<div *ngIf="otpCodeFormControl.errors?.otpInvalid">
 						Entered OTP is invalid.
-					</div>
-					<div *ngIf="otpCodeFormControl.errors?.otpMaxAttemptsLimitReached">
-						You have exceeded the maximum retry attempts, please request an OTP resend.
 					</div>
 					<div *ngIf="otpCodeFormControl.errors?.otpHasExpired">
 						Previously sent OTP has expired, please request an OTP resend.

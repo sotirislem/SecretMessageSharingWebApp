@@ -1,4 +1,5 @@
-﻿using SecretMessageSharingWebApp.Models.Domain;
+﻿using SecretMessageSharingWebApp.Models.Common;
+using SecretMessageSharingWebApp.Models.Domain;
 
 namespace SecretMessageSharingWebApp.Services.Interfaces;
 
@@ -6,5 +7,5 @@ public interface IGetLogsService
 {
 	Task<GetLog> CreateNewLog(GetLog getLog);
 
-	IEnumerable<RecentlyStoredSecretMessage> GetRecentlyStoredSecretMessagesInfo(List<string> recentlyStoredSecretMessagesList);
+	Task<List<RecentlyStoredSecretMessage>> GetRecentlyStoredSecretMessagesInfo(List<string> recentlyStoredSecretMessagesList);
 }

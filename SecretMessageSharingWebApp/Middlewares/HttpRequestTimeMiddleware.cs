@@ -2,35 +2,22 @@
 
 namespace SecretMessageSharingWebApp.Middlewares;
 
-public interface IHttpRequestDateTimeFeature
-{
-	DateTime RequestDateTime { get; init; }
-}
-
-public sealed class HttpRequestDateTimeFeature : IHttpRequestDateTimeFeature
+public sealed record HttpRequestDateTimeFeature
 {
 	public DateTime RequestDateTime { get; init; }
 }
 
-public sealed class HttpRequestTimeMiddleware
+public sealed class HttpRequestTimeMiddleware(IDateTimeProviderService dateTimeProviderService) : IMiddleware
 {
-	private readonly RequestDelegate _next;
-	private readonly IDateTimeProviderService _dateTimeProviderService;
-
-	public HttpRequestTimeMiddleware(RequestDelegate next, IDateTimeProviderService dateTimeProviderService)
-	{
-		_next = next;
-		_dateTimeProviderService = dateTimeProviderService;
-	}
-
-	public Task InvokeAsync(HttpContext context)
+	public Task InvokeAsync(HttpContext context, RequestDelegate next)
 	{
 		var httpRequestTimeFeature = new HttpRequestDateTimeFeature()
 		{
-			RequestDateTime = _dateTimeProviderService.LocalNow()
+			RequestDateTime = dateTimeProviderService.LocalNow()
 		};
-		context.Features.Set<IHttpRequestDateTimeFeature>(httpRequestTimeFeature);
 
-		return _next(context);
+		context.Features.Set(httpRequestTimeFeature);
+
+		return next(context);
 	}
 }

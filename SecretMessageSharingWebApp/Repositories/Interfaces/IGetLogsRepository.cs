@@ -2,7 +2,7 @@
 
 namespace SecretMessageSharingWebApp.Repositories.Interfaces;
 
-public interface IGetLogsRepository : IGeneralRepository<GetLogDto>
+public interface IGetLogsRepository : IGeneralRepository<GetLogEntity>
 {
 	Task<int> DeleteOldLogs();
 }

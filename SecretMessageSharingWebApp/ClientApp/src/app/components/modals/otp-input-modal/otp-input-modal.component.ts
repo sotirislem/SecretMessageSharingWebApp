@@ -42,17 +42,14 @@ export class OtpInputModalComponent {
 	getOtp() {
 		if (this.otpSent && this.timerActive) return;
 
-		this.apiClientService.acquireSecretMessageOtp(this.messageId).subscribe((response) => {
-			this.otpSent = response;
+		this.apiClientService.acquireSecretMessageOtp(this.messageId).subscribe(() => {
+			this.otpSent = true;
+			this.startExpirationTimer();
 
-			if (this.otpSent) {
-				this.startExpirationTimer();
-
-				setTimeout(() => {
-					this.form?.resetForm();
-					this.otpCodeFormControlRef?.nativeElement.focus();
-				});
-			}
+			setTimeout(() => {
+				this.form?.resetForm();
+				this.otpCodeFormControlRef?.nativeElement.focus();
+			});
 		});
 	}
 
@@ -72,15 +69,11 @@ export class OtpInputModalComponent {
 
 		this.apiClientService.validateSecretMessageOtp(this.messageId, this.otpCode).subscribe((response: ValidateSecretMessageOtpResponse) => {
 			if (response.isValid) {
-				this.modal.close(response.token);
-			}
-			else if (!response.canRetry) {
-				this.stopExpirationTimer();
-				this.otpCodeFormControl.setErrors({ otpInvalid: true, otpMaxAttemptsLimitReached: true });
+				this.modal.close(response.authToken);
 			}
 			else if (response.hasExpired) {
 				this.stopExpirationTimer();
-				this.otpCodeFormControl.setErrors({ otpHasExpired: true });
+				this.otpCodeFormControl.setErrors({ otpInvalid: true, otpHasExpired: true });
 			}
 			else {
 				this.otpCodeFormControl.setErrors({ otpInvalid: true });

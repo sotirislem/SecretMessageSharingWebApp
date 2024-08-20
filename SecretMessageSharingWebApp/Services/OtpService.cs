@@ -5,11 +5,8 @@ using System.Text;
 
 namespace SecretMessageSharingWebApp.Services;
 
-public sealed class OtpService : IOtpService
+public sealed class OtpService(IDateTimeProviderService dateTimeProviderService) : IOtpService
 {
-	public OtpService()
-	{ }
-
 	public OneTimePassword Generate()
 	{
 		var otpBuilder = new StringBuilder();
@@ -20,33 +17,29 @@ public sealed class OtpService : IOtpService
 			otpBuilder.Append(randomNumber);
 		}
 
-		var otp = otpBuilder.ToString();
-		var timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-
-		return new OneTimePassword(otp, timestamp)
+		return new OneTimePassword()
 		{
-			AvailableValidationAttempts = Constants.OtpMaxValidationRetries
+			Code = otpBuilder.ToString(),
+			CreatedTimestamp = dateTimeProviderService.UtcNowUnixTimeSeconds()
 		};
 	}
 
-	public (bool isValid, bool canRetry, bool hasExpired) Validate(string otpInputCode, OneTimePassword inMemoryOtp)
+	public (bool isValid, bool hasExpired) Validate(string otpInputCode, OneTimePassword otp)
 	{
-		inMemoryOtp.AvailableValidationAttempts--;
-		if (inMemoryOtp.AvailableValidationAttempts <= 0)
+		if (otp.TotalCodeAccesses >= Constants.OtpMaxValidationRetries)
 		{
-			return (isValid: false, canRetry: false, hasExpired: true);
+			return (isValid: false, hasExpired: true);
 		}
 
-		var nowTimestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+		var nowTimestamp = dateTimeProviderService.UtcNowUnixTimeSeconds();
 		var validTimestampRange = TimeSpan.FromMinutes(Constants.OtpExpirationMinutes).TotalSeconds;
-		var otpTimestampValid = (nowTimestamp - inMemoryOtp.CreatedTimestamp <= validTimestampRange);
 
+		var otpTimestampValid = (nowTimestamp - otp.CreatedTimestamp <= validTimestampRange);
 		if (!otpTimestampValid)
 		{
-			return (isValid: false, canRetry: true, hasExpired: true);
+			return (isValid: false, hasExpired: true);
 		}
 
-		var otpCodeValid = (otpInputCode == inMemoryOtp.Code);
-		return (isValid: otpCodeValid, canRetry: true, hasExpired: false);
+		return (isValid: otpInputCode == otp.Code, hasExpired: false);
 	}
 }

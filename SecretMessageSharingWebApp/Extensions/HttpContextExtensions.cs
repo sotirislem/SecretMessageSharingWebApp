@@ -1,4 +1,5 @@
 ﻿using SecretMessageSharingWebApp.Middlewares;
+using SecretMessageSharingWebApp.Models;
 using UAParser;
 
 namespace SecretMessageSharingWebApp.Extensions;
@@ -26,7 +27,17 @@ public static class HttpContextExtensions
 
 	public static DateTime GetRequestDateTime(this HttpContext httpContext)
 	{
-		return httpContext.Features.Get<IHttpRequestDateTimeFeature>()!.RequestDateTime;
+		return httpContext.Features.Get<HttpRequestDateTimeFeature>()!.RequestDateTime;
+	}
+
+	public static HttpContextClientInfo GetHttpContextClientInfo(this HttpContext httpContext)
+	{
+		return new HttpContextClientInfo
+		{
+			RequestDateTime = httpContext.GetRequestDateTime(),
+			ClientIP = httpContext.GetClientIP(),
+			ClientInfo = httpContext.GetClientInfo()
+		};
 	}
 
 	public static string? GetRequestHeaderValue(this HttpContext httpContext, string key)

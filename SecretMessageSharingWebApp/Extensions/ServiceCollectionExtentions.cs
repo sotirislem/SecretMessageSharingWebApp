@@ -10,6 +10,6 @@ public static class ServiceCollectionExtentions
 			.Bind(configuration)
 			.ValidateDataAnnotations();
 
-		services.AddTransient(resolver => resolver.GetRequiredService<IOptions<TOptions>>().Value);
+		services.AddSingleton(resolver => resolver.GetRequiredService<IOptions<TOptions>>().Value);
 	}
 }

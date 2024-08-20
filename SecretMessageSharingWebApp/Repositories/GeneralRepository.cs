@@ -6,60 +6,63 @@ using System.Linq.Expressions;
 
 namespace SecretMessageSharingWebApp.Repositories;
 
-public class GeneralRepository<TEntity> : IGeneralRepository<TEntity> where TEntity : class
+public class GeneralRepository<TEntity> : IGeneralRepository<TEntity> where TEntity : class, IDbEntity
 {
-	protected readonly SecretMessagesDbContext _context;
-	protected readonly DbSet<TEntity> _dbSet;
 	protected readonly IDateTimeProviderService _dateTimeProviderService;
+
+	protected readonly SecretMessagesDbContext _dbContext;
+	protected readonly DbSet<TEntity> _dbSet;
 
 	public GeneralRepository(SecretMessagesDbContext context, IDateTimeProviderService dateTimeProviderService)
 	{
-		_context = context;
-		_dbSet = context.Set<TEntity>();
 		_dateTimeProviderService = dateTimeProviderService;
+
+		_dbContext = context;
+		_dbSet = context.Set<TEntity>();
 	}
 
-	public async Task<TEntity?> Get(string id)
+	public async Task<TEntity?> GetById(string id)
 	{
 		return await _dbSet.FindAsync(id);
 	}
 
-	public async Task Insert(TEntity entity, bool save = true)
+	public async Task<int> Insert(TEntity entity)
 	{
 		_dbSet.Add(entity);
-		if (save) await Save();
+
+		return await _dbContext.SaveChangesAsync();
 	}
 
-	public async Task Delete(TEntity entity, bool save = true)
+	public async Task<int> Delete(TEntity entity)
 	{
-		if (_context.Entry(entity).State == EntityState.Detached)
+		if (_dbContext.Entry(entity).State == EntityState.Detached)
 		{
 			_dbSet.Attach(entity);
 		}
 
 		_dbSet.Remove(entity);
-		if (save) await Save();
+
+		return await _dbContext.SaveChangesAsync();
 	}
 
-	public async Task<int> Save()
+	public async Task<ICollection<TEntity>> SelectEntitiesWhere(Expression<Func<TEntity, bool>> predicate)
 	{
-		return await _context.SaveChangesAsync();
-	}
-
-	public IQueryable<TEntity> GetDbSetAsQueryable()
-	{
-		return _dbSet.AsNoTracking().AsQueryable();
+		return await _dbSet
+			.Where(predicate)
+			.AsNoTracking()
+			.ToListAsync();
 	}
 
 	public async Task<int> DeleteRangeBasedOnPredicate(Expression<Func<TEntity, bool>> predicate)
 	{
 		var results = _dbSet.Where(predicate);
-		if (results.Count() > 0)
+		var resultsCount = await results.CountAsync();
+
+		if (resultsCount > 0)
 		{
 			_dbSet.RemoveRange(results);
-			var dbSaveResult = await Save();
 
-			return dbSaveResult;
+			return await _dbContext.SaveChangesAsync();
 		}
 
 		return 0;

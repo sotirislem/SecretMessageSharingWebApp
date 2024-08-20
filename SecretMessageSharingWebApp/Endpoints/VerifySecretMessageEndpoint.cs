@@ -4,33 +4,26 @@ using SecretMessageSharingWebApp.Services.Interfaces;
 
 namespace SecretMessageSharingWebApp.Endpoints;
 
-public sealed class VerifySecretMessageEndpoint : EndpointWithoutRequest<VerifySecretMessageResponse>
+public sealed class VerifySecretMessageEndpoint(ISecretMessagesService secretMessagesService) : EndpointWithoutRequest<VerifySecretMessageResponse>
 {
 	public override void Configure()
 	{
 		Verbs(Http.GET);
-		Routes(Constants.ApiRoutes.VerifySecretMessage);
+		Routes("api/secret-messages/verify/{id}");
 		AllowAnonymous();
-	}
-
-	private readonly ISecretMessagesService _secretMessagesService;
-
-	public VerifySecretMessageEndpoint(ISecretMessagesService secretMessagesService)
-	{
-		_secretMessagesService = secretMessagesService;
 	}
 
 	public override async Task HandleAsync(CancellationToken ct)
 	{
 		var messageId = Route<string>("id")!;
 
-		var result = _secretMessagesService.VerifyExistence(messageId);
+		var (exists, otpSettings) = await secretMessagesService.Exists(messageId);
 
 		var response = new VerifySecretMessageResponse
 		{
 			Id = messageId,
-			Exists = result.exists,
-			RequiresOtp = result.otp?.Required
+			Exists = exists,
+			RequiresOtp = otpSettings?.Required
 		};
 
 		await SendOkAsync(response, cancellation: ct);

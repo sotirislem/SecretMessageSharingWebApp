@@ -12,6 +12,7 @@ public sealed class ValidateSecretMessageOtpRequestValidator : Validator<Validat
 
 		RuleFor(x => x.OtpCode)
 			.NotEmpty()
-			.Length(Constants.OtpSize);
+			.Length(Constants.OtpSize)
+			.Matches(@"^\d+$").WithMessage("The value must contain only numeric digits."); ;
 	}
 }

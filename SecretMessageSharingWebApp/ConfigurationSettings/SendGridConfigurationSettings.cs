@@ -4,9 +4,9 @@ namespace SecretMessageSharingWebApp.Configuration;
 
 public sealed class SendGridConfigurationSettings
 {
-	[Required]
+	//[Required]
 	public string ApiKey { get; init; }
 
-	[Required]
+	//[Required]
 	public string AuthSender { get; init; }
 }
