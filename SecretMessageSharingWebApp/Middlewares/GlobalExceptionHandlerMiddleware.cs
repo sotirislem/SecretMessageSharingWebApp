@@ -1,5 +1,5 @@
-﻿using Microsoft.AspNetCore.Diagnostics;
-using Microsoft.AspNetCore.Mvc;
+﻿using FastEndpoints;
+using Microsoft.AspNetCore.Diagnostics;
 
 namespace SecretMessageSharingWebApp.Middlewares;
 
@@ -10,18 +10,21 @@ internal sealed class GlobalExceptionHandlerMiddleware(ILogger<GlobalExceptionHa
 		Exception exception,
 		CancellationToken cancellationToken)
 	{
-		logger.LogError(exception, "Exception occurred: {exceptionMessage}", exception.Message);
+		logger.LogError(exception,
+			"{exceptionType}: {exceptionMessage}", exception.GetType(), exception.Message);
 
-		var problemDetails = new ProblemDetails
+		var internalErrorResponse = new InternalErrorResponse()
 		{
-			Status = StatusCodes.Status500InternalServerError,
-			Title = "Internal Server Error"
+			Status = "Internal Server Error",
+			Code = StatusCodes.Status500InternalServerError,
+			Reason = "Something unexpected has happened",
+			Note = "See application log for stack trace"
 		};
 
-		httpContext.Response.StatusCode = problemDetails.Status.Value;
+		httpContext.Response.StatusCode = internalErrorResponse.Code;
+		httpContext.Response.ContentType = "application/json";
 
-		await httpContext.Response
-			.WriteAsJsonAsync(problemDetails, cancellationToken);
+		await httpContext.Response.WriteAsJsonAsync(internalErrorResponse, cancellationToken);
 
 		return true;
 	}

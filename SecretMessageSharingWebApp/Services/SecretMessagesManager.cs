@@ -1,5 +1,4 @@
-﻿using System.Security.Claims;
-using SecretMessageSharingWebApp.Mappings;
+﻿using SecretMessageSharingWebApp.Mappings;
 using SecretMessageSharingWebApp.Models;
 using SecretMessageSharingWebApp.Models.Api.Requests;
 using SecretMessageSharingWebApp.Models.Api.Responses;

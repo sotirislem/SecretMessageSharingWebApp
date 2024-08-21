@@ -12,6 +12,16 @@ public sealed class GetRecentlyStoredSecretMessagesEndpoint(
 		Verbs(Http.GET);
 		Routes("api/secret-messages");
 		AllowAnonymous();
+
+		Description(builder => builder
+			.ClearDefaultProduces()
+			.Produces(StatusCodes.Status200OK, typeof(RecentlyStoredSecretMessagesResponse))
+			.Produces(StatusCodes.Status500InternalServerError, typeof(InternalErrorResponse)));
+
+		Summary(s =>
+		{
+			s.Summary = "Get recently stored Secret Messages info";
+		});
 	}
 
 	public override async Task HandleAsync(CancellationToken ct)

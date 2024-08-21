@@ -9,7 +9,8 @@ import {
 	HttpErrorResponse
 } from '@angular/common/http';
 import { ToastrService } from 'ngx-toastr';
-import { BadRequestApiError } from '../models/api/bad-request-api-error.model';
+import { ApiErrorResponse } from '../models/api/api-error-response.model';
+import { ApiInternalErrorResponse } from '../models/api/api-internal-error-response.model';
 
 @Injectable()
 export class HttpErrorInterceptor implements HttpInterceptor {
@@ -24,19 +25,29 @@ export class HttpErrorInterceptor implements HttpInterceptor {
 					let toastrMessage: string = 'API error';
 
 					if (response.status === 400) {
-						const badRequestError = response.error as BadRequestApiError;
+						const badRequestError = response.error as ApiErrorResponse;
 
-						toastrMessage = `${badRequestError.message}</br>`
+						if (badRequestError) {
+							toastrMessage = `${badRequestError.message}</br>`
 
-						if (badRequestError.errors) {
-							toastrMessage += "<ul>";
-							for (let errorKey in badRequestError.errors) {
-								const errorMessages = badRequestError.errors[errorKey];
-								for (let errorMessage of errorMessages) {
-									toastrMessage += '<li><b>' + errorKey + '</b>: ' + errorMessage + '</li>';
+							if (badRequestError.errors) {
+								toastrMessage += "<ul>";
+								for (let errorKey in badRequestError.errors) {
+									const errorMessages = badRequestError.errors[errorKey];
+									for (let errorMessage of errorMessages) {
+										toastrMessage += '<li><b>' + errorKey + '</b>: ' + errorMessage + '</li>';
+									}
 								}
+								toastrMessage += "</ul>";
 							}
-							toastrMessage += "</ul>";
+						}
+					}
+					else if (response.status === 500) {
+						const internalError = response.error as ApiInternalErrorResponse;
+
+						if (internalError) {
+							toastrTitle = internalError.status;
+							toastrMessage = internalError.reason;
 						}
 					}
 

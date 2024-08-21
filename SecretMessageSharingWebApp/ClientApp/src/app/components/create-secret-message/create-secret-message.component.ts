@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import { FormBuilder, FormControl, FormGroup } from '@angular/forms';
+import { FormBuilder, FormControl } from '@angular/forms';
 
 import { SjclService } from '../../services/sjcl.service';
 import { ApiClientService } from '../../services/api-client.service';
@@ -10,6 +10,7 @@ import { Routes, Constants } from '../../../constants';
 
 import { SecretMessage } from '../../models/secret-message.model';
 import { OtpSettings, StoreNewSecretMessageRequest } from '../../models/api/store-new-secret-message-request.model';
+import { finalize } from 'rxjs';
 
 @Component({
 	selector: 'create-secret-message',
@@ -124,10 +125,17 @@ export class CreateSecretMessageComponent {
 				},
 				encryptionKeySha256: encryptionResult.encryptionKeySha256
 			};
-			this.apiClientService.storeSecretMessage(request).subscribe(secretMsgId => {
-				this.navigateToNewSecretMessagePage(secretMsgObj, secretMsgId, encryptionResult.encryptionKeyAsBase64url);
-			});
-		}, 500);
+
+			this.apiClientService.storeSecretMessage(request)
+				.pipe(
+					finalize(() => {
+						this.formSubmitted = false;
+					})
+				)
+				.subscribe(secretMsgId => {
+					this.navigateToNewSecretMessagePage(secretMsgObj, secretMsgId, encryptionResult.encryptionKeyAsBase64url);
+				});
+		}, 250);
 	}
 
 	onFileSelection(event: Event) {

@@ -8,9 +8,7 @@ public sealed class ValidateSecretMessageOtpRequestValidator : Validator<Validat
 {
 	public ValidateSecretMessageOtpRequestValidator()
 	{
-		RuleLevelCascadeMode = CascadeMode.Stop;
-
-		RuleFor(x => x.OtpCode)
+		RuleFor(request => request.OtpCode)
 			.NotEmpty()
 			.Length(Constants.OtpSize)
 			.Matches(@"^\d+$").WithMessage("The value must contain only numeric digits."); ;

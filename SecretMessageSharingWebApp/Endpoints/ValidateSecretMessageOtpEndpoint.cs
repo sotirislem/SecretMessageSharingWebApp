@@ -13,6 +13,17 @@ public sealed class ValidateSecretMessageOtpEndpoint(
 		Verbs(Http.POST);
 		Routes("api/secret-messages/otp/{id}");
 		AllowAnonymous();
+
+		Description(builder => builder
+			.ClearDefaultProduces()
+			.Produces(StatusCodes.Status200OK, typeof(ValidateSecretMessageOtpResponse))
+			.Produces(StatusCodes.Status400BadRequest, typeof(ErrorResponse))
+			.Produces(StatusCodes.Status500InternalServerError, typeof(InternalErrorResponse)));
+
+		Summary(s =>
+		{
+			s.Summary = "Validate OTP of a Secret Message (generates auth jwtToken upon success)";
+		});
 	}
 
 	public override async Task HandleAsync(ValidateSecretMessageOtpRequest req, CancellationToken ct)

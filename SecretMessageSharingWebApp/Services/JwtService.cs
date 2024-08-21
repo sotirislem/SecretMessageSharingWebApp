@@ -71,7 +71,6 @@ public sealed class JwtService(
 			JwtSecurityToken jwtToken = (JwtSecurityToken)securityToken;
 
 			var jwtTokenClaimsAreValid = jwtToken.Claims.Any(claim => claim.Type == "messageId" && claim.Value == messageId);
-
 			return jwtTokenClaimsAreValid;
 		}
 		catch (Exception ex)

@@ -1,7 +1,7 @@
 using FastEndpoints;
+using FastEndpoints.Swagger;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging.ApplicationInsights;
 using SecretMessageSharingWebApp;
 using SecretMessageSharingWebApp.Configuration;
 using SecretMessageSharingWebApp.Data;
@@ -16,13 +16,6 @@ using SecretMessageSharingWebApp.Services.Interfaces;
 
 // builder
 var builder = WebApplication.CreateBuilder(args);
-
-#if (!DEBUG)
-if (builder.Configuration["APPLICATIONINSIGHTS_CONNECTION_STRING"] is not null)
-{
-	builder.Services.AddApplicationInsightsTelemetry(builder.Configuration["APPLICATIONINSIGHTS_CONNECTION_STRING"]);
-}
-#endif
 
 builder.Services.BindConfigurationSettings<CosmosDbConfigurationSettings>(builder.Configuration.GetSection("CosmosDb"));
 builder.Services.BindConfigurationSettings<SendGridConfigurationSettings>(builder.Configuration.GetSection("SendGrid"));
@@ -65,8 +58,15 @@ builder.Services.AddSession(options =>
 });
 
 builder.Services.AddFastEndpoints();
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.SwaggerDocument(o =>
+{
+	o.DocumentSettings = s =>
+	{
+		s.Title = Constants.AppName;
+		s.Version = "v1";
+		s.Description = $"API documentation for {Constants.AppName} (using FastEndpoints)";
+	};
+});
 
 builder.Services.AddSignalR(hubOptions =>
 {
@@ -97,8 +97,7 @@ using (var scope = app.Services.CreateScope())
 
 if (app.Environment.IsDevelopment())
 {
-	app.UseSwagger();
-	app.UseSwaggerUI();
+	app.UseSwaggerGen();
 }
 else
 {
@@ -117,9 +116,8 @@ app.UseExceptionHandler();
 
 app.MapHub<SecretMessageDeliveryNotificationHub>(SecretMessageDeliveryNotificationHub.Url);
 
-app.UseAuthorization();
 app.UseFastEndpoints();
-
+app.UseAuthorization();
 app.MapFallbackToFile("index.html");
 
 app.Run();
