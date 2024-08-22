@@ -9,18 +9,16 @@ namespace SecretMessageSharingWebApp.Services;
 
 public sealed class SecretMessagesService(
 	ILogger<SecretMessagesService> logger,
-	IMemoryCacheService memoryCacheService,
 	IHttpContextAccessor httpContextAccessor,
 	ISecretMessagesRepository secretMessagesRepository) : ISecretMessagesService
 {
-	public async Task<SecretMessage> Store(SecretMessage secretMessage, string clientId)
+	public async Task<SecretMessage> Store(SecretMessage secretMessage)
 	{
 		var secretMessageEntity = secretMessage.ToEntity();
 
 		await secretMessagesRepository.Insert(secretMessageEntity);
 
 		SaveSecretMessageToRecentlyStoredSecretMessagesList(secretMessageEntity.Id);
-		SaveSecretMessageCreatorClientIdToMemoryCache(secretMessageEntity.Id, clientId);
 
 		logger.LogInformation("SecretMessagesService:Insert => ID: {secretMessageId}", secretMessageEntity.Id);
 
@@ -76,11 +74,6 @@ public sealed class SecretMessagesService(
 			.SelectEntitiesWhere(secretMessageEntity => recentlyStoredSecretMessagesList.Contains(secretMessageEntity.Id)))
 			.Select(secretMessageEntity => secretMessageEntity.ToRecentlyStoredSecretMessage())
 			.ToList();
-	}
-
-	private void SaveSecretMessageCreatorClientIdToMemoryCache(string secretMessageId, string clientId)
-	{
-		memoryCacheService.SetValue(secretMessageId, clientId, Constants.MemoryKeys.SecretMessageCreatorClientId);
 	}
 
 	private void SaveSecretMessageToRecentlyStoredSecretMessagesList(string secretMessageId)

@@ -7,21 +7,22 @@ namespace SecretMessageSharingWebApp.Mappings;
 
 public static class EntityToDomainDtoMapper
 {
-	public static SecretMessage ToDomain(this SecretMessageEntity secretMessageEntity) => new()
+	public static SecretMessage ToDomain(this SecretMessageEntity entity) => new()
 	{
-		Id = secretMessageEntity.Id,
-		CreatedDateTime = secretMessageEntity.CreatedDateTime,
-		CreatorClientInfo = secretMessageEntity.CreatorClientInfo,
-		CreatorIP = secretMessageEntity.CreatorIP,
-		Data = JsonSerializer.Deserialize<SecretMessageData>(secretMessageEntity.JsonData)!,
-		Otp = secretMessageEntity.Otp.ToDomain(),
-		EncryptionKeySha256 = secretMessageEntity.EncryptionKeySha256
+		Id = entity.Id,
+		CreatedDateTime = entity.CreatedDateTime,
+		Data = JsonSerializer.Deserialize<SecretMessageData>(entity.JsonData)!,
+		Otp = entity.Otp.ToDomain(),
+		EncryptionKeySha256 = entity.EncryptionKeySha256,
+		CreatorClientId = entity.CreatorClientId,
+		CreatorIP = entity.CreatorIP,
+		CreatorClientInfo = entity.CreatorClientInfo,
 	};
 
-	public static Models.Common.OtpSettings ToDomain(this Data.Entities.OtpSettings? otpSettingsEntity) => new()
+	public static Models.Common.OtpSettings ToDomain(this Data.Entities.OtpSettings? entity) => new()
 	{
-		Required = otpSettingsEntity?.Required ?? false,
-		RecipientsEmail = otpSettingsEntity?.RecipientsEmail ?? string.Empty
+		Required = entity?.Required ?? false,
+		RecipientsEmail = entity?.RecipientsEmail ?? string.Empty
 	};
 
 	public static GetLog ToDomain(this GetLogEntity getLogDto) => new()
@@ -36,21 +37,21 @@ public static class EntityToDomainDtoMapper
 		SecretMessageCreatorClientInfo = getLogDto.SecretMessageCreatorClientInfo
 	};
 
-	public static RecentlyStoredSecretMessage ToRecentlyStoredSecretMessage(this SecretMessageEntity secretMessageEntity) => new()
+	public static RecentlyStoredSecretMessage ToRecentlyStoredSecretMessage(this SecretMessageEntity entity) => new()
 	{
-		Id = secretMessageEntity.Id,
-		CreatedDateTime = secretMessageEntity.CreatedDateTime
+		Id = entity.Id,
+		CreatedDateTime = entity.CreatedDateTime
 	};
 
-	public static RecentlyStoredSecretMessage ToRecentlyStoredSecretMessage(this GetLogEntity getLogEntity) => new()
+	public static RecentlyStoredSecretMessage ToRecentlyStoredSecretMessage(this GetLogEntity entity) => new()
 	{
-		Id = getLogEntity.SecretMessageId,
-		CreatedDateTime = getLogEntity.SecretMessageCreatedDateTime!.Value,
+		Id = entity.SecretMessageId,
+		CreatedDateTime = entity.SecretMessageCreatedDateTime!.Value,
 		DeliveryDetails = new DeliveryDetails
 		{
-			DeliveredAt = getLogEntity.RequestDateTime,
-			RecipientIP = getLogEntity.RequestCreatorIP,
-			RecipientClientInfo = getLogEntity.RequestClientInfo
+			DeliveredAt = entity.RequestDateTime,
+			RecipientIP = entity.RequestCreatorIP,
+			RecipientClientInfo = entity.RequestClientInfo
 		}
 	};
 }

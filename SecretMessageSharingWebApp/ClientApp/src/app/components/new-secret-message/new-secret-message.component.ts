@@ -72,7 +72,7 @@ export class NewSecretMessageComponent implements AfterViewInit, OnDestroy {
 		if (!this.ngbTooltip.isOpen()) this.ngbTooltip.open();
 
 		this.ngbTooltipClearTimer = setTimeout(() => {
-			this.ngbTooltip.close();
+			this.ngbTooltip?.close();
 		}, 5000);
 	}
 

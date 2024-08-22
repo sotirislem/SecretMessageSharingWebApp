@@ -89,6 +89,17 @@ public class SecretMessagesManager(
 	{
 		var secretMessage = await secretMessagesService.Retrieve(messageId);
 
+		var getLog = await getLogsService.CreateNewLog(new GetLog
+		{
+			SecretMessageId = messageId,
+			RequestDateTime = httpContextClientInfo.RequestDateTime,
+			RequestCreatorIP = httpContextClientInfo.ClientIP,
+			RequestClientInfo = httpContextClientInfo.ClientInfo,
+			SecretMessageCreatedDateTime = secretMessage?.CreatedDateTime,
+			SecretMessageCreatorIP = secretMessage?.CreatorIP,
+			SecretMessageCreatorClientInfo = secretMessage?.CreatorClientInfo
+		});
+
 		if (secretMessage is null)
 		{
 			return ApiResult.NotFound();
@@ -109,19 +120,8 @@ public class SecretMessagesManager(
 			}
 		}
 
-		var getLog = await getLogsService.CreateNewLog(new GetLog
-		{
-			SecretMessageId = messageId,
-			RequestDateTime = httpContextClientInfo.RequestDateTime,
-			RequestCreatorIP = httpContextClientInfo.ClientIP,
-			RequestClientInfo = httpContextClientInfo.ClientInfo,
-			SecretMessageCreatedDateTime = secretMessage?.CreatedDateTime,
-			SecretMessageCreatorIP = secretMessage?.CreatorIP,
-			SecretMessageCreatorClientInfo = secretMessage?.CreatorClientInfo
-		});
-
 		var secretMessageDeliveryNotification = getLog.ToSecretMessageDeliveryNotification();
-		var deliveryNotificationSent = await notificationHubService.SendNotification(secretMessageDeliveryNotification);
+		var deliveryNotificationSent = await notificationHubService.SendNotification(secretMessage.CreatorClientId, secretMessageDeliveryNotification);
 
 		return ApiResult.Success(new GetSecretMessageResponse
 		{

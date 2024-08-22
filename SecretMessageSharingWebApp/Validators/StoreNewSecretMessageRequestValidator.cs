@@ -29,6 +29,8 @@ public sealed class StoreNewSecretMessageRequestValidator : Validator<StoreNewSe
 				.When(request => request.Otp.Required);
 		});
 
-		RuleFor(request => request.EncryptionKeySha256).NotEmpty();
+		RuleFor(request => request.EncryptionKeySha256)
+			.Matches(@"^[a-fA-F0-9]{64}$")
+			.WithMessage($"'{nameof(StoreNewSecretMessageRequest.EncryptionKeySha256)}' must be a valid SHA-256 hexadecimal string.");
 	}
 }

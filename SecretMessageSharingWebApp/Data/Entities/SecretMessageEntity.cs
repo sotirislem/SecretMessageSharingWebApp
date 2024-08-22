@@ -8,6 +8,8 @@ public sealed record SecretMessageEntity : IDbEntity
 
 	public string JsonData { get; init; }
 
+	public string CreatorClientId { get; init; }
+
 	public string? CreatorIP { get; init; }
 
 	public string? CreatorClientInfo { get; init; }

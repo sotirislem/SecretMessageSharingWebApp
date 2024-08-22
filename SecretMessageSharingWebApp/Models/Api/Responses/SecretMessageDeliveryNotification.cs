@@ -18,4 +18,7 @@ public sealed record SecretMessageDeliveryNotification
 
 	[JsonPropertyName("recipientClientInfo")]
 	public string? RecipientClientInfo { get; init; }
+
+	[JsonPropertyName("isSelfNotification")]
+	public bool IsSelfNotification { get; set; }
 }

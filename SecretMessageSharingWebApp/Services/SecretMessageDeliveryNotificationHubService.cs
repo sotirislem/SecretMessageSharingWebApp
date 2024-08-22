@@ -1,5 +1,6 @@
 ﻿using System.Collections.Concurrent;
 using Microsoft.AspNetCore.SignalR;
+using SecretMessageSharingWebApp.Extensions;
 using SecretMessageSharingWebApp.Hubs;
 using SecretMessageSharingWebApp.Models.Api.Responses;
 using SecretMessageSharingWebApp.Services.Interfaces;
@@ -9,6 +10,7 @@ namespace SecretMessageSharingWebApp.Services;
 public sealed class SecretMessageDeliveryNotificationHubService(
 		ILogger<SecretMessageDeliveryNotificationHubService> logger,
 		IMemoryCacheService memoryCacheService,
+		IHttpContextAccessor httpContextAccessor,
 		IHubContext<SecretMessageDeliveryNotificationHub, ISecretMessageDeliveryNotificationHub> secretMessageDeliveryNotificationHub)
 	: ISecretMessageDeliveryNotificationHubService
 {
@@ -24,26 +26,20 @@ public sealed class SecretMessageDeliveryNotificationHubService(
 		_activeClients.TryRemove(clientId, out _);
 	}
 
-	public async Task<bool> SendNotification(SecretMessageDeliveryNotification secretMessageDeliveryNotification)
+	public async Task<bool> SendNotification(string clientId, SecretMessageDeliveryNotification secretMessageDeliveryNotification)
 	{
-		(var clientIdExists, var clientId)
-			= memoryCacheService.GetValue<string>(secretMessageDeliveryNotification.MessageId, Constants.MemoryKeys.SecretMessageCreatorClientId);
+		secretMessageDeliveryNotification.IsSelfNotification = IsSelfNotification(clientId);
 
-		if (!clientIdExists)
-		{
-			return false;
-		}
-
-		var notificationSent = await TrySend(clientId!, secretMessageDeliveryNotification);
+		var notificationSent = await TrySend(clientId, secretMessageDeliveryNotification);
 		if (!notificationSent)
 		{
-			SaveNotificationToMemoryCacheQueueForFutureDelivery(clientId!, secretMessageDeliveryNotification);
+			SaveNotificationToMemoryCacheQueueForFutureDelivery(clientId, secretMessageDeliveryNotification);
 		}
 
 		return notificationSent;
 	}
 
-	public async Task SendAnyPendingSecretMessageDeliveryNotificationFromMemoryCacheQueue(string clientId)
+	public async Task SendAnyPendingNotificationFromMemoryCacheQueue(string clientId)
 	{
 		var memoryResult = memoryCacheService.GetValue<Queue<SecretMessageDeliveryNotification>>(clientId, Constants.MemoryKeys.SecretMessageDeliveryNotificationQueue);
 		if (!memoryResult.exists)
@@ -85,5 +81,12 @@ public sealed class SecretMessageDeliveryNotificationHubService(
 		secretMessageDeliveryNotificationQueue.Enqueue(secretMessageDeliveryNotification);
 
 		memoryCacheService.SetValue(clientId, secretMessageDeliveryNotificationQueue, Constants.MemoryKeys.SecretMessageDeliveryNotificationQueue);
+	}
+
+	private bool IsSelfNotification(string clientIdToSendNotification)
+	{
+		var currentClientId = httpContextAccessor.HttpContext!.GetRequestHeaderValue("Client-Id");
+
+		return clientIdToSendNotification == currentClientId;
 	}
 }

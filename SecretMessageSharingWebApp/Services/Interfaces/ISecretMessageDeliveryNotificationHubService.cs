@@ -8,7 +8,7 @@ public interface ISecretMessageDeliveryNotificationHubService
 
 	void RemoveConnection(string clientId);
 
-	Task<bool> SendNotification(SecretMessageDeliveryNotification secretMessageDeliveryNotification);
+	Task<bool> SendNotification(string clientId, SecretMessageDeliveryNotification secretMessageDeliveryNotification);
 
-	Task SendAnyPendingSecretMessageDeliveryNotificationFromMemoryCacheQueue(string clientId);
+	Task SendAnyPendingNotificationFromMemoryCacheQueue(string clientId);
 }

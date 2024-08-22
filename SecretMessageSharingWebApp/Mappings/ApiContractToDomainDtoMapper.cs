@@ -22,6 +22,7 @@ public static class ApiContractToDomainDtoMapper
 			RecipientsEmail = request.Otp.RecipientsEmail.Trim()
 		},
 		EncryptionKeySha256 = request.EncryptionKeySha256,
+		CreatorClientId = request.ClientId,
 		CreatorIP = httpContextClientInfo.ClientIP,
 		CreatorClientInfo = httpContextClientInfo.ClientInfo
 	};

@@ -20,16 +20,18 @@ public sealed class SecretMessageDeliveryNotificationHub(
 	public override Task OnConnectedAsync()
 	{
 		var clientId = GetClientId();
-		if (string.IsNullOrEmpty(clientId))
+		if (IsClientIdValidGuid(clientId) is false)
 		{
+			logger.LogError("SecretMessageDeliveryNotificationHub => New connection aborted, ID: {connectionId}, ClientId: {clientId}", Context.ConnectionId, clientId);
+
 			Context.Abort();
 			return Task.CompletedTask;
 		}
 
-		secretMessageDeliveryNotificationHubService.AddConnection(clientId, Context.ConnectionId);
-		secretMessageDeliveryNotificationHubService.SendAnyPendingSecretMessageDeliveryNotificationFromMemoryCacheQueue(clientId);
+		secretMessageDeliveryNotificationHubService.AddConnection(clientId!, Context.ConnectionId);
+		secretMessageDeliveryNotificationHubService.SendAnyPendingNotificationFromMemoryCacheQueue(clientId!);
 
-		logger.LogInformation("SecretMessageDeliveryNotificationHub => New connection, ID: {connectionId}, Client: {clientId}", Context.ConnectionId, clientId);
+		logger.LogInformation("SecretMessageDeliveryNotificationHub => New connection established, ID: {connectionId}, ClientId: {clientId}", Context.ConnectionId, clientId);
 
 		return base.OnConnectedAsync();
 	}
@@ -37,10 +39,10 @@ public sealed class SecretMessageDeliveryNotificationHub(
 	public override Task OnDisconnectedAsync(Exception? exception)
 	{
 		var clientId = GetClientId();
-		if (!string.IsNullOrEmpty(clientId))
+		if (IsClientIdValidGuid(clientId) is true)
 		{
-			secretMessageDeliveryNotificationHubService.RemoveConnection(clientId);
-			logger.LogInformation("SecretMessageDeliveryNotificationHub => Connection terminated, ID: {connectionId}, Client: {clientId}", Context.ConnectionId, clientId);
+			secretMessageDeliveryNotificationHubService.RemoveConnection(clientId!);
+			logger.LogInformation("SecretMessageDeliveryNotificationHub => Connection terminated, ID: {connectionId}, ClientId: {clientId}", Context.ConnectionId, clientId);
 		}
 
 		if (exception is not null)
@@ -57,5 +59,10 @@ public sealed class SecretMessageDeliveryNotificationHub(
 			.Where(x => x.Key == "client_id")
 			.Select(x => x.Value.ToString())
 			.FirstOrDefault();
+	}
+
+	private bool IsClientIdValidGuid(string? clientId)
+	{
+		return Guid.TryParse(clientId, out _);
 	}
 }

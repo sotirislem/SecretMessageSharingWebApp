@@ -62,6 +62,10 @@ export class SecretMessageDeliveryNotificationHubService {
 	private handleIncomingNotification(secretMessageDeliveryNotification: SecretMessageDeliveryNotification) {
 		this.receivedDeliveryNotifications$.next(secretMessageDeliveryNotification.messageId);
 
+		if (secretMessageDeliveryNotification.isSelfNotification) {
+			return;
+		}
+
 		this.modalService.openModal(
 			MessageDeliveryDetailsModalComponent,
 			{ isNotification: true, messageDeliveryDetails: secretMessageDeliveryNotification },

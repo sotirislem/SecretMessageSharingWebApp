@@ -4,4 +4,5 @@ export interface SecretMessageDeliveryNotification {
 	messageDeliveredOn: Date;
 	recipientIP: string;
 	recipientClientInfo: string;
+	isSelfNotification: boolean;
 }

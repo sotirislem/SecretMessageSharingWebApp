@@ -25,7 +25,6 @@ public static class Constants
 
 	public static class MemoryKeys
 	{
-		public const string SecretMessageCreatorClientId = "SECRET_MESSAGE_CREATOR_CLIENT_ID";
 		public const string SecretMessageOtp = "SECRET_MESSAGE_OTP";
 		public const string SecretMessageDeliveryNotificationQueue = "SECRET_MESSAGE_DELIVERY_NOTIFICATION_QUEUE";
 	}

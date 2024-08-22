@@ -9,9 +9,10 @@ public static class DomainToEntityDtoMapper
 	public static SecretMessageEntity ToEntity(this SecretMessage secretMessage) => new()
 	{
 		CreatedDateTime = secretMessage.CreatedDateTime,
+		JsonData = JsonSerializer.Serialize(secretMessage.Data),
+		CreatorClientId = secretMessage.CreatorClientId,
 		CreatorIP = secretMessage.CreatorIP,
 		CreatorClientInfo = secretMessage.CreatorClientInfo,
-		JsonData = JsonSerializer.Serialize(secretMessage.Data),
 		Otp = secretMessage.Otp.Required
 			? new OtpSettings() { RecipientsEmail = secretMessage.Otp.RecipientsEmail }
 			: null,

@@ -5,7 +5,7 @@ namespace SecretMessageSharingWebApp.Services.Interfaces;
 
 public interface ISecretMessagesService
 {
-	Task<SecretMessage> Store(SecretMessage secretMessage, string clientId);
+	Task<SecretMessage> Store(SecretMessage secretMessage);
 
 	Task<(bool exists, OtpSettings? otpSettings)> Exists(string id);
 

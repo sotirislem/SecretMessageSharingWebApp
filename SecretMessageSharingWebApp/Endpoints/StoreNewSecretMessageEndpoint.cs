@@ -32,8 +32,7 @@ public sealed class StoreNewSecretMessageEndpoint(
 		var httpContextClientInfo = HttpContext.GetHttpContextClientInfo();
 
 		var secretMessage = await secretMessagesService.Store(
-			req.ToSecretMessage(httpContextClientInfo),
-			req.ClientId);
+			req.ToSecretMessage(httpContextClientInfo));
 
 		await SendCreatedAtAsync<GetSecretMessageEndpoint>(
 			routeValues: new
