@@ -21,7 +21,7 @@ public static class DomainDtoToApiContractMapper
 			return null;
 		}
 
-		if (!ipAddress.Contains('.'))
+		if (ipAddress.IndexOf('.') < 0)
 		{
 			return ipAddress;
 		}
