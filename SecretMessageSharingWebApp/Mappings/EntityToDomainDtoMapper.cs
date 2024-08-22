@@ -50,8 +50,18 @@ public static class EntityToDomainDtoMapper
 		DeliveryDetails = new DeliveryDetails
 		{
 			DeliveredAt = entity.RequestDateTime,
-			RecipientIP = entity.RequestCreatorIP,
+			RecipientIP = MaskIpAddress(entity.RequestCreatorIP),
 			RecipientClientInfo = entity.RequestClientInfo
 		}
 	};
+
+	private static string? MaskIpAddress(string? ipAddress)
+	{
+		if (ipAddress?.Contains('.') is false)
+		{
+			return ipAddress;
+		}
+
+		return string.Concat(ipAddress.AsSpan(0, ipAddress!.LastIndexOf('.')), ".xxx");
+	}
 }

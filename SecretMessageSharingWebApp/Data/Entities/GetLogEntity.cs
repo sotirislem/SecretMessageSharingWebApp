@@ -1,6 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
-
-namespace SecretMessageSharingWebApp.Data.Entities;
+﻿namespace SecretMessageSharingWebApp.Data.Entities;
 
 public sealed record GetLogEntity : IDbEntity
 {

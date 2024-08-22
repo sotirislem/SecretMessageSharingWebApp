@@ -16,16 +16,11 @@ public static class DomainDtoToApiContractMapper
 
 	private static string? MaskIpAddress(string? ipAddress)
 	{
-		if (string.IsNullOrWhiteSpace(ipAddress))
-		{
-			return null;
-		}
-
-		if (ipAddress.IndexOf('.') < 0)
+		if (ipAddress?.Contains('.') is false)
 		{
 			return ipAddress;
 		}
 
-		return string.Concat(ipAddress.AsSpan(0, ipAddress.LastIndexOf('.')), ".xxx");
+		return string.Concat(ipAddress.AsSpan(0, ipAddress!.LastIndexOf('.')), ".xxx");
 	}
 }
