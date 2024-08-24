@@ -42,9 +42,9 @@ public sealed class SendGridEmailService(
 		var subject = $"{Constants.AppName} - OTP";
 
 		var htmlContent =
-			$"Message Id: <strong>{messageId}</strong></br>" +
-			$"</br>" +
-			$"OTP: <strong>{otp.Code}</strong></br>" +
+			$"Message Id: <strong>{messageId}</strong><br>" +
+			$"<br>" +
+			$"OTP: <strong>{otp.Code}</strong><br>" +
 			$"Expires at: {otp.ExpiresAt}";
 
 		return (subject, htmlContent);

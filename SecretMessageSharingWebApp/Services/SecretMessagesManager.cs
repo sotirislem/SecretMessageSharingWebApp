@@ -23,7 +23,7 @@ public class SecretMessagesManager(
 		var recentStoredSecretMessagesList = recentlyStoredMessagesService.GetRecentlyStoredSecretMessagesList();
 		if (!recentStoredSecretMessagesList.Contains(id))
 		{
-			return ApiResult.BadRequest();
+			return ApiResult.BadRequest("Message not on recently stored list");
 		}
 
 		bool deleted = await secretMessagesService.Delete(id);
@@ -36,14 +36,19 @@ public class SecretMessagesManager(
 	public async Task<ApiResult> SendOtp(string messageId)
 	{
 		var (exists, otpSettings) = await secretMessagesService.Exists(messageId);
-		var cacheResult = memoryCacheService.GetValue<OneTimePassword>(messageId, Constants.MemoryKeys.SecretMessageOtp, remove: false);
 
-		if (exists is false || otpSettings?.Required is not true ||
-			(cacheResult.exists is true && otpService.IsExpired(cacheResult.value!) is false))
+		if (exists is false || otpSettings?.Required is not true)
 		{
-			return ApiResult.BadRequest();
+			return ApiResult.BadRequest("Message does not exist or does not require OTP");
 		}
 
+		var cacheResult = memoryCacheService.GetValue<OneTimePassword>(messageId, Constants.MemoryKeys.SecretMessageOtp, remove: false);
+
+		if (cacheResult.exists && otpService.IsExpired(cacheResult.value!) is false)
+		{
+			return ApiResult.SuccessNoContent();
+		}
+		
 		var oneTimePassword = otpService.Generate();
 
 		var otpSent = await sendGridEmailService.SendOtp(oneTimePassword, messageId, otpSettings.RecipientsEmail);
@@ -64,10 +69,9 @@ public class SecretMessagesManager(
 		var (exists, otpSettings) = await secretMessagesService.Exists(messageId);
 		var cacheResult = memoryCacheService.GetValue<OneTimePassword>(messageId, Constants.MemoryKeys.SecretMessageOtp, remove: false);
 
-		if (exists is false || otpSettings?.Required is not true ||
-			cacheResult.exists is false)
+		if (exists is false || otpSettings?.Required is not true ||	cacheResult.exists is false)
 		{
-			return ApiResult.BadRequest();
+			return ApiResult.BadRequest("No acquired OTP to validate");
 		}
 
 		string? jwtToken = null;
@@ -81,13 +85,14 @@ public class SecretMessagesManager(
 			jwtToken = jwtService.GenerateToken(messageId);
 		}
 
-		return ApiResult.Success(new ValidateSecretMessageOtpResponse
+		return ApiResult<ValidateSecretMessageOtpResponse>.SuccessWithData(new()
 		{
 			IsValid = isValid,
 			HasExpired = hasExpired,
 			AuthToken = jwtToken
 		});
 	}
+
 	public async Task<ApiResult> GetMessage(string messageId, string encryptionKeySha256, string? jwtToken, HttpContextClientInfo httpContextClientInfo)
 	{
 		var secretMessage = await secretMessagesService.Retrieve(messageId);
@@ -110,7 +115,7 @@ public class SecretMessagesManager(
 
 		if (secretMessage.EncryptionKeySha256 != encryptionKeySha256)
 		{
-			return ApiResult.BadRequest();
+			return ApiResult.BadRequest("Bad encryption key hash");
 		}
 
 		if (secretMessage.Otp.Required)
@@ -126,7 +131,7 @@ public class SecretMessagesManager(
 		var secretMessageDeliveryNotification = getLog.ToSecretMessageDeliveryNotification();
 		var deliveryNotificationSent = await notificationHubService.SendNotification(secretMessage.CreatorClientId, secretMessageDeliveryNotification);
 
-		return ApiResult.Success(new GetSecretMessageResponse
+		return ApiResult<GetSecretMessageResponse>.SuccessWithData(new()
 		{
 			Data = secretMessage!.Data,
 			DeliveryNotificationSent = deliveryNotificationSent

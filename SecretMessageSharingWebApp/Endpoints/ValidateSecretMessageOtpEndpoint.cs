@@ -32,12 +32,6 @@ public sealed class ValidateSecretMessageOtpEndpoint(
 
 		var apiResult = await secretMessagesManager.ValidateOtp(messageId, req.OtpCode);
 
-		if (apiResult is SuccessResult<ValidateSecretMessageOtpResponse> successResult)
-		{
-			await SendOkAsync(successResult.Data, cancellation: ct);
-			return;
-		}
-
-		await SendAsync(response: default, statusCode: apiResult.HttpStatusCode, cancellation: ct);
+		await SendResultAsync(apiResult.HttpResult);
 	}
 }

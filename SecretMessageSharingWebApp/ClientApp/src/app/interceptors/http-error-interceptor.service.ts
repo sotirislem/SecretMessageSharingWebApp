@@ -21,14 +21,17 @@ export class HttpErrorInterceptor implements HttpInterceptor {
 		return next.handle(req)
 			.pipe(
 				catchError((response: HttpErrorResponse) => {
-					let toastrTitle: string = `${response.statusText} (${response.status})`;
-					let toastrMessage: string = 'API error';
+					let toastrTitle: string = 'API Error';
+					let toastrMessage: string = `Status Code: ${response.status}`;
 
-					if (response.status === 400) {
+					if (typeof response.error === 'string' && response.error.length > 0) {
+						toastrMessage += `<br><br>${response.error}`
+					}
+					else if (response.status === 400) {
 						const badRequestError = response.error as ApiErrorResponse;
 
 						if (badRequestError) {
-							toastrMessage = `${badRequestError.message}</br>`
+							toastrMessage = `${badRequestError.message}<br>`
 
 							if (badRequestError.errors) {
 								toastrMessage += "<ul>";

@@ -30,6 +30,6 @@ public sealed class AcquireSecretMessageOtpEndpoint(
 
 		var apiResult = await secretMessagesManager.SendOtp(messageId);
 
-		await SendAsync(response: default, statusCode: apiResult.HttpStatusCode, cancellation: ct);
+		await SendResultAsync(apiResult.HttpResult);
 	}
 }

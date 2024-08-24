@@ -2,57 +2,70 @@
 
 public abstract record ApiResult
 {
-	public static SuccessResult<T> Success<T>(T data) => new(data);
 	public static SuccessNoContentResult SuccessNoContent() => new();
 	public static UnauthorizedResult Unauthorized() => new();
 	public static BadRequestResult BadRequest(string? message = null) => new(message);
 	public static NotFoundResult NotFound(string? message = null) => new(message);
 	public static InternalServerErrorResult InternalServerError(string? message = null) => new(message);
 
-	public int HttpStatusCode
+	public virtual IResult HttpResult { get; }
+}
+
+public abstract record ApiResult<T> : ApiResult
+{
+	public static SuccessResult<T> SuccessWithData(T data) => new(data);
+
+	public override IResult HttpResult
 	{
 		get
 		{
-			if (GetType().IsGenericType &&
-				GetType().GetGenericTypeDefinition() == typeof(SuccessResult<>))
+			if (this is SuccessResult<T> successResult)
 			{
-				return StatusCodes.Status200OK;
-			}
-			else if (this is SuccessNoContentResult)
-			{
-				return StatusCodes.Status204NoContent;
-			}
-			else if (this is UnauthorizedResult)
-			{
-				return StatusCodes.Status401Unauthorized;
-			}
-			else if (this is BadRequestResult)
-			{
-				return StatusCodes.Status400BadRequest;
-			}
-			else if (this is NotFoundResult)
-			{
-				return StatusCodes.Status404NotFound;
-			}
-			else if (this is InternalServerErrorResult)
-			{
-				return StatusCodes.Status500InternalServerError;
+				return Results.Ok(successResult.Data);
 			}
 
-			throw new ArgumentOutOfRangeException(nameof(HttpStatusCode),
-				$"Could not map {nameof(ApiResult)} type to {nameof(HttpStatusCode)}");
+			if (this is SuccessNoContentResult)
+			{
+				return Results.NoContent();
+			}
+
+			if (this is UnauthorizedResult)
+			{
+				return Results.Unauthorized();
+			}
+
+			if (this is BadRequestResult badRequestResult)
+			{
+				return Results.BadRequest(badRequestResult.Message);
+			}
+
+			if (this is NotFoundResult notFoundResult)
+			{
+				return Results.NotFound(notFoundResult.Message);
+			}
+
+			if (this is InternalServerErrorResult internalServerErrorResult)
+			{
+				return Results.Json(
+					internalServerErrorResult.Message,
+					statusCode: StatusCodes.Status500InternalServerError,
+					contentType: "text/plain");
+			}
+
+			throw new ArgumentOutOfRangeException(nameof(HttpResult),
+				$"Could not map {nameof(ApiResult<T>)} type to {nameof(HttpResult)}");
 		}
 	}
 }
 
-public sealed record SuccessResult<T>(T Data) : ApiResult;
+public sealed record SuccessResult<T>(T Data) : ApiResult<T>;
 
-public sealed record SuccessNoContentResult() : ApiResult;
+public sealed record SuccessNoContentResult() : ApiResult<object>;
 
-public sealed record UnauthorizedResult() : ApiResult;
+public sealed record UnauthorizedResult() : ApiResult<object>;
 
-public sealed record BadRequestResult(string? Message) : ApiResult;
+public sealed record BadRequestResult(string? Message) : ApiResult<object>;
 
-public sealed record NotFoundResult(string? Message) : ApiResult;
+public sealed record NotFoundResult(string? Message) : ApiResult<object>;
 
-public sealed record InternalServerErrorResult(string? Message) : ApiResult;
+public sealed record InternalServerErrorResult(string? Message) : ApiResult<object>;

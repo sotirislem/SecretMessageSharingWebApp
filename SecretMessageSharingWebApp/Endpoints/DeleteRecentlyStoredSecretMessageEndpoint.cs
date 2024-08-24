@@ -31,6 +31,6 @@ public sealed class DeleteRecentlyStoredSecretMessageEndpoint(
 
 		var apiResult = await secretMessagesManager.DeleteRecentMessage(id);
 
-		await SendAsync(response: default, statusCode: apiResult.HttpStatusCode, cancellation: ct);
+		await SendResultAsync(apiResult.HttpResult);
 	}
 }

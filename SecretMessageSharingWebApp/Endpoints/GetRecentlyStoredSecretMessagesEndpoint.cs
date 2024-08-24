@@ -33,6 +33,6 @@ public sealed class GetRecentlyStoredSecretMessagesEndpoint(
 			RecentlyStoredSecretMessages = recentlyStoredSecretMessages
 		};
 
-		await SendAsync(response, cancellation: ct);
+		await SendOkAsync(response, cancellation: ct);
 	}
 }

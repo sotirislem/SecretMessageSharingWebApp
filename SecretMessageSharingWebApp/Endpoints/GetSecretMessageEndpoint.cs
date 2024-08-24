@@ -39,12 +39,6 @@ public sealed class GetSecretMessageEndpoint(
 
 		var apiResult = await secretMessagesManager.GetMessage(messageId, req.EncryptionKeySha256, jwtToken, httpContextClientInfo);
 
-		if (apiResult is SuccessResult<GetSecretMessageResponse> successResult)
-		{
-			await SendOkAsync(successResult.Data, cancellation: ct);
-			return;
-		}
-
-		await SendAsync(response: default, statusCode: apiResult.HttpStatusCode, cancellation: ct);
+		await SendResultAsync(apiResult.HttpResult);
 	}
 }
