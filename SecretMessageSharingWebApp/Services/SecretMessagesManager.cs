@@ -36,15 +36,17 @@ public class SecretMessagesManager(
 	public async Task<ApiResult> SendOtp(string messageId)
 	{
 		var (exists, otpSettings) = await secretMessagesService.Exists(messageId);
+		var cacheResult = memoryCacheService.GetValue<OneTimePassword>(messageId, Constants.MemoryKeys.SecretMessageOtp, remove: false);
 
-		if (exists is false || otpSettings?.Required is not true)
+		if (exists is false || otpSettings?.Required is not true ||
+			(cacheResult.exists is true && otpService.IsExpired(cacheResult.value!) is false))
 		{
 			return ApiResult.BadRequest();
 		}
 
 		var oneTimePassword = otpService.Generate();
 
-		var otpSent = await sendGridEmailService.SendOtp(messageId, oneTimePassword.Code, otpSettings.RecipientsEmail);
+		var otpSent = await sendGridEmailService.SendOtp(oneTimePassword, messageId, otpSettings.RecipientsEmail);
 		if (!otpSent)
 		{
 			logger.LogError("Could not sent OTP to recipient's Email: {recipientsEmail}", otpSettings.RecipientsEmail);
@@ -62,7 +64,8 @@ public class SecretMessagesManager(
 		var (exists, otpSettings) = await secretMessagesService.Exists(messageId);
 		var cacheResult = memoryCacheService.GetValue<OneTimePassword>(messageId, Constants.MemoryKeys.SecretMessageOtp, remove: false);
 
-		if (exists is false || otpSettings?.Required is not true || cacheResult.exists is false)
+		if (exists is false || otpSettings?.Required is not true ||
+			cacheResult.exists is false)
 		{
 			return ApiResult.BadRequest();
 		}

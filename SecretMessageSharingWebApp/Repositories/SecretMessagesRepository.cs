@@ -13,7 +13,8 @@ public sealed class SecretMessagesRepository : GeneralRepository<SecretMessageEn
 
 	public async Task<int> DeleteOldMessages()
 	{
-		var comparisonDateTime = _dateTimeProviderService.LocalNow()
+		var comparisonDateTime = _dateTimeProviderService
+			.LocalNow()
 			.AddHours(Constants.DeleteOldMessagesAfterHours * -1);
 
 		var deletedMessages = await DeleteRangeBasedOnPredicate(m => m.CreatedDateTime < comparisonDateTime);

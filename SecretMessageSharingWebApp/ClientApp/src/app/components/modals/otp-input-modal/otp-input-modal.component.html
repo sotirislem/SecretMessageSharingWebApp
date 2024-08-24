@@ -26,7 +26,8 @@
 		<form #form="ngForm" [formGroup]="otpValidationForm" (ngSubmit)="submitOtpValidationForm()">
 			<p>
 				Enter the OTP you received in your email address.<br />
-				Please note that the code is only valid for 3 minutes (3 submit attempts).
+				Please note that the code is only valid for 3 minutes.<br />
+				(Max validation attempts: 3)
 			</p>
 
 			<div class="mt-3">

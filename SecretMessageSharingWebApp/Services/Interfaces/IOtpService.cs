@@ -6,5 +6,7 @@ public interface IOtpService
 {
 	public OneTimePassword Generate();
 
+	bool IsExpired(OneTimePassword otp);
+
 	public (bool isValid, bool hasExpired) Validate(string otpInputCode, OneTimePassword inMemoryOtp);
 }

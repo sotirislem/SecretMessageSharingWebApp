@@ -3,7 +3,6 @@
 public static class Constants
 {
 	public const string AppName = "SecretMessageSharingWebApp";
-	public const string LocalTimeZone = "GTB Standard Time";
 
 	public const int SessionIdleTimeoutInMinutes = 15;
 	public const int MemoryCacheValueExpirationTimeInMinutes = 15;
@@ -14,7 +13,7 @@ public static class Constants
 
 	public const int OtpSize = 8;
 	public const int OtpExpirationMinutes = 3;
-	public const int OtpMaxValidationRetries = 3;
+	public const int OtpMaxValidationAttempts = 3;
 
 	public const int JwtTokenExpirationMinutes = 1;
 

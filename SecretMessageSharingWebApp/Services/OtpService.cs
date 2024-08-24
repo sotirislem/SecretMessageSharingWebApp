@@ -17,29 +17,41 @@ public sealed class OtpService(IDateTimeProviderService dateTimeProviderService)
 			otpBuilder.Append(randomNumber);
 		}
 
+		var expiresAt = dateTimeProviderService
+			.UtcNow()
+			.AddMinutes(Constants.OtpExpirationMinutes);
+
 		return new OneTimePassword()
 		{
 			Code = otpBuilder.ToString(),
-			CreatedTimestamp = dateTimeProviderService.UtcNowUnixTimeSeconds()
+			ExpiresAt = expiresAt
 		};
+	}
+
+	public bool IsExpired(OneTimePassword otp)
+	{
+		if (otp.CodeValidationAttempts >= Constants.OtpMaxValidationAttempts)
+		{
+			return true;
+		}
+
+		if (dateTimeProviderService.UtcNow() >= otp.ExpiresAt)
+		{
+			return true;
+		}
+
+		return false;
 	}
 
 	public (bool isValid, bool hasExpired) Validate(string otpInputCode, OneTimePassword otp)
 	{
-		if (otp.TotalCodeAccesses >= Constants.OtpMaxValidationRetries)
+		if (IsExpired(otp))
 		{
 			return (isValid: false, hasExpired: true);
 		}
 
-		var nowTimestamp = dateTimeProviderService.UtcNowUnixTimeSeconds();
-		var validTimestampRange = TimeSpan.FromMinutes(Constants.OtpExpirationMinutes).TotalSeconds;
+		var isValid = otp.Validate(otpInputCode);
 
-		var otpTimestampValid = (nowTimestamp - otp.CreatedTimestamp <= validTimestampRange);
-		if (!otpTimestampValid)
-		{
-			return (isValid: false, hasExpired: true);
-		}
-
-		return (isValid: otpInputCode == otp.Code, hasExpired: false);
+		return (isValid, hasExpired: false);
 	}
 }

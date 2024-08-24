@@ -18,7 +18,7 @@ public sealed class JwtService(
 	{
 		var expireDateTime = dateTimeProviderService
 			.UtcNow()
-			.Add(TimeSpan.FromMinutes(Constants.JwtTokenExpirationMinutes));
+			.AddMinutes(Constants.JwtTokenExpirationMinutes);
 
 		var claims = new List<Claim>
 		{

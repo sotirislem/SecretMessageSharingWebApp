@@ -2,20 +2,17 @@
 
 public sealed record OneTimePassword
 {
-	private readonly string _code;
+	public string Code { get; init; }
 
-	public string Code
+	public DateTimeOffset ExpiresAt { get; init; }
+
+	public int CodeValidationAttempts { get; private set; } = 0;
+
+
+	public bool Validate(string codeToValidate)
 	{
-		get
-		{
-			TotalCodeAccesses++;
+		CodeValidationAttempts++;
 
-			return _code;
-		}
-		init => _code = value;
+		return codeToValidate == Code;
 	}
-
-	public long CreatedTimestamp { get; init; }
-
-	public int TotalCodeAccesses { get; private set; } = 0;
 }

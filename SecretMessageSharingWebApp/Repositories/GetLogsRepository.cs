@@ -13,7 +13,8 @@ public sealed class GetLogsRepository : GeneralRepository<GetLogEntity>, IGetLog
 
 	public async Task<int> DeleteOldLogs()
 	{
-		var comparisonDateTime = _dateTimeProviderService.LocalNow()
+		var comparisonDateTime = _dateTimeProviderService
+			.LocalNow()
 			.AddDays(Constants.DeleteOldLogsAfterDays * -1);
 
 		var deletedLogs = await DeleteRangeBasedOnPredicate(m => m.RequestDateTime < comparisonDateTime);
