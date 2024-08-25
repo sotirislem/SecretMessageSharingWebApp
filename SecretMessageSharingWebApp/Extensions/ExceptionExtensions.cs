@@ -6,10 +6,9 @@ public static class ExceptionExtensions
 {
 	public static string GetAllErrorMessages(this Exception ex)
 	{
-		if (ex is null)
-			throw new ArgumentNullException(nameof(ex));
+		ArgumentNullException.ThrowIfNull(ex);
 
-		StringBuilder sb = new StringBuilder();
+		StringBuilder sb = new();
 
 		do
 		{

@@ -2,7 +2,7 @@
 
 namespace SecretMessageSharingWebApp.Configuration;
 
-public sealed class SendGridConfigurationSettings
+public sealed record SendGridConfigurationSettings
 {
 	[Required]
 	public string ApiKey { get; init; }

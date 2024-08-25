@@ -1,17 +1,20 @@
-﻿using SecretMessageSharingWebApp.Models.Common;
+﻿using System.Text.Json.Serialization;
+using FastEndpoints;
+using SecretMessageSharingWebApp.Models.Common;
 
 namespace SecretMessageSharingWebApp.Models.Api.Requests;
 
-public sealed class StoreNewSecretMessageRequest
+public sealed record StoreNewSecretMessageRequest
 {
+	[FromHeader("Client-Id")]
+	public string ClientId { get; init; }
+
+	[JsonPropertyName("secretMessageData")]
 	public SecretMessageData SecretMessageData { get; init; }
 
+	[JsonPropertyName("otp")]
 	public OtpSettings Otp { get; init; }
-}
 
-public sealed class OtpSettings
-{
-	public bool Required { get; init; }
-
-	public string RecipientsEmail { get; init; }
+	[JsonPropertyName("encryptionKeySha256")]
+	public string EncryptionKeySha256 { get; init; }
 }

@@ -1,65 +1,84 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using SecretMessageSharingWebApp.Data;
+using SecretMessageSharingWebApp.Providers;
 using SecretMessageSharingWebApp.Repositories.Interfaces;
 using SecretMessageSharingWebApp.Services.Interfaces;
 using System.Linq.Expressions;
 
 namespace SecretMessageSharingWebApp.Repositories;
 
-public class GeneralRepository<TEntity> : IGeneralRepository<TEntity> where TEntity : class
+public class GeneralRepository<TEntity> : IGeneralRepository<TEntity> where TEntity : class, IDbEntity
 {
-	protected readonly SecretMessagesDbContext _context;
-	protected readonly DbSet<TEntity> _dbSet;
 	protected readonly IDateTimeProviderService _dateTimeProviderService;
+	protected readonly ICancellationTokenProvider _cancellationTokenProvider;
 
-	public GeneralRepository(SecretMessagesDbContext context, IDateTimeProviderService dateTimeProviderService)
+	protected readonly SecretMessagesDbContext _dbContext;
+	protected readonly DbSet<TEntity> _dbSet;
+
+	public GeneralRepository(
+		SecretMessagesDbContext context,
+		IDateTimeProviderService dateTimeProviderService,
+		ICancellationTokenProvider cancellationTokenProvider)
 	{
-		_context = context;
-		_dbSet = context.Set<TEntity>();
 		_dateTimeProviderService = dateTimeProviderService;
+		_cancellationTokenProvider = cancellationTokenProvider;
+
+		_dbContext = context;
+		_dbSet = context.Set<TEntity>();
 	}
 
-	public async Task<TEntity?> Get(string id)
+	public async Task<TEntity?> GetById(string id, CancellationToken? ct = null)
 	{
-		return await _dbSet.FindAsync(id);
+		ct ??= _cancellationTokenProvider.Token;
+
+		return await _dbSet.FindAsync(new object?[] { id }, (CancellationToken)ct);
 	}
 
-	public async Task Insert(TEntity entity, bool save = true)
+	public async Task<int> Insert(TEntity entity, CancellationToken? ct = null)
 	{
+		ct ??= _cancellationTokenProvider.Token;
+
 		_dbSet.Add(entity);
-		if (save) await Save();
+
+		return await _dbContext.SaveChangesAsync((CancellationToken)ct);
 	}
 
-	public async Task Delete(TEntity entity, bool save = true)
+	public async Task<int> Delete(TEntity entity, CancellationToken? ct = null)
 	{
-		if (_context.Entry(entity).State == EntityState.Detached)
+		ct ??= _cancellationTokenProvider.Token;
+
+		if (_dbContext.Entry(entity).State == EntityState.Detached)
 		{
 			_dbSet.Attach(entity);
 		}
 
 		_dbSet.Remove(entity);
-		if (save) await Save();
+
+		return await _dbContext.SaveChangesAsync((CancellationToken)ct);
 	}
 
-	public async Task<int> Save()
+	public async Task<ICollection<TEntity>> SelectEntitiesWhere(Expression<Func<TEntity, bool>> predicate, CancellationToken? ct = null)
 	{
-		return await _context.SaveChangesAsync();
+		ct ??= _cancellationTokenProvider.Token;
+
+		return await _dbSet
+			.Where(predicate)
+			.AsNoTracking()
+			.ToListAsync((CancellationToken)ct);
 	}
 
-	public IQueryable<TEntity> GetDbSetAsQueryable()
+	public async Task<int> DeleteRangeBasedOnPredicate(Expression<Func<TEntity, bool>> predicate, CancellationToken? ct = null)
 	{
-		return _dbSet.AsNoTracking().AsQueryable();
-	}
+		ct ??= _cancellationTokenProvider.Token;
 
-	public async Task<int> DeleteRangeBasedOnPredicate(Expression<Func<TEntity, bool>> predicate)
-	{
 		var results = _dbSet.Where(predicate);
-		if (results.Count() > 0)
+		var resultsCount = await results.CountAsync((CancellationToken)ct);
+
+		if (resultsCount > 0)
 		{
 			_dbSet.RemoveRange(results);
-			var dbSaveResult = await Save();
 
-			return dbSaveResult;
+			return await _dbContext.SaveChangesAsync((CancellationToken)ct);
 		}
 
 		return 0;

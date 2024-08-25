@@ -5,11 +5,8 @@ using System.Text;
 
 namespace SecretMessageSharingWebApp.Services;
 
-public sealed class OtpService : IOtpService
+public sealed class OtpService(IDateTimeProviderService dateTimeProviderService) : IOtpService
 {
-	public OtpService()
-	{ }
-
 	public OneTimePassword Generate()
 	{
 		var otpBuilder = new StringBuilder();
@@ -20,33 +17,42 @@ public sealed class OtpService : IOtpService
 			otpBuilder.Append(randomNumber);
 		}
 
-		var otp = otpBuilder.ToString();
-		var timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+		var expiresAt = dateTimeProviderService
+			.UtcNow()
+			.AddMinutes(Constants.OtpExpirationMinutes);
 
-		return new OneTimePassword(otp, timestamp)
+		return new OneTimePassword()
 		{
-			AvailableValidationAttempts = Constants.OtpMaxValidationRetries
+			Code = otpBuilder.ToString(),
+			ExpiresAt = expiresAt
 		};
 	}
 
-	public (bool isValid, bool canRetry, bool hasExpired) Validate(string otpInputCode, OneTimePassword inMemoryOtp)
+	public bool IsExpired(OneTimePassword otp)
 	{
-		inMemoryOtp.AvailableValidationAttempts--;
-		if (inMemoryOtp.AvailableValidationAttempts <= 0)
+		if (otp.CodeValidationAttempts >= Constants.OtpMaxValidationAttempts)
+		{
+			return true;
+		}
+
+		if (dateTimeProviderService.UtcNow() >= otp.ExpiresAt)
+		{
+			return true;
+		}
+
+		return false;
+	}
+
+	public (bool isValid, bool canRetry, bool hasExpired) Validate(string otpInputCode, OneTimePassword otp)
+	{
+		if (IsExpired(otp))
 		{
 			return (isValid: false, canRetry: false, hasExpired: true);
 		}
 
-		var nowTimestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-		var validTimestampRange = TimeSpan.FromMinutes(Constants.OtpExpirationMinutes).TotalSeconds;
-		var otpTimestampValid = (nowTimestamp - inMemoryOtp.CreatedTimestamp <= validTimestampRange);
+		var isValid = otp.Validate(otpInputCode);
+		var canRetry = IsExpired(otp) is false;
 
-		if (!otpTimestampValid)
-		{
-			return (isValid: false, canRetry: true, hasExpired: true);
-		}
-
-		var otpCodeValid = (otpInputCode == inMemoryOtp.Code);
-		return (isValid: otpCodeValid, canRetry: true, hasExpired: false);
+		return (isValid, canRetry, hasExpired: false);
 	}
 }

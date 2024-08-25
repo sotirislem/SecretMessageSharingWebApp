@@ -9,8 +9,8 @@ import {
 	HttpErrorResponse
 } from '@angular/common/http';
 import { ToastrService } from 'ngx-toastr';
-import { InternalApiError } from '../models/api/internal-api-error.model'
-import { BadRequestApiError } from '../models/api/bad-request-api-error.model';
+import { ApiErrorResponse } from '../models/api/api-error-response.model';
+import { ApiInternalErrorResponse } from '../models/api/api-internal-error-response.model';
 
 @Injectable()
 export class HttpErrorInterceptor implements HttpInterceptor {
@@ -21,35 +21,37 @@ export class HttpErrorInterceptor implements HttpInterceptor {
 		return next.handle(req)
 			.pipe(
 				catchError((response: HttpErrorResponse) => {
-					let toastrMessage: string = '';
-					let toastrTitle: string = '';
+					let toastrTitle: string = 'API Error';
+					let toastrMessage: string = `Status Code: ${response.status}`;
 
-					if (response.status === 500) {
-						const apiError = response.error as InternalApiError;
-
-						toastrTitle = 'API Error';
-						toastrMessage = (apiError?.message ?? 'An unexpected internal API error occurred');
+					if (typeof response.error === 'string' && response.error.length > 0) {
+						toastrMessage += `<br><br>${response.error}`
 					}
 					else if (response.status === 400) {
-						const badRequestError = response.error as BadRequestApiError;
+						const badRequestError = response.error as ApiErrorResponse;
 
-						toastrTitle = `${response.statusText}`;
-						toastrMessage += `${badRequestError.message}</br>`
+						if (badRequestError) {
+							toastrMessage = `${badRequestError.message}<br>`
 
-						if (badRequestError.errors) {
-							toastrMessage += "<ul>";
-							for (let errorKey in badRequestError.errors) {
-								const errorMessages = badRequestError.errors[errorKey];
-								for (let errorMessage of errorMessages) {
-									toastrMessage += '<li>' + errorMessage + '</li>';
+							if (badRequestError.errors) {
+								toastrMessage += "<ul>";
+								for (let errorKey in badRequestError.errors) {
+									const errorMessages = badRequestError.errors[errorKey];
+									for (let errorMessage of errorMessages) {
+										toastrMessage += '<li><b>' + errorKey + '</b>: ' + errorMessage + '</li>';
+									}
 								}
+								toastrMessage += "</ul>";
 							}
-							toastrMessage += "</ul>";
 						}
 					}
-					else {
-						toastrTitle = `${response.statusText} (${response.status})`;
-						toastrMessage = 'Request could not be processed';
+					else if (response.status === 500) {
+						const internalError = response.error as ApiInternalErrorResponse;
+
+						if (internalError) {
+							toastrTitle = internalError.status;
+							toastrMessage = internalError.reason;
+						}
 					}
 
 					this.toastrService.error(toastrMessage, toastrTitle, {
@@ -59,6 +61,7 @@ export class HttpErrorInterceptor implements HttpInterceptor {
 						progressBar: true,
 						enableHtml: true
 					});
+
 					return throwError(response);
 				})
 			);

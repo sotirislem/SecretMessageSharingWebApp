@@ -11,7 +11,7 @@ For even more security, an OTP mechanism can seal the message further, allowing 
 
 ### Made with:
 * Angular 14
-* .NET 7
+* .NET 8
 * Entity Framework Core
 
 ### Libraries used:

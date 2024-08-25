@@ -2,7 +2,7 @@
 
 namespace SecretMessageSharingWebApp.Repositories.Interfaces;
 
-public interface ISecretMessagesRepository : IGeneralRepository<SecretMessageDto>
+public interface ISecretMessagesRepository : IGeneralRepository<SecretMessageEntity>
 {
-	Task<int> DeleteOldMessages();
+	Task<int> DeleteOldMessages(CancellationToken ct);
 }

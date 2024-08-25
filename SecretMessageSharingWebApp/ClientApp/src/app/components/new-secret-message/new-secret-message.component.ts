@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
 
 import { Clipboard } from '@angular/cdk/clipboard';
 import { NgbTooltip } from '@ng-bootstrap/ng-bootstrap'
@@ -17,8 +17,9 @@ import { Subject, takeUntil } from 'rxjs';
 	templateUrl: './new-secret-message.component.html',
 	styleUrls: ['./new-secret-message.component.css']
 })
-export class NewSecretMessageComponent implements OnInit, OnDestroy {
+export class NewSecretMessageComponent implements AfterViewInit, OnDestroy {
 	@ViewChild('ngbTooltipElement') ngbTooltip: NgbTooltip;
+	@ViewChild('secretMsgShareElementRef') secretMsgShareElementRef: ElementRef;
 	ngbTooltipClearTimer: NodeJS.Timeout;
 
 	secretMsgObj: SecretMessage;
@@ -47,8 +48,8 @@ export class NewSecretMessageComponent implements OnInit, OnDestroy {
 			.subscribe((secretMessageId) => this.receivedDeliveryNotificationsObserver(secretMessageId));
 	}
 
-	ngOnInit(): void {
-		this.qrCodeCanvas = document.getElementById('qrCodeCanvas') as HTMLCanvasElement;
+	ngAfterViewInit(): void {
+		this.qrCodeCanvas = this.secretMsgShareElementRef.nativeElement.querySelector('#qrCodeCanvas') as HTMLCanvasElement;
 		QRCode.toCanvas(this.qrCodeCanvas, this.secretMsgUrl);
 	}
 
@@ -71,7 +72,7 @@ export class NewSecretMessageComponent implements OnInit, OnDestroy {
 		if (!this.ngbTooltip.isOpen()) this.ngbTooltip.open();
 
 		this.ngbTooltipClearTimer = setTimeout(() => {
-			this.ngbTooltip.close();
+			this.ngbTooltip?.close();
 		}, 5000);
 	}
 

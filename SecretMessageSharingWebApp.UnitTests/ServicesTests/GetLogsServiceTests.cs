@@ -1,3 +1,4 @@
+using System.Linq.Expressions;
 using Microsoft.Extensions.Logging;
 using SecretMessageSharingWebApp.Data.Entities;
 using SecretMessageSharingWebApp.Mappings;
@@ -7,50 +8,55 @@ using SecretMessageSharingWebApp.Services;
 
 namespace SecretMessageSharingWebApp.UnitTests.ServicesTests;
 
-public sealed class GetLogsServiceTests
+public class GetLogsServiceTests
 {
-	private readonly GetLogsService _sut;
-	private readonly Fixture _fixture = new();
+	private readonly IFixture _fixture;
+	private readonly IGetLogsRepository _getLogsRepository;
+	private readonly ILogger<GetLogsService> _logger;
 
-	private readonly IGetLogsRepository _getLogsRepository = Substitute.For<IGetLogsRepository>();
-	private readonly ILogger<GetLogsService> _logger = Substitute.For<ILogger<GetLogsService>>();
+	private readonly GetLogsService _sut;
 
 	public GetLogsServiceTests()
 	{
+		_fixture = new Fixture();
+		_getLogsRepository = Substitute.For<IGetLogsRepository>();
+		_logger = Substitute.For<ILogger<GetLogsService>>();
+
 		_sut = new GetLogsService(_getLogsRepository, _logger);
 	}
 
 	[Fact]
-	public void CreateNewLog_ShouldReturnInsertedGetLog_WhenExecuted()
+	public async Task CreateNewLog_ShouldInsertLogAndReturnLog()
 	{
 		// Arrange
 		var getLog = _fixture.Create<GetLog>();
+		var getLogEntity = getLog.ToEntity();
 
 		// Act
-		var result = _sut.CreateNewLog(getLog).Result;
+		var result = await _sut.CreateNewLog(getLog);
 
 		// Assert
-		_getLogsRepository.Received().Insert(Arg.Any<GetLogDto>());
+		await _getLogsRepository.Received(1).Insert(getLogEntity);
 		_logger.ReceivedWithAnyArgs().LogInformation(default);
 
-		result.Should().BeEquivalentTo(getLog, opt => opt.Excluding(r => r.Id));
-		result.Id.Should().NotBeNullOrEmpty();
+		result.Should().BeEquivalentTo(getLogEntity.ToDomain());
 	}
 
 	[Fact]
-	public void GetRecentlyStoredSecretMessagesInfo_ShouldReturnProperIEnumerable_WhenGivenValidRecentlyStoredSecretMessagesList()
+	public async Task GetRecentlyStoredSecretMessagesInfo_ShouldReturnMessages()
 	{
 		// Arrange
-		var allGetLogs = _fixture.Build<GetLogDto>().CreateMany(10);
-		var recentlyStoredGetLogs = allGetLogs.TakeLast(5);
-		var recentlyStoredSecretMessagesList = recentlyStoredGetLogs.Select(m => m.SecretMessageId).ToList();
+		var secretMessageIdList = _fixture.Create<List<string>>();
+		var getLogEntities = _fixture.CreateMany<GetLogEntity>().ToList();
+		var expectedMessages = getLogEntities.Select(entity => entity.ToRecentlyStoredSecretMessage()).ToList();
 
-		_getLogsRepository.GetDbSetAsQueryable().Returns(allGetLogs.AsQueryable());
+		_getLogsRepository.SelectEntitiesWhere(Arg.Any<Expression<Func<GetLogEntity, bool>>>())
+			.Returns(getLogEntities);
 
 		// Act
-		var result = _sut.GetRecentlyStoredSecretMessagesInfo(recentlyStoredSecretMessagesList);
+		var result = await _sut.GetRecentlyStoredSecretMessagesInfo(secretMessageIdList);
 
 		// Assert
-		result.Should().BeEquivalentTo(recentlyStoredGetLogs.Select(l => l.ToRecentlyStoredSecretMessage()));
+		result.Should().BeEquivalentTo(expectedMessages);
 	}
 }

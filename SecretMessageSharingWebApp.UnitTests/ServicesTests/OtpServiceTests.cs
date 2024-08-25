@@ -1,83 +1,123 @@
 using SecretMessageSharingWebApp.Models.Domain;
 using SecretMessageSharingWebApp.Services;
+using SecretMessageSharingWebApp.Services.Interfaces;
 
 namespace SecretMessageSharingWebApp.UnitTests.ServicesTests;
 
-public sealed class OtpServiceTests
+public class OtpServiceTests
 {
+	private readonly IFixture _fixture;
+	private readonly IDateTimeProviderService _dateTimeProviderService;
+
 	private readonly OtpService _sut;
-	private readonly Fixture _fixture = new();
 
 	public OtpServiceTests()
 	{
-		_sut = new OtpService();
+		_fixture = new Fixture();
+		_dateTimeProviderService = Substitute.For<IDateTimeProviderService>();
+
+		_sut = new OtpService(_dateTimeProviderService);
 	}
 
 	[Fact]
-	public void Generate_ShouldReturnAValidOneTimePasswordObject_WhenExecuted()
+	public void Generate_ShouldReturnOtpWithExpectedFormat()
 	{
 		// Arrange
-		// -
+		var now = DateTime.UtcNow;
+		_dateTimeProviderService.UtcNow().Returns(now);
 
 		// Act
 		var result = _sut.Generate();
 
 		// Assert
-		result.Code.Length.Should().Be(Constants.OtpSize);
-		result.CreatedTimestamp.Should().BeCloseTo(DateTimeOffset.UtcNow.ToUnixTimeSeconds(), 1);
-		result.AvailableValidationAttempts.Should().Be(Constants.OtpMaxValidationRetries);
+		result.Code.Should().HaveLength(Constants.OtpSize);
+		result.ExpiresAt.Should().Be(now.AddMinutes(Constants.OtpExpirationMinutes));
 	}
 
 	[Fact]
-	public void Validate_ShouldReturnIsValidEqualsTrue_WhenExecutedAndOtpIsValid()
+	public void IsExpired_ShouldReturnTrue_WhenOtpIsExpired()
 	{
 		// Arrange
-		var oneTimePassword = _fixture.Build<OneTimePassword>()
-			.With(x => x.CreatedTimestamp, DateTimeOffset.UtcNow.ToUnixTimeSeconds())
-			.With(x => x.AvailableValidationAttempts, Constants.OtpMaxValidationRetries)
-			.Create();
-		var otpInputCode = oneTimePassword.Code;
+		var now = DateTime.UtcNow;
+		var otp = new OneTimePassword
+		{
+			Code = _fixture.Create<string>(),
+			ExpiresAt = now.AddMinutes(-Constants.OtpExpirationMinutes)
+		};
+
+		_dateTimeProviderService.UtcNow().Returns(now);
 
 		// Act
-		var result = _sut.Validate(otpInputCode, oneTimePassword);
+		var result = _sut.IsExpired(otp);
+
+		// Assert
+		result.Should().BeTrue();
+	}
+
+	[Fact]
+	public void IsExpired_ShouldReturnTrue_WhenMaxValidationAttemptsExceeded()
+	{
+		// Arrange
+		var now = DateTime.UtcNow;
+		var otp = new OneTimePassword
+		{
+			Code = _fixture.Create<string>(),
+			ExpiresAt = now.AddMinutes(Constants.OtpExpirationMinutes)
+		};
+
+		// Simulate multiple validation attempts
+		for (int i = 0; i < Constants.OtpMaxValidationAttempts; i++)
+		{
+			otp.Validate(_fixture.Create<string>());
+		}
+
+		// Act
+		var result = _sut.IsExpired(otp);
+
+		// Assert
+		result.Should().BeTrue();
+	}
+
+	[Fact]
+	public void Validate_ShouldReturnExpectedResults_WhenOtpIsValid()
+	{
+		// Arrange
+		var otpCode = _fixture.Create<string>();
+		var now = DateTime.UtcNow;
+		var otp = new OneTimePassword
+		{
+			Code = otpCode,
+			ExpiresAt = now.AddMinutes(Constants.OtpExpirationMinutes)
+		};
+		var otpInputCode = otpCode;
+
+		_dateTimeProviderService.UtcNow().Returns(now);
+
+		// Act
+		var result = _sut.Validate(otpInputCode, otp);
 
 		// Assert
 		result.isValid.Should().BeTrue();
-		result.canRetry.Should().BeTrue();
-		result.hasExpired.Should().BeFalse();
 	}
 
 	[Fact]
-	public void Validate_ShouldReturnCanRetryEqualsTrue_WhenOtpIsInvalidButCanRetry()
+	public void Validate_ShouldReturnExpectedResults_WhenOtpIsExpired()
 	{
 		// Arrange
-		var oneTimePassword = _fixture.Build<OneTimePassword>()
-			.With(x => x.CreatedTimestamp, DateTimeOffset.UtcNow.ToUnixTimeSeconds())
-			.With(x => x.AvailableValidationAttempts, Constants.OtpMaxValidationRetries)
-			.Create();
-		var otpInputCode = _sut.Generate().Code;
+		var otpCode = _fixture.Create<string>();
+		var now = DateTime.UtcNow;
+		var otp = new OneTimePassword
+		{
+			Code = otpCode,
+			ExpiresAt = now.AddMinutes(-Constants.OtpExpirationMinutes)
+		};
+
+		var otpInputCode = otpCode;
+
+		_dateTimeProviderService.UtcNow().Returns(now);
 
 		// Act
-		var result = _sut.Validate(otpInputCode, oneTimePassword);
-
-		// Assert
-		result.isValid.Should().BeFalse();
-		result.canRetry.Should().BeTrue();
-		result.hasExpired.Should().BeFalse();
-	}
-
-	[Fact]
-	public void Validate_ShouldReturnCanRetryEqualsFalse_WhenOtpMaxValidationRetriesReached()
-	{
-		// Arrange
-		var oneTimePassword = _fixture.Build<OneTimePassword>()
-			.With(x => x.CreatedTimestamp, DateTimeOffset.UtcNow.ToUnixTimeSeconds())
-			.With(x => x.AvailableValidationAttempts, 0)
-			.Create();
-		var otpInputCode = _sut.Generate().Code;
-
-		// Act
-		var result = _sut.Validate(otpInputCode, oneTimePassword);
+		var result = _sut.Validate(otpInputCode, otp);
 
 		// Assert
 		result.isValid.Should().BeFalse();
@@ -86,21 +126,27 @@ public sealed class OtpServiceTests
 	}
 
 	[Fact]
-	public void Validate_ShouldReturnHasExpiredEqualsTrue_WhenOtpHasExpired()
+	public void Validate_ShouldReturnExpectedResults_WhenOtpCodeIsInvalid()
 	{
 		// Arrange
-		var oneTimePassword = _fixture.Build<OneTimePassword>()
-			.With(x => x.CreatedTimestamp, DateTimeOffset.UtcNow.ToUnixTimeSeconds() - TimeSpan.FromMinutes(Constants.OtpExpirationMinutes).TotalSeconds - 1)
-			.With(x => x.AvailableValidationAttempts, Constants.OtpMaxValidationRetries)
-			.Create();
-		var otpInputCode = oneTimePassword.Code;
+		var otpCode = _fixture.Create<string>();
+		var now = DateTime.UtcNow;
+		var otp = new OneTimePassword
+		{
+			Code = otpCode,
+			ExpiresAt = now.AddMinutes(Constants.OtpExpirationMinutes)
+		};
+
+		var otpInputCode = _fixture.Create<string>();
+
+		_dateTimeProviderService.UtcNow().Returns(now);
 
 		// Act
-		var result = _sut.Validate(otpInputCode, oneTimePassword);
+		var result = _sut.Validate(otpInputCode, otp);
 
 		// Assert
 		result.isValid.Should().BeFalse();
 		result.canRetry.Should().BeTrue();
-		result.hasExpired.Should().BeTrue();
+		result.hasExpired.Should().BeFalse();
 	}
 }

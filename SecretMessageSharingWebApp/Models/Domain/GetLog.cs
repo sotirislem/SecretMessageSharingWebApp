@@ -1,20 +1,20 @@
 ﻿namespace SecretMessageSharingWebApp.Models.Domain;
 
-public sealed class GetLog
+public sealed record GetLog
 {
 	public string Id { get; init; }
 
-	public DateTime RequestDateTime { get; set; }
+	public DateTime RequestDateTime { get; init; }
 
-	public string? RequestCreatorIP { get; set; }
+	public string? RequestCreatorIP { get; init; }
 
-	public string? RequestClientInfo { get; set; }
+	public string? RequestClientInfo { get; init; }
 
-	public string SecretMessageId { get; set; }
+	public string SecretMessageId { get; init; }
 
-	public DateTime? SecretMessageCreatedDateTime { get; set; }
+	public DateTime? SecretMessageCreatedDateTime { get; init; }
 
-	public string? SecretMessageCreatorIP { get; set; }
+	public string? SecretMessageCreatorIP { get; init; }
 
-	public string? SecretMessageCreatorClientInfo { get; set; }
+	public string? SecretMessageCreatorClientInfo { get; init; }
 }

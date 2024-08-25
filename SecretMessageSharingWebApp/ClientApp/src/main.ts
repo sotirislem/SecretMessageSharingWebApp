@@ -40,7 +40,14 @@ function getApiUrl(): string {
 }
 
 function getClientId(): string {
-	return crypto.randomUUID();
+	let clientId = localStorage.getItem('CLIENT_ID');
+
+	if (!clientId) {
+		clientId = crypto.randomUUID();
+		localStorage.setItem('CLIENT_ID', clientId);
+	}
+
+	return clientId;
 }
 
 // Helper functions

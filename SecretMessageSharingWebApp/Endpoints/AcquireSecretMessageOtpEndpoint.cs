@@ -3,58 +3,33 @@ using SecretMessageSharingWebApp.Services.Interfaces;
 
 namespace SecretMessageSharingWebApp.Endpoints;
 
-public sealed class AcquireSecretMessageOtpEndpoint : EndpointWithoutRequest<bool>
+public sealed class AcquireSecretMessageOtpEndpoint(
+	ISecretMessagesManager secretMessagesManager) : EndpointWithoutRequest
 {
 	public override void Configure()
 	{
 		Verbs(Http.GET);
-		Routes(Constants.ApiRoutes.AcquireSecretMessageOtp);
+		Routes("api/secret-messages/otp/{id}");
 		AllowAnonymous();
-	}
 
-	private readonly ISecretMessagesService _secretMessagesService;
-	private readonly IMemoryCacheService _memoryCacheService;
-	private readonly IOtpService _otpService;
-	private readonly ISendGridEmailService _sendGridEmailService;
+		Description(builder => builder
+			.ClearDefaultProduces()
+			.Produces(StatusCodes.Status204NoContent)
+			.Produces(StatusCodes.Status400BadRequest, typeof(ErrorResponse))
+			.Produces(StatusCodes.Status500InternalServerError, typeof(InternalErrorResponse)));
 
-	public AcquireSecretMessageOtpEndpoint(
-		ISecretMessagesService secretMessagesService,
-		IMemoryCacheService memoryCacheService,
-		IOtpService otpService,
-		ISendGridEmailService sendGridEmailService)
-	{
-		_secretMessagesService = secretMessagesService;
-		_otpService = otpService;
-		_memoryCacheService = memoryCacheService;
-		_sendGridEmailService = sendGridEmailService;
+		Summary(s =>
+		{
+			s.Summary = "Send Secret Message OTP to registered recepient`s Email (set at Store)";
+		});
 	}
 
 	public override async Task HandleAsync(CancellationToken ct)
 	{
 		var messageId = Route<string>("id")!;
 
-		var result = _secretMessagesService.VerifyExistence(messageId);
-		var otpRequired = (result.otp?.Required ?? false);
+		var apiResult = await secretMessagesManager.SendOtp(messageId);
 
-		if (!(result.exists && otpRequired))
-		{
-			ThrowError("Bad request");
-		}
-
-		var oneTimePassword = _otpService.Generate();
-		_memoryCacheService.SetValue(messageId, oneTimePassword, Constants.MemoryKey_SecretMessageOtp);
-
-#if DEBUG
-		Console.WriteLine(oneTimePassword);
-#else
-		var otpSent = await _sendGridEmailService.SendOtp(messageId, oneTimePassword.Code, result.otp!.RecipientsEmail);
-		if (!otpSent)
-		{
-			_memoryCacheService.RemoveValue(messageId, Constants.MemoryKey_SecretMessageOtp);
-			ThrowError("Could not sent OTP to recipient's Email.");
-		}
-#endif
-
-		await SendOkAsync(true, cancellation: ct);
+		await SendResultAsync(apiResult.HttpResult);
 	}
 }

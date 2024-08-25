@@ -1,3 +1,15 @@
-﻿namespace SecretMessageSharingWebApp.Models.Common;
+﻿using System.Text.Json.Serialization;
 
-public sealed record SecretMessageData(string IV, string Salt, string CT);
+namespace SecretMessageSharingWebApp.Models.Common;
+
+public sealed record SecretMessageData
+{
+	[JsonPropertyName("iv")]
+	public string IV { get; init; }
+
+	[JsonPropertyName("salt")]
+	public string Salt { get; init; }
+
+	[JsonPropertyName("ct")]
+	public string CT { get; init; }
+}

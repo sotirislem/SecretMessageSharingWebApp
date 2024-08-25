@@ -1,100 +1,92 @@
-﻿using Microsoft.AspNetCore.SignalR;
+﻿using System.Collections.Concurrent;
+using Microsoft.AspNetCore.SignalR;
+using SecretMessageSharingWebApp.Extensions;
 using SecretMessageSharingWebApp.Hubs;
 using SecretMessageSharingWebApp.Models.Api.Responses;
 using SecretMessageSharingWebApp.Services.Interfaces;
 
 namespace SecretMessageSharingWebApp.Services;
 
-public sealed class SecretMessageDeliveryNotificationHubService : ISecretMessageDeliveryNotificationHubService
-{
-	private readonly Dictionary<string, string> _activeClients = new();
-
-	private readonly ILogger<SecretMessageDeliveryNotificationHubService> _logger;
-	private readonly IMemoryCacheService _memoryCacheService;
-	private readonly IHubContext<SecretMessageDeliveryNotificationHub, ISecretMessageDeliveryNotificationHub> _secretMessageDeliveryNotificationHub;
-
-	public SecretMessageDeliveryNotificationHubService(
+public sealed class SecretMessageDeliveryNotificationHubService(
 		ILogger<SecretMessageDeliveryNotificationHubService> logger,
 		IMemoryCacheService memoryCacheService,
+		IHttpContextAccessor httpContextAccessor,
 		IHubContext<SecretMessageDeliveryNotificationHub, ISecretMessageDeliveryNotificationHub> secretMessageDeliveryNotificationHub)
-	{
-		_logger = logger;
-		_memoryCacheService = memoryCacheService;
-		_secretMessageDeliveryNotificationHub = secretMessageDeliveryNotificationHub;
-	}
+	: ISecretMessageDeliveryNotificationHubService
+{
+	private readonly ConcurrentDictionary<string, string> _activeClients = new();
 
-	public void AddConnection(string connectionId, string clientId)
+	public void AddConnection(string clientId, string connectionId)
 	{
-		_activeClients.Add(clientId, connectionId);
+		_activeClients.TryAdd(clientId, connectionId);
 	}
 
 	public void RemoveConnection(string clientId)
 	{
-		_activeClients.Remove(clientId);
+		_activeClients.TryRemove(clientId, out _);
 	}
 
-	public async Task SendAnyPendingSecretMessageDeliveryNotificationFromMemoryCacheQueue(string clientId)
+	public async Task<bool> SendNotification(string clientId, SecretMessageDeliveryNotification secretMessageDeliveryNotification)
 	{
-		var memoryResult = _memoryCacheService.GetValue<Queue<SecretMessageDeliveryNotification>>(clientId, Constants.MemoryKey_SecretMessageDeliveryNotificationQueue);
-		if (memoryResult.exists)
+		secretMessageDeliveryNotification.IsSelfNotification = IsSelfNotification(clientId);
+
+		var notificationSent = await TrySend(clientId, secretMessageDeliveryNotification);
+		if (!notificationSent)
 		{
-			var queue = memoryResult.value;
-			while (queue.Count > 0)
-			{
-				var notification = queue.Dequeue();
-				await TrySend(clientId, notification, saveToMemoryCacheQueueOnFailure: false);
-			}
-		}
-	}
-
-	public async Task<bool> SendNotification(SecretMessageDeliveryNotification secretMessageDeliveryNotification)
-	{
-		bool notificationSent = false;
-
-		(var clientIdExists, var clientId)
-			= _memoryCacheService.GetValue<string>(secretMessageDeliveryNotification.MessageId, Constants.MemoryKey_SecretMessageCreatorClientId);
-
-		if (clientIdExists)
-		{
-			notificationSent = await TrySend(clientId, secretMessageDeliveryNotification);
+			SaveNotificationToMemoryCacheQueueForFutureDelivery(clientId, secretMessageDeliveryNotification);
 		}
 
 		return notificationSent;
 	}
 
-	private async Task<bool> TrySend(string clientId, SecretMessageDeliveryNotification secretMessageDeliveryNotification, bool saveToMemoryCacheQueueOnFailure = true)
+	public async Task SendAnyPendingNotificationFromMemoryCacheQueue(string clientId)
 	{
-		if (_activeClients.ContainsKey(clientId))
+		var memoryResult = memoryCacheService.GetValue<Queue<SecretMessageDeliveryNotification>>(clientId, Constants.MemoryKeys.SecretMessageDeliveryNotificationQueue);
+		if (!memoryResult.exists)
 		{
-			await _secretMessageDeliveryNotificationHub.Clients.Client(_activeClients[clientId]).SendSecretMessageDeliveryNotification(secretMessageDeliveryNotification);
-
-			_logger.LogInformation("SecretMessageDeliveryNotificationHubService => Sent delivery notification to client: {clientId}", clientId);
-
-			return true;
+			return;
 		}
 
-		if (saveToMemoryCacheQueueOnFailure)
+		var queue = memoryResult.value!;
+		while (queue.TryDequeue(out var notification))
 		{
-			SaveNotificationToMemoryCacheQueueForFutureDelivery(clientId, secretMessageDeliveryNotification);
+			await TrySend(clientId, notification);
 		}
-		return false;
+	}
+
+	private async Task<bool> TrySend(string clientId, SecretMessageDeliveryNotification secretMessageDeliveryNotification)
+	{
+		if (!_activeClients.TryGetValue(clientId, out string? connectionId))
+		{
+			return false;
+		}
+
+		await secretMessageDeliveryNotificationHub.Clients
+				.Client(connectionId)
+				.SendSecretMessageDeliveryNotification(secretMessageDeliveryNotification);
+
+		logger.LogInformation("SecretMessageDeliveryNotificationHubService => Sent delivery notification to client: {clientId}", clientId);
+
+		return true;
 	}
 
 	private void SaveNotificationToMemoryCacheQueueForFutureDelivery(string clientId, SecretMessageDeliveryNotification secretMessageDeliveryNotification)
 	{
-		var memoryResult = _memoryCacheService.GetValue<Queue<SecretMessageDeliveryNotification>>(clientId, Constants.MemoryKey_SecretMessageDeliveryNotificationQueue);
+		var memoryResult = memoryCacheService.GetValue<Queue<SecretMessageDeliveryNotification>>(clientId, Constants.MemoryKeys.SecretMessageDeliveryNotificationQueue);
 
-		Queue<SecretMessageDeliveryNotification> secretMessageDeliveryNotificationQueue;
-		if (memoryResult.exists)
-		{
-			secretMessageDeliveryNotificationQueue = memoryResult.value;
-		}
-		else
-		{
-			secretMessageDeliveryNotificationQueue = new();
-		}
+		Queue<SecretMessageDeliveryNotification> secretMessageDeliveryNotificationQueue = memoryResult.exists
+			? memoryResult.value!
+			: new();
 
 		secretMessageDeliveryNotificationQueue.Enqueue(secretMessageDeliveryNotification);
-		_memoryCacheService.SetValue(clientId, secretMessageDeliveryNotificationQueue, Constants.MemoryKey_SecretMessageDeliveryNotificationQueue);
+
+		memoryCacheService.SetValue(clientId, secretMessageDeliveryNotificationQueue, Constants.MemoryKeys.SecretMessageDeliveryNotificationQueue);
+	}
+
+	private bool IsSelfNotification(string clientIdToSendNotification)
+	{
+		var currentClientId = httpContextAccessor.HttpContext!.GetRequestHeaderValue("Client-Id");
+
+		return clientIdToSendNotification == currentClientId;
 	}
 }

@@ -1,8 +1,9 @@
-﻿using SecretMessageSharingWebApp.Models.Common;
+﻿using System.Text.Json.Serialization;
 
 namespace SecretMessageSharingWebApp.Models.Api.Requests;
 
-public sealed class ValidateSecretMessageOtpRequest
+public sealed record ValidateSecretMessageOtpRequest
 {
+	[JsonPropertyName("otpCode")]
 	public string OtpCode { get; init; }
 }

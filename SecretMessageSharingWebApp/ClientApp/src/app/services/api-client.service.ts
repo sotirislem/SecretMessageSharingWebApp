@@ -1,4 +1,4 @@
-import { HttpClient, HttpHeaders, HttpResponse } from '@angular/common/http';
+import { HttpClient, HttpHeaders, HttpParams, HttpResponse } from '@angular/common/http';
 import { Inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 
@@ -30,9 +30,9 @@ export class ApiClientService {
 		return this.httpClient.get<VerifySecretMessageResponse>(url);
 	}
 
-	acquireSecretMessageOtp(id: string): Observable<boolean> {
+	acquireSecretMessageOtp(id: string): Observable<void> {
 		const url = this.getApiUrl('otp/' + id);
-		return this.httpClient.get<boolean>(url);
+		return this.httpClient.get<void>(url);
 	}
 
 	validateSecretMessageOtp(id: string, otpCode: string): Observable<ValidateSecretMessageOtpResponse> {
@@ -40,15 +40,18 @@ export class ApiClientService {
 		return this.httpClient.post<ValidateSecretMessageOtpResponse>(url, <ValidateSecretMessageOtpRequest>{ otpCode });
 	}
 
-	getSecretMessage(id: string, token?: string): Observable<GetSecretMessageResponse> {
+	getSecretMessage(id: string, keyHash: string, authToken?: string): Observable<GetSecretMessageResponse> {
 		const url = this.getApiUrl(id);
 
+		let params = new HttpParams();
+		params = params.append('keyHash', keyHash);
+
 		let headers = new HttpHeaders();
-		if (token) {
-			headers = headers.set('Authorization', 'Bearer ' + token);
+		if (authToken) {
+			headers = headers.append('Authorization', 'Bearer ' + authToken);
 		}
 
-		return this.httpClient.get<GetSecretMessageResponse>(url, { headers });
+		return this.httpClient.get<GetSecretMessageResponse>(url, { headers, params });
 	}
 
 	getRecentlyStoredSecretMessages(): Observable<RecentlyStoredSecretMessagesResponse> {
@@ -56,9 +59,9 @@ export class ApiClientService {
 		return this.httpClient.get<RecentlyStoredSecretMessagesResponse>(url);
 	}
 
-	deleteRecentlyStoredSecretMessage(id: string): Observable<boolean> {
+	deleteRecentlyStoredSecretMessage(id: string): Observable<void> {
 		const url = this.getApiUrl(id);
-		return this.httpClient.delete<boolean>(url);
+		return this.httpClient.delete<void>(url);
 	}
 
 	private getApiUrl(apiPath: string = "") {

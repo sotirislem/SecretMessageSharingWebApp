@@ -1,31 +1,54 @@
-﻿using SecretMessageSharingWebApp.Configuration;
+﻿using System.Diagnostics;
+using SecretMessageSharingWebApp.Configuration;
+using SecretMessageSharingWebApp.Models.Domain;
+using SecretMessageSharingWebApp.Providers;
 using SecretMessageSharingWebApp.Services.Interfaces;
 using SendGrid;
 using SendGrid.Helpers.Mail;
 
 namespace SecretMessageSharingWebApp.Services;
 
-public sealed class SendGridEmailService : ISendGridEmailService
+public sealed class SendGridEmailService(
+	ILogger<SendGridEmailService> logger,
+	ICancellationTokenProvider cancellationTokenProvider,
+	SendGridConfigurationSettings sendGridConfigurationSettings) : ISendGridEmailService
 {
-	private readonly SendGridConfigurationSettings _sendGridConfigurationSettings;
-
-	public SendGridEmailService(SendGridConfigurationSettings sendGridConfigurationSettings)
+	public async Task<bool> SendOtp(OneTimePassword otp, string messageId, string recipientsEmail)
 	{
-		_sendGridConfigurationSettings = sendGridConfigurationSettings;
+		if (Debugger.IsAttached)
+		{
+			Console.WriteLine($"OTP Code: {otp.Code}");
+			return true;
+		}
+
+		var client = new SendGridClient(sendGridConfigurationSettings.ApiKey);
+		var from = new EmailAddress(sendGridConfigurationSettings.AuthSender, Constants.AppName);
+		var to = new EmailAddress(recipientsEmail);
+
+		var (subject, htmlContent) = CreateEmailContent(otp, messageId);
+
+		var msg = MailHelper.CreateSingleEmail(from, to, subject, plainTextContent: null, htmlContent);
+		var response = await client.SendEmailAsync(msg, cancellationTokenProvider.Token);
+
+		if (response.IsSuccessStatusCode is false)
+		{
+			logger.LogError("Failed to send OTP for message: {messageId} | SendGrid API status code: {httpStatusCode} ({httpStatusCodeInt})",
+				messageId, response.StatusCode, (int)response.StatusCode);
+		}
+
+		return response.IsSuccessStatusCode;
 	}
 
-	public async Task<bool> SendOtp(string messageId, string otpCode, string recipientsEmail)
+	private (string subject, string htmlContent) CreateEmailContent(OneTimePassword otp, string messageId)
 	{
-		var from = new EmailAddress(_sendGridConfigurationSettings.AuthSender, Constants.AppName);
-		var client = new SendGridClient(_sendGridConfigurationSettings.ApiKey);
+		var subject = $"{Constants.AppName} - OTP";
 
-		var to = new EmailAddress(recipientsEmail);
-		var subject = $"OTP - Message Id: {messageId}";
+		var htmlContent =
+			$"Message Id: <strong>{messageId}</strong><br>" +
+			$"<br>" +
+			$"OTP: <strong>{otp.Code}</strong><br>" +
+			$"Expires at: {otp.ExpiresAt}";
 
-		var htmlContent = $"OTP: <strong>{otpCode}</strong>";
-		var msg = MailHelper.CreateSingleEmail(from, to, subject, null, htmlContent);
-
-		var response = await client.SendEmailAsync(msg);
-		return response.IsSuccessStatusCode;
+		return (subject, htmlContent);
 	}
 }

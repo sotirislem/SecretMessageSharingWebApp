@@ -3,6 +3,7 @@ import { Injectable } from '@angular/core';
 import { SecretMessageData } from '../models/common/secret-message-data.model';
 import { DecryptionResult, SjclDecryptionResult } from '../models/sjcl-decryption-result.model';
 import { SecretMessage } from '../models/secret-message.model';
+import { SjclEncryptionResult } from '../models/sjcl-encryption-result.model';
 
 @Injectable({
 	providedIn: 'root'
@@ -21,7 +22,7 @@ export class SjclService {
 		sjcl.random.startCollectors();
 	}
 
-	encryptMessage(secretMsgObj: SecretMessage): [secretMessageData: SecretMessageData, encryptionKeyAsBase64url: string] {
+	encryptMessage(secretMsgObj: SecretMessage): SjclEncryptionResult {
 		const secretMsgSerialized = JSON.stringify(secretMsgObj);
 
 		const encryptionParams = this.generateEncryptionParams();
@@ -36,7 +37,18 @@ export class SjclService {
 			salt: salt.toString(),
 			ct: ct.toString()
 		};
-		return [secretMessageData, this.convertEncryptionKeyToBase64Url(encryptionKey)];
+
+		const encryptionKeyAsBase64url = this.convertEncryptionKeyToBase64Url(encryptionKey);
+		const encryptionKeySha256 = this.getSha256(encryptionKeyAsBase64url);
+
+
+		const sjclDecryptionResult = <SjclEncryptionResult>{
+			secretMessageData,
+			encryptionKeyAsBase64url,
+			encryptionKeySha256
+		};
+
+		return sjclDecryptionResult;
 	}
 
 	decryptMessage(secretMessageData: SecretMessageData, encryptionKeyAsBase64url: string): SjclDecryptionResult {
@@ -63,6 +75,10 @@ export class SjclService {
 		finally {
 			return sjclDecryptionResult;
 		}
+	}
+
+	getSha256(value: string): string {
+		return sjcl.codec.hex.fromBits(sjcl.hash.sha256.hash(value));
 	}
 
 	private generateEncryptionParams(): sjcl.SjclCipherEncryptParams {

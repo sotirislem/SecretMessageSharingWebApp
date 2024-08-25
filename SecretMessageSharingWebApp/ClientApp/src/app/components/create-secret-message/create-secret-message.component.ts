@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import { FormBuilder, FormControl, FormGroup } from '@angular/forms';
+import { FormBuilder, FormControl } from '@angular/forms';
 
 import { SjclService } from '../../services/sjcl.service';
 import { ApiClientService } from '../../services/api-client.service';
@@ -10,6 +10,7 @@ import { Routes, Constants } from '../../../constants';
 
 import { SecretMessage } from '../../models/secret-message.model';
 import { OtpSettings, StoreNewSecretMessageRequest } from '../../models/api/store-new-secret-message-request.model';
+import { finalize } from 'rxjs';
 
 @Component({
 	selector: 'create-secret-message',
@@ -114,19 +115,27 @@ export class CreateSecretMessageComponent {
 		};
 
 		setTimeout(() => {
-			const [secretMessageData, encryptionKey] = this.sjclService.encryptMessage(secretMsgObj);
+			const encryptionResult = this.sjclService.encryptMessage(secretMsgObj);
 
 			const request = <StoreNewSecretMessageRequest>{
-				secretMessageData: secretMessageData,
+				secretMessageData: encryptionResult.secretMessageData,
 				otp: <OtpSettings>{
 					required: this.secretMsgRequiresOtp,
 					recipientsEmail: this.secretMsgOtpRecipientsEmail.trim()
-				}
+				},
+				encryptionKeySha256: encryptionResult.encryptionKeySha256
 			};
-			this.apiClientService.storeSecretMessage(request).subscribe(secretMsgId => {
-				this.navigateToNewSecretMessagePage(secretMsgObj, secretMsgId, encryptionKey);
-			});
-		}, 500);
+
+			this.apiClientService.storeSecretMessage(request)
+				.pipe(
+					finalize(() => {
+						this.formSubmitted = false;
+					})
+				)
+				.subscribe(secretMsgId => {
+					this.navigateToNewSecretMessagePage(secretMsgObj, secretMsgId, encryptionResult.encryptionKeyAsBase64url);
+				});
+		}, 250);
 	}
 
 	onFileSelection(event: Event) {

@@ -1,5 +1,5 @@
-﻿using SecretMessageSharingWebApp.Models.Domain;
-using System.Runtime.CompilerServices;
+﻿using SecretMessageSharingWebApp.Models.Common;
+using SecretMessageSharingWebApp.Models.Domain;
 
 namespace SecretMessageSharingWebApp.Services.Interfaces;
 
@@ -7,11 +7,11 @@ public interface ISecretMessagesService
 {
 	Task<SecretMessage> Store(SecretMessage secretMessage);
 
-	(bool exists, OtpSettings? otp) VerifyExistence(string id);
+	Task<(bool exists, OtpSettings? otpSettings)> Exists(string id);
 
 	Task<SecretMessage?> Retrieve(string id);
 
 	Task<bool> Delete(string id);
 
-	IEnumerable<RecentlyStoredSecretMessage> GetRecentlyStoredSecretMessagesInfo(List<string> recentlyStoredSecretMessagesList);
+	Task<List<RecentlyStoredSecretMessage>> GetRecentlyStoredSecretMessagesInfo(List<string> recentlyStoredSecretMessagesList);
 }

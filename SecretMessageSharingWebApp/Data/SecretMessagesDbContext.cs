@@ -10,11 +10,17 @@ public sealed class SecretMessagesDbContext : DbContext
 
 	protected override void OnModelCreating(ModelBuilder modelBuilder)
 	{
-		modelBuilder.Entity<SecretMessageDto>()
+		modelBuilder.Entity<SecretMessageEntity>()
+			.HasKey(e => e.Id);
+
+		modelBuilder.Entity<GetLogEntity>()
+			.HasKey(e => e.Id);
+
+		modelBuilder.Entity<SecretMessageEntity>()
 			.ToContainer("SecretMessages")
 			.HasNoDiscriminator();
 
-		modelBuilder.Entity<GetLogDto>()
+		modelBuilder.Entity<GetLogEntity>()
 			.ToContainer("GetLogs")
 			.HasNoDiscriminator();
 	}
@@ -28,6 +34,6 @@ public sealed class SecretMessagesDbContext : DbContext
 		optionsBuilder.LogTo(Console.WriteLine, logLevel);
 	}
 
-	public DbSet<SecretMessageDto> SecretMessages { get; set; }
-	public DbSet<GetLogDto> GetLogs { get; set; }
+	public DbSet<SecretMessageEntity> SecretMessages { get; init; }
+	public DbSet<GetLogEntity> GetLogs { get; init; }
 }

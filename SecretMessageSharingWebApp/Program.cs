@@ -1,28 +1,22 @@
 using FastEndpoints;
+using FastEndpoints.Swagger;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging.ApplicationInsights;
 using SecretMessageSharingWebApp;
+using SecretMessageSharingWebApp.BackgroundServices;
 using SecretMessageSharingWebApp.Configuration;
 using SecretMessageSharingWebApp.Data;
 using SecretMessageSharingWebApp.Extensions;
 using SecretMessageSharingWebApp.Hubs;
 using SecretMessageSharingWebApp.Middlewares;
+using SecretMessageSharingWebApp.Providers;
 using SecretMessageSharingWebApp.Repositories;
 using SecretMessageSharingWebApp.Repositories.Interfaces;
 using SecretMessageSharingWebApp.Services;
-using SecretMessageSharingWebApp.Services.BackgroundServices;
 using SecretMessageSharingWebApp.Services.Interfaces;
 
 // builder
 var builder = WebApplication.CreateBuilder(args);
-
-#if (!DEBUG)
-if (builder.Configuration["APPLICATIONINSIGHTS_CONNECTION_STRING"] is not null)
-{
-	builder.Services.AddApplicationInsightsTelemetry(builder.Configuration["APPLICATIONINSIGHTS_CONNECTION_STRING"]);
-}
-#endif
 
 builder.Services.BindConfigurationSettings<CosmosDbConfigurationSettings>(builder.Configuration.GetSection("CosmosDb"));
 builder.Services.BindConfigurationSettings<SendGridConfigurationSettings>(builder.Configuration.GetSection("SendGrid"));
@@ -44,10 +38,13 @@ builder.Services.AddSingleton<IDateTimeProviderService, DateTimeProviderService>
 builder.Services.AddSingleton<ISecretMessageDeliveryNotificationHubService, SecretMessageDeliveryNotificationHubService>();
 builder.Services.AddSingleton<IOtpService, OtpService>();
 builder.Services.AddSingleton<IJwtService, JwtService>();
-builder.Services.AddSingleton<ISendGridEmailService, SendGridEmailService>();
+
+builder.Services.AddScoped<ISendGridEmailService, SendGridEmailService>();
 
 builder.Services.AddScoped<ISecretMessagesRepository, SecretMessagesRepository>();
 builder.Services.AddScoped<ISecretMessagesService, SecretMessagesService>();
+builder.Services.AddScoped<IRecentlyStoredMessagesService, RecentlyStoredMessagesService>();
+builder.Services.AddScoped<ISecretMessagesManager, SecretMessagesManager>();
 
 builder.Services.AddScoped<IGetLogsRepository, GetLogsRepository>();
 builder.Services.AddScoped<IGetLogsService, GetLogsService>();
@@ -63,8 +60,15 @@ builder.Services.AddSession(options =>
 });
 
 builder.Services.AddFastEndpoints();
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.SwaggerDocument(o =>
+{
+	o.DocumentSettings = s =>
+	{
+		s.Title = Constants.AppName;
+		s.Version = "v1";
+		s.Description = $"API documentation for {Constants.AppName} (using FastEndpoints)";
+	};
+});
 
 builder.Services.AddSignalR(hubOptions =>
 {
@@ -78,19 +82,25 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
 		ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
 });
 
+builder.Services.AddTransient<HttpRequestTimeMiddleware>();
+builder.Services.AddExceptionHandler<GlobalExceptionHandlerMiddleware>();
+builder.Services.AddProblemDetails();
+
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<ICancellationTokenProvider, CancellationTokenProvider>();
+
 // app
 var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())
 {
-	var context = scope.ServiceProvider.GetService<SecretMessagesDbContext>();
-	context!.Database.EnsureCreated();
+	var context = scope.ServiceProvider.GetService<SecretMessagesDbContext>()!;
+	context.Database.EnsureCreated();
 }
 
 if (app.Environment.IsDevelopment())
 {
-	app.UseSwagger();
-	app.UseSwaggerUI();
+	app.UseSwaggerGen();
 }
 else
 {
@@ -104,14 +114,13 @@ app.UseStaticFiles();
 app.UseRouting();
 app.UseSession();
 
-app.UseMiddleware<ExceptionHandlingMiddleware>();
 app.UseMiddleware<HttpRequestTimeMiddleware>();
+app.UseExceptionHandler();
 
 app.MapHub<SecretMessageDeliveryNotificationHub>(SecretMessageDeliveryNotificationHub.Url);
 
-app.UseAuthorization();
 app.UseFastEndpoints();
-
+app.UseAuthorization();
 app.MapFallbackToFile("index.html");
 
 app.Run();

@@ -4,10 +4,13 @@ namespace SecretMessageSharingWebApp.Services;
 
 public sealed class DateTimeProviderService : IDateTimeProviderService
 {
+	private const string LocalTimeZoneId = "GTB Standard Time";
+
 	public DateTime LocalNow()
 	{
-		var destinationTimeZone = TimeZoneInfo.FindSystemTimeZoneById(Constants.LocalTimeZone);
-		return TimeZoneInfo.ConvertTime(DateTime.Now, destinationTimeZone);
+		var destinationTimeZone = TimeZoneInfo.FindSystemTimeZoneById(LocalTimeZoneId);
+
+		return TimeZoneInfo.ConvertTime(DateTime.UtcNow, destinationTimeZone);
 	}
 
 	public DateTime UtcNow()

@@ -126,18 +126,20 @@ export class GetSecretMessageComponent {
 			OtpInputModalComponent,
 			{ messageId: this.messageId },
 			<NgbModalOptions>{ centered: true, backdrop: 'static' }
-		).then((token: string) => {
-			if (token) {
-				this.getSecretMessage(encryptionKey, token);
+		).then((authToken?: string) => {
+			if (authToken) {
+				this.getSecretMessage(encryptionKey, authToken);
 			} else {
 				this.componentState = ComponentState.Error;
 			}
 		});
 	}
 
-	private getSecretMessage(encryptionKey: string, token?: string) {
+	private getSecretMessage(encryptionKey: string, authToken?: string) {
 		setTimeout(() => {
-			this.apiClientService.getSecretMessage(this.messageId, token).subscribe((response: GetSecretMessageResponse) => {
+			const encryptionKeySha256 = this.sjclService.getSha256(encryptionKey);
+
+			this.apiClientService.getSecretMessage(this.messageId, encryptionKeySha256, authToken).subscribe((response: GetSecretMessageResponse) => {
 				this.componentState = ComponentState.ReadyWithMessage;
 
 				this.decryptionResult = this.sjclService.decryptMessage(response.data, encryptionKey);

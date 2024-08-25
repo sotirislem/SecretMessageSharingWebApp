@@ -1,6 +1,8 @@
-﻿namespace SecretMessageSharingWebApp.Services.Interfaces;
+﻿using SecretMessageSharingWebApp.Models.Domain;
+
+namespace SecretMessageSharingWebApp.Services.Interfaces;
 
 public interface ISendGridEmailService
 {
-	Task<bool> SendOtp(string messageId, string otpCode, string recipientsEmail);
+	Task<bool> SendOtp(OneTimePassword otp, string messageId, string recipientsEmail);
 }

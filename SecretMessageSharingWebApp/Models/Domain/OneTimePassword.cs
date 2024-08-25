@@ -1,6 +1,18 @@
 ﻿namespace SecretMessageSharingWebApp.Models.Domain;
 
-public sealed record OneTimePassword(string Code, long CreatedTimestamp)
+public sealed record OneTimePassword
 {
-	public int AvailableValidationAttempts { get; set; }
+	public string Code { get; init; }
+
+	public DateTimeOffset ExpiresAt { get; init; }
+
+	public int CodeValidationAttempts { get; private set; } = 0;
+
+
+	public bool Validate(string codeToValidate)
+	{
+		CodeValidationAttempts++;
+
+		return codeToValidate == Code;
+	}
 }
