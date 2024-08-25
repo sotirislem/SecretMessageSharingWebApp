@@ -1,6 +1,7 @@
 ﻿using System.Diagnostics;
 using SecretMessageSharingWebApp.Configuration;
 using SecretMessageSharingWebApp.Models.Domain;
+using SecretMessageSharingWebApp.Providers;
 using SecretMessageSharingWebApp.Services.Interfaces;
 using SendGrid;
 using SendGrid.Helpers.Mail;
@@ -9,6 +10,7 @@ namespace SecretMessageSharingWebApp.Services;
 
 public sealed class SendGridEmailService(
 	ILogger<SendGridEmailService> logger,
+	ICancellationTokenProvider cancellationTokenProvider,
 	SendGridConfigurationSettings sendGridConfigurationSettings) : ISendGridEmailService
 {
 	public async Task<bool> SendOtp(OneTimePassword otp, string messageId, string recipientsEmail)
@@ -26,7 +28,7 @@ public sealed class SendGridEmailService(
 		var (subject, htmlContent) = CreateEmailContent(otp, messageId);
 
 		var msg = MailHelper.CreateSingleEmail(from, to, subject, plainTextContent: null, htmlContent);
-		var response = await client.SendEmailAsync(msg);
+		var response = await client.SendEmailAsync(msg, cancellationTokenProvider.Token);
 
 		if (response.IsSuccessStatusCode is false)
 		{

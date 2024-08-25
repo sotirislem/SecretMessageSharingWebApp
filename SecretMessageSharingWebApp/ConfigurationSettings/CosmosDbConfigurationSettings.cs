@@ -2,7 +2,7 @@
 
 namespace SecretMessageSharingWebApp.Configuration;
 
-public sealed class CosmosDbConfigurationSettings
+public sealed record CosmosDbConfigurationSettings
 {
 	[Required]
 	public string Endpoint { get; init; }

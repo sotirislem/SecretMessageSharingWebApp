@@ -8,5 +8,5 @@ public interface IOtpService
 
 	bool IsExpired(OneTimePassword otp);
 
-	public (bool isValid, bool hasExpired) Validate(string otpInputCode, OneTimePassword inMemoryOtp);
+	public (bool isValid, bool canRetry, bool hasExpired) Validate(string otpInputCode, OneTimePassword otp);
 }

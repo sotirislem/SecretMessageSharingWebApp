@@ -1,130 +1,116 @@
-//using Microsoft.AspNetCore.SignalR;
-//using Microsoft.Extensions.Logging;
-//using SecretMessageSharingWebApp.Hubs;
-//using SecretMessageSharingWebApp.Models.Api.Responses;
-//using SecretMessageSharingWebApp.Services;
-//using SecretMessageSharingWebApp.Services.Interfaces;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.SignalR;
+using Microsoft.Extensions.Logging;
+using SecretMessageSharingWebApp.Hubs;
+using SecretMessageSharingWebApp.Models.Api.Responses;
+using SecretMessageSharingWebApp.Services;
+using SecretMessageSharingWebApp.Services.Interfaces;
 
-//namespace SecretMessageSharingWebApp.UnitTests.ServicesTests;
+namespace SecretMessageSharingWebApp.UnitTests.ServicesTests;
 
-//public sealed class SecretMessageDeliveryNotificationHubServiceTests
-//{
-//	private readonly SecretMessageDeliveryNotificationHubService _sut;
-//	private readonly Fixture _fixture = new();
+public class SecretMessageDeliveryNotificationHubServiceTests
+{
+	private readonly ILogger<SecretMessageDeliveryNotificationHubService> _logger;
+	private readonly IMemoryCacheService _memoryCacheService;
+	private readonly IHttpContextAccessor _httpContextAccessor;
+	private readonly IHubContext<SecretMessageDeliveryNotificationHub, ISecretMessageDeliveryNotificationHub> _hubContext;
+	
+	private readonly SecretMessageDeliveryNotificationHubService _sut;
 
-//	private readonly ILogger<SecretMessageDeliveryNotificationHubService> _logger
-//		= Substitute.For<ILogger<SecretMessageDeliveryNotificationHubService>>();
-//	private readonly IMemoryCacheService _memoryCacheService
-//		= Substitute.For<IMemoryCacheService>();
-//	private readonly IHubContext<SecretMessageDeliveryNotificationHub, ISecretMessageDeliveryNotificationHub> _secretMessageDeliveryNotificationHub
-//		= Substitute.For<IHubContext<SecretMessageDeliveryNotificationHub, ISecretMessageDeliveryNotificationHub>>();
+	public SecretMessageDeliveryNotificationHubServiceTests()
+	{
+		_logger = Substitute.For<ILogger<SecretMessageDeliveryNotificationHubService>>();
+		_memoryCacheService = Substitute.For<IMemoryCacheService>();
+		_httpContextAccessor = Substitute.For<IHttpContextAccessor>();
+		_hubContext = Substitute.For<IHubContext<SecretMessageDeliveryNotificationHub, ISecretMessageDeliveryNotificationHub>>();
 
-//	public SecretMessageDeliveryNotificationHubServiceTests()
-//	{
-//		_sut = new SecretMessageDeliveryNotificationHubService(_logger, _memoryCacheService, _secretMessageDeliveryNotificationHub);
-//	}
+		_sut = new SecretMessageDeliveryNotificationHubService(
+			_logger,
+			_memoryCacheService,
+			_httpContextAccessor,
+			_hubContext);
+	}
 
-//	[Fact]
-//	public void SendNotification_ShouldSuccessfullySendADeliveryNotification_WhenCreatorsClientIdExistsInMemoryAndHisConnectionIsAlive()
-//	{
-//		// Arrange
-//		var secretMessageDeliveryNotification = _fixture.Create<SecretMessageDeliveryNotification>();
-//		var connectionId = _fixture.Create<string>();
-//		var clientId = _fixture.Create<string>();
+	[Fact]
+	public async Task SendNotification_ShouldSendNotification_WhenClientIsActive()
+	{
+		// Arrange
+		var clientId = "client1";
+		var connectionId = "connection1";
+		var secretMessageDeliveryNotification = new SecretMessageDeliveryNotification();
 
-//		_sut.AddConnection(connectionId, clientId);
-//		_memoryCacheService.GetValue<string>(secretMessageDeliveryNotification.MessageId, Constants.MemoryKeys.SecretMessageCreatorClientId).Returns((true, clientId));
+		var hubClient = Substitute.For<ISecretMessageDeliveryNotificationHub>();
+		_hubContext.Clients.Client(connectionId).Returns(hubClient);
+		_sut.AddConnection(clientId, connectionId);
 
-//		// Act
-//		var result = _sut.SendNotification(secretMessageDeliveryNotification).Result;
+		var httpContext = Substitute.For<HttpContext>();
+		httpContext.Request.Headers.Returns(new HeaderDictionary { { "Client-Id", clientId } });
+		_httpContextAccessor.HttpContext.Returns(httpContext);
 
-//		// Assert
-//		_secretMessageDeliveryNotificationHub.Clients.Client(connectionId).Received().SendSecretMessageDeliveryNotification(secretMessageDeliveryNotification);
-//		_logger.ReceivedWithAnyArgs().LogInformation(default);
+		// Act
+		var result = await _sut.SendNotification(clientId, secretMessageDeliveryNotification);
 
-//		result.Should().BeTrue();
-//	}
+		// Assert
+		result.Should().BeTrue();
+		await hubClient.Received().SendSecretMessageDeliveryNotification(secretMessageDeliveryNotification);
+		_logger.ReceivedWithAnyArgs().LogInformation(default);
+	}
 
-//	[Fact]
-//	public void SendNotification_ShouldNotSendADeliveryNotification_WhenCreatorsClientIdExistsInMemoryButHisConnectionIsNotAlive()
-//	{
-//		// Arrange
-//		var secretMessageDeliveryNotification = _fixture.Create<SecretMessageDeliveryNotification>();
-//		var connectionId = _fixture.Create<string>();
-//		var clientId = _fixture.Create<string>();
+	[Theory]
+	[InlineData(true)]
+	[InlineData(false)]
+	public async Task SendNotification_ShouldQueueNotification_WhenClientIsNotActive(bool isSelfNotification)
+	{
+		// Arrange
+		var clientId = "client1";
+		var requestHeadersClientId = isSelfNotification
+			? clientId
+			: "client2";
 
-//		_sut.AddConnection(connectionId, clientId);
-//		_memoryCacheService.GetValue<string>(secretMessageDeliveryNotification.MessageId, Constants.MemoryKeys.SecretMessageCreatorClientId).Returns((true, clientId));
+		var secretMessageDeliveryNotification = new SecretMessageDeliveryNotification();
+		var queue = new Queue<SecretMessageDeliveryNotification>();
 
-//		// Act
-//		_sut.RemoveConnection(clientId);
-//		var result = _sut.SendNotification(secretMessageDeliveryNotification).Result;
+		_memoryCacheService.GetValue<Queue<SecretMessageDeliveryNotification>>(clientId, Constants.MemoryKeys.SecretMessageDeliveryNotificationQueue)
+			.Returns((true, queue));
 
-//		// Assert
-//		_secretMessageDeliveryNotificationHub.Clients.Client(connectionId).DidNotReceive().SendSecretMessageDeliveryNotification(secretMessageDeliveryNotification);
-//		_logger.DidNotReceiveWithAnyArgs().LogInformation(default);
+		var httpContext = Substitute.For<HttpContext>();
+		httpContext.Request.Headers.Returns(new HeaderDictionary { { "Client-Id", requestHeadersClientId } });
+		_httpContextAccessor.HttpContext.Returns(httpContext);
 
-//		result.Should().BeFalse();
-//	}
+		// Act
+		var result = await _sut.SendNotification(clientId, secretMessageDeliveryNotification);
 
-//	[Fact]
-//	public void SendNotification_ShouldNotSendADeliveryNotification_WhenCreatorsClientIdDoesNotExistsInMemoryRegardlessTheConnectionStatus()
-//	{
-//		// Arrange
-//		var secretMessageDeliveryNotification = _fixture.Create<SecretMessageDeliveryNotification>();
+		// Assert
+		secretMessageDeliveryNotification.IsSelfNotification.Should().Be(isSelfNotification);
+		result.Should().BeFalse();
+		queue.Should().Contain(secretMessageDeliveryNotification);
+		_memoryCacheService.Received().SetValue(clientId, queue, Constants.MemoryKeys.SecretMessageDeliveryNotificationQueue);
+		_logger.DidNotReceiveWithAnyArgs().LogInformation(default);
+	}
 
-//		_memoryCacheService.GetValue<string>(secretMessageDeliveryNotification.MessageId, Constants.MemoryKeys.SecretMessageCreatorClientId).Returns((false, null));
+	[Fact]
+	public async Task SendAnyPendingNotificationFromMemoryCacheQueue_ShouldSendPendingNotifications()
+	{
+		// Arrange
+		var clientId = "client1";
+		var connectionId = "connection1";
+		var queue = new Queue<SecretMessageDeliveryNotification>();
+		var notification = new SecretMessageDeliveryNotification();
+		queue.Enqueue(notification);
 
-//		// Act
-//		var result = _sut.SendNotification(secretMessageDeliveryNotification).Result;
+		_memoryCacheService.GetValue<Queue<SecretMessageDeliveryNotification>>(clientId, Constants.MemoryKeys.SecretMessageDeliveryNotificationQueue)
+			.Returns((true, queue));
 
-//		// Assert
-//		_secretMessageDeliveryNotificationHub.Clients.Client(Arg.Any<string>()).DidNotReceive().SendSecretMessageDeliveryNotification(secretMessageDeliveryNotification);
-//		_logger.DidNotReceiveWithAnyArgs().LogInformation(default);
+		var hubClient = Substitute.For<ISecretMessageDeliveryNotificationHub>();
+		_hubContext.Clients.Client(connectionId).Returns(hubClient);
+		_sut.AddConnection(clientId, connectionId);
 
-//		result.Should().BeFalse();
-//	}
+		// Act
+		await _sut.SendAnyPendingNotificationFromMemoryCacheQueue(clientId);
 
-//	[Fact]
-//	public void SendNotification_ShouldSaveNotificationToMemoryCacheQueueForFutureDelivery_WhenNotificationCannotBeSend()
-//	{
-//		// Arrange
-//		var secretMessageDeliveryNotification = _fixture.Create<SecretMessageDeliveryNotification>();
-//		var connectionId = _fixture.Create<string>();
-//		var clientId = _fixture.Create<string>();
-
-//		_memoryCacheService.GetValue<string>(secretMessageDeliveryNotification.MessageId, Constants.MemoryKeys.SecretMessageCreatorClientId).Returns((true, clientId));
-//		_memoryCacheService.GetValue<Queue<SecretMessageDeliveryNotification>>(clientId, Constants.MemoryKeys.SecretMessageDeliveryNotificationQueue).Returns((false, null));
-
-//		// Act
-//		var result = _sut.SendNotification(secretMessageDeliveryNotification).Result;
-
-//		// Assert
-//		result.Should().BeFalse();
-//		_memoryCacheService.Received().SetValue(clientId, Arg.Is<Queue<SecretMessageDeliveryNotification>>(x => x.Count > 0), Constants.MemoryKeys.SecretMessageDeliveryNotificationQueue);
-//	}
-
-//	[Fact]
-//	public void SendAnyPendingSecretMessageDeliveryNotificationFromMemoryCacheQueue_ShouldSendEveryPendingNotification_WhenExecuted()
-//	{
-//		// Arrange
-//		var pendingSecretMessageDeliveryNotifications = _fixture.CreateMany<SecretMessageDeliveryNotification>(5);
-
-//		var connectionId = _fixture.Create<string>();
-//		var clientId = _fixture.Create<string>();
-
-//		_sut.AddConnection(connectionId, clientId);
-
-//		var inMemomyQueue = new Queue<SecretMessageDeliveryNotification>(pendingSecretMessageDeliveryNotifications);
-//		_memoryCacheService.GetValue<Queue<SecretMessageDeliveryNotification>>(clientId, Constants.MemoryKeys.SecretMessageDeliveryNotificationQueue).Returns((true, inMemomyQueue));
-
-//		// Act
-//		_ = _sut.SendAnyPendingSecretMessageDeliveryNotificationFromMemoryCacheQueue(clientId);
-
-//		// Assert
-//		foreach (var notification in inMemomyQueue)
-//		{
-//			_secretMessageDeliveryNotificationHub.Clients.Client(connectionId).Received().SendSecretMessageDeliveryNotification(notification);
-//		}
-//	}
-//}
+		// Assert
+		await hubClient.Received().SendSecretMessageDeliveryNotification(notification);
+		_logger.ReceivedWithAnyArgs().LogInformation(default);
+		queue.Should().BeEmpty();
+	}
+}

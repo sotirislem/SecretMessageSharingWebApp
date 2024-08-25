@@ -43,15 +43,16 @@ public sealed class OtpService(IDateTimeProviderService dateTimeProviderService)
 		return false;
 	}
 
-	public (bool isValid, bool hasExpired) Validate(string otpInputCode, OneTimePassword otp)
+	public (bool isValid, bool canRetry, bool hasExpired) Validate(string otpInputCode, OneTimePassword otp)
 	{
 		if (IsExpired(otp))
 		{
-			return (isValid: false, hasExpired: true);
+			return (isValid: false, canRetry: false, hasExpired: true);
 		}
 
 		var isValid = otp.Validate(otpInputCode);
+		var canRetry = IsExpired(otp) is false;
 
-		return (isValid, hasExpired: false);
+		return (isValid, canRetry, hasExpired: false);
 	}
 }

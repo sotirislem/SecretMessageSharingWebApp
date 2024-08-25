@@ -62,6 +62,9 @@
 					<div *ngIf="otpCodeFormControl.errors?.otpInvalid">
 						Entered OTP is invalid.
 					</div>
+					<div *ngIf="otpCodeFormControl.errors?.otpMaxAttemptsLimitReached">
+						You have exceeded the maximum retry attempts, please request an OTP resend.
+					</div>
 					<div *ngIf="otpCodeFormControl.errors?.otpHasExpired">
 						Previously sent OTP has expired, please request an OTP resend.
 					</div>

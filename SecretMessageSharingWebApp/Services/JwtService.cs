@@ -16,9 +16,8 @@ public sealed class JwtService(
 
 	public string GenerateToken(string messageId)
 	{
-		var expireDateTime = dateTimeProviderService
-			.UtcNow()
-			.AddMinutes(Constants.JwtTokenExpirationMinutes);
+		var utcNow = dateTimeProviderService.UtcNow();
+		var expireDateTime = utcNow.AddMinutes(Constants.JwtTokenExpirationMinutes);
 
 		var claims = new List<Claim>
 		{
@@ -30,7 +29,7 @@ public sealed class JwtService(
 			issuer: Constants.AppName,
 			audience: null,
 			claims: claims,
-			notBefore: null,
+			notBefore: utcNow,
 			expires: expireDateTime,
 			signingCredentials);
 

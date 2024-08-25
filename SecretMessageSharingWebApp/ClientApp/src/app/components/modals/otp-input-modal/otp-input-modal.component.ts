@@ -75,6 +75,10 @@ export class OtpInputModalComponent {
 				this.stopExpirationTimer();
 				this.otpCodeFormControl.setErrors({ otpHasExpired: true });
 			}
+			else if (!response.canRetry) {
+				this.stopExpirationTimer();
+				this.otpCodeFormControl.setErrors({ otpInvalid: true, otpMaxAttemptsLimitReached: true });
+			}
 			else {
 				this.otpCodeFormControl.setErrors({ otpInvalid: true });
 			}

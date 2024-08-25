@@ -1,212 +1,155 @@
-//using System.Text.Json;
-//using Microsoft.Extensions.Logging;
-//using SecretMessageSharingWebApp.Data.Entities;
-//using SecretMessageSharingWebApp.Mappings;
-//using SecretMessageSharingWebApp.Models.Common;
-//using SecretMessageSharingWebApp.Models.Domain;
-//using SecretMessageSharingWebApp.Repositories.Interfaces;
-//using SecretMessageSharingWebApp.Services;
+using System.Linq.Expressions;
+using System.Text.Json;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
+using SecretMessageSharingWebApp.Data.Entities;
+using SecretMessageSharingWebApp.Mappings;
+using SecretMessageSharingWebApp.Models.Common;
+using SecretMessageSharingWebApp.Models.Domain;
+using SecretMessageSharingWebApp.Repositories.Interfaces;
+using SecretMessageSharingWebApp.Services;
 
-//namespace SecretMessageSharingWebApp.UnitTests.ServicesTests;
+namespace SecretMessageSharingWebApp.UnitTests.ServicesTests;
 
-//public sealed class SecretMessagesServiceTests
-//{
-//	private readonly SecretMessagesService _sut;
-//	private readonly Fixture _fixture = new();
+public class SecretMessagesServiceTests
+{
+	private readonly IFixture _fixture;
+	private readonly ILogger<SecretMessagesService> _logger;
+	private readonly IHttpContextAccessor _httpContextAccessor;
+	private readonly ISecretMessagesRepository _secretMessagesRepository;
 
-//	private readonly ISecretMessagesRepository _secretMessagesRepository = Substitute.For<ISecretMessagesRepository>();
-//	private readonly ILogger<SecretMessagesService> _logger = Substitute.For<ILogger<SecretMessagesService>>();
+	private readonly SecretMessagesService _sut;
 
-//	public SecretMessagesServiceTests()
-//	{
-//		_sut = new SecretMessagesService(_secretMessagesRepository, _logger);
-//	}
+	public SecretMessagesServiceTests()
+	{
+		_fixture = new Fixture();
+		_logger = Substitute.For<ILogger<SecretMessagesService>>();
+		_httpContextAccessor = Substitute.For<IHttpContextAccessor>();
+		_secretMessagesRepository = Substitute.For<ISecretMessagesRepository>();
 
-//	[Fact]
-//	public void Store_ShouldReturnInsertedSecretMessage_WhenExecuted()
-//	{
-//		// Arrange
-//		var secretMessage = _fixture.Build<SecretMessage>()
-//			.Without(x => x.Id)
-//			.Create();
+		_sut = new SecretMessagesService(_logger, _httpContextAccessor, _secretMessagesRepository);
+	}
 
-//		// Act
-//		var result = _sut.Store(secretMessage).Result;
+	[Fact]
+	public async Task Store_ShouldInsertSecretMessageAndSaveToSession()
+	{
+		// Arrange
+		var secretMessage = _fixture.Create<SecretMessage>();
 
-//		// Assert
-//		_secretMessagesRepository.Received().Insert(Arg.Any<SecretMessageEntity>());
-//		_logger.ReceivedWithAnyArgs().LogInformation(default);
+		var session = Substitute.For<ISession>();
+		_httpContextAccessor.HttpContext!.Session = session;
 
-//		result.Should().BeEquivalentTo(secretMessage, opt => opt.Excluding(r => r.Id));
-//		result.Id.Should().NotBeNullOrEmpty();
-//	}
+		// Act
+		var result = await _sut.Store(secretMessage);
 
-//	[Fact]
-//	public void VerifyExistence_ShouldReturnTrueWithOtpSettings_WhenExecutedAndSecretMessageExistsAndOtpIsRequired()
-//	{
-//		// Arrange
-//		var secretMessageDto = _fixture.Build<SecretMessageEntity>()
-//			.With(x => x.Otp, new Data.Entities.OtpSettings() { RecipientsEmail = "example@example.com" })
-//			.Create();
+		// Assert
+		await _secretMessagesRepository.Received(1).Insert(Arg.Any<SecretMessageEntity>());
+		session.Received().Set(Constants.SessionKeys.RecentlyStoredSecretMessagesList, Arg.Any<byte[]>());
+		_logger.ReceivedWithAnyArgs().LogInformation(default);
+		result.Should().BeEquivalentTo(secretMessage, options => options.Excluding(s => s.Id));
+	}
 
-//		_secretMessagesRepository.GetDbSetAsQueryable().Returns(new List<SecretMessageEntity>()
-//		{
-//			secretMessageDto
-//		}.AsQueryable());
+	[Fact]
+	public async Task Exists_ShouldReturnCorrectExistenceAndOtpSettings()
+	{
+		// Arrange
+		var secretMessageEntity = _fixture.Build<SecretMessageEntity>()
+			.With(e => e.JsonData, JsonSerializer.Serialize(new SecretMessageData()))
+			.Create();
 
-//		// Act
-//		var result = _sut.VerifyExistence(secretMessageDto.Id);
+		_secretMessagesRepository.GetById(secretMessageEntity.Id).Returns(secretMessageEntity);
 
-//		// Assert
-//		_secretMessagesRepository.Received().GetDbSetAsQueryable();
-//		_logger.ReceivedWithAnyArgs().LogInformation(default);
+		// Act
+		var result = await _sut.Exists(secretMessageEntity.Id);
 
-//		result.exists.Should().BeTrue();
-//		result.otp.Should().NotBeNull();
-//		result.otp?.Required.Should().BeTrue();
-//		result.otp?.RecipientsEmail.Should().Be("example@example.com");
-//	}
+		// Assert
+		result.exists.Should().BeTrue();
+		result.otpSettings.Should().BeEquivalentTo(secretMessageEntity.Otp.ToDomain());
+	}
 
-//	[Fact]
-//	public void VerifyExistence_ShouldReturnTrueWithOtpSettings_WhenExecutedAndSecretMessageExistsAndOtpIsNotRequired()
-//	{
-//		// Arrange
-//		var secretMessageDto = _fixture.Build<SecretMessageEntity>()
-//			.Without(x => x.Otp)
-//			.Create();
+	[Fact]
+	public async Task Retrieve_ShouldDeleteMessageAndLogInformation_WhenMessageExists()
+	{
+		// Arrange
+		var secretMessageEntity = _fixture.Build<SecretMessageEntity>()
+			.With(e => e.JsonData, JsonSerializer.Serialize(new SecretMessageData()))
+			.Create();
 
-//		_secretMessagesRepository.GetDbSetAsQueryable().Returns(new List<SecretMessageEntity>()
-//		{
-//			secretMessageDto
-//		}.AsQueryable());
+		_secretMessagesRepository.GetById(secretMessageEntity.Id).Returns(secretMessageEntity);
+		_secretMessagesRepository.Delete(secretMessageEntity).Returns(1);
 
-//		// Act
-//		var result = _sut.VerifyExistence(secretMessageDto.Id);
+		// Act
+		var result = await _sut.Retrieve(secretMessageEntity.Id);
 
-//		// Assert
-//		_secretMessagesRepository.Received().GetDbSetAsQueryable();
-//		_logger.ReceivedWithAnyArgs().LogInformation(default);
+		// Assert
+		await _secretMessagesRepository.Received(1).Delete(secretMessageEntity);
+		_logger.ReceivedWithAnyArgs().LogInformation(default);
+		result.Should().BeEquivalentTo(secretMessageEntity.ToDomain());
+	}
 
-//		result.exists.Should().BeTrue();
-//		result.otp.Should().NotBeNull();
-//		result.otp?.Required.Should().BeFalse();
-//		result.otp?.RecipientsEmail.Should().BeEmpty();
-//	}
+	[Fact]
+	public async Task Retrieve_ShouldNotDeleteMessageAndLogInformation_WhenMessageDoesNotExist()
+	{
+		// Arrange
+		var nonExistentId = _fixture.Create<string>();
+		_secretMessagesRepository.GetById(nonExistentId).Returns((SecretMessageEntity?)null);
 
-//	[Fact]
-//	public void VerifyExistence_ShouldReturnFalseWithoutOtpSettings_WhenExecutedAndSecretMessageDoesNotExists()
-//	{
-//		// Arrange
-//		var id = _fixture.Create<string>();
+		// Act
+		var result = await _sut.Retrieve(nonExistentId);
 
-//		_secretMessagesRepository.GetDbSetAsQueryable().Returns(new List<SecretMessageEntity>().AsQueryable());
+		// Assert
+		await _secretMessagesRepository.DidNotReceive().Delete(Arg.Any<SecretMessageEntity>());
+		_logger.ReceivedWithAnyArgs().LogInformation(default);
+		result.Should().BeNull();
+	}
 
-//		// Act
-//		var result = _sut.VerifyExistence(id);
+	[Fact]
+	public async Task Delete_ShouldDeleteMessageAndLogInformation_WhenMessageExists()
+	{
+		// Arrange
+		var secretMessageEntity = _fixture.Create<SecretMessageEntity>();
+		_secretMessagesRepository.GetById(secretMessageEntity.Id).Returns(secretMessageEntity);
+		_secretMessagesRepository.Delete(secretMessageEntity).Returns(1);
 
-//		// Assert
-//		_secretMessagesRepository.Received().GetDbSetAsQueryable();
-//		_logger.ReceivedWithAnyArgs().LogInformation(default);
+		// Act
+		var result = await _sut.Delete(secretMessageEntity.Id);
 
-//		result.exists.Should().BeFalse();
-//		result.otp.Should().BeNull();
-//	}
+		// Assert
+		await _secretMessagesRepository.Received(1).Delete(secretMessageEntity);
+		_logger.ReceivedWithAnyArgs().LogInformation(default);
+		result.Should().BeTrue();
+	}
 
-//	[Fact]
-//	public void Retrieve_ShouldReturnFoundSecretMessage_WhenExecutedAndSecretMessageExists()
-//	{
-//		// Arrange
-//		var secretMessageDto = _fixture.Build<SecretMessageEntity>()
-//			.With(x => x.DeleteOnRetrieve, true)
-//			.With(x => x.JsonData, JsonSerializer.Serialize(_fixture.Create<SecretMessageData>()))
-//			.Create();
-//		var id = secretMessageDto.Id;
+	[Fact]
+	public async Task Delete_ShouldNotDeleteMessageAndLogInformation_WhenMessageDoesNotExist()
+	{
+		// Arrange
+		var nonExistentId = _fixture.Create<string>();
+		_secretMessagesRepository.GetById(nonExistentId).Returns((SecretMessageEntity?)null);
 
-//		_secretMessagesRepository.GetById(id).Returns(secretMessageDto);
+		// Act
+		var result = await _sut.Delete(nonExistentId);
 
-//		// Act
-//		var result = _sut.Retrieve(id).Result;
+		// Assert
+		await _secretMessagesRepository.DidNotReceive().Delete(Arg.Any<SecretMessageEntity>());
+		_logger.ReceivedWithAnyArgs().LogInformation(default);
+		result.Should().BeFalse();
+	}
 
-//		// Assert
-//		_secretMessagesRepository.Received().GetById(id);
-//		_secretMessagesRepository.Received().Delete(Arg.Any<SecretMessageEntity>());
-//		_logger.ReceivedWithAnyArgs().LogInformation(default);
+	[Fact]
+	public async Task GetRecentlyStoredSecretMessagesInfo_ShouldReturnMappedList()
+	{
+		// Arrange
+		var recentlyStoredSecretMessagesList = _fixture.Create<List<string>>();
+		var secretMessageEntities = _fixture.CreateMany<SecretMessageEntity>(2).ToList();
 
-//		result.Should().BeEquivalentTo(secretMessageDto.ToSecretMessage());
-//	}
+		_secretMessagesRepository.SelectEntitiesWhere(Arg.Any<Expression<Func<SecretMessageEntity, bool>>>())
+			.Returns(secretMessageEntities);
 
-//	[Fact]
-//	public void Retrieve_ShouldReturnNull_WhenExecutedAndSecretMessageDoesNotExist()
-//	{
-//		// Arrange
-//		var id = _fixture.Create<string>();
+		// Act
+		var result = await _sut.GetRecentlyStoredSecretMessagesInfo(recentlyStoredSecretMessagesList);
 
-//		_secretMessagesRepository.GetById(id).ReturnsNull();
-
-//		// Act
-//		var result = _sut.Retrieve(id).Result;
-
-//		// Assert
-//		_secretMessagesRepository.Received().GetById(id);
-//		_secretMessagesRepository.DidNotReceive().Delete(Arg.Any<SecretMessageEntity>());
-//		_logger.ReceivedWithAnyArgs().LogInformation(default);
-
-//		result.Should().BeNull();
-//	}
-
-//	[Fact]
-//	public void Delete_ShouldDeleteExistingSecretMessageAndReturnTrue_WhenExecutedAndSecretMessageExists()
-//	{
-//		// Arrange
-//		var secretMessageDto = _fixture.Create<SecretMessageEntity>();
-//		var id = secretMessageDto.Id;
-
-//		_secretMessagesRepository.GetById(id).Returns(secretMessageDto);
-
-//		// Act
-//		var result = _sut.Delete(id).Result;
-
-//		// Assert
-//		_secretMessagesRepository.Received().GetById(id);
-//		_secretMessagesRepository.Received().Delete(secretMessageDto);
-//		_logger.ReceivedWithAnyArgs().LogInformation(default);
-
-//		result.Should().BeTrue();
-//	}
-
-//	[Fact]
-//	public void Delete_ShouldDoNothingAndReturnFalse_WhenExecutedAndSecretMessageDoesNotExist()
-//	{
-//		// Arrange
-//		var id = _fixture.Create<string>();
-
-//		_secretMessagesRepository.GetById(id).ReturnsNull();
-
-//		// Act
-//		var result = _sut.Delete(id).Result;
-
-//		// Assert
-//		_secretMessagesRepository.Received().GetById(id);
-//		_secretMessagesRepository.DidNotReceive().Delete(Arg.Any<SecretMessageEntity>());
-//		_logger.DidNotReceiveWithAnyArgs().LogInformation(default);
-
-//		result.Should().BeFalse();
-//	}
-
-//	[Fact]
-//	public void GetRecentlyStoredSecretMessagesInfo_ShouldReturnProperIEnumerable_WhenGivenValidRecentlyStoredSecretMessagesList()
-//	{
-//		// Arrange
-//		var allSecretMessages = _fixture.CreateMany<SecretMessageEntity>(10);
-//		var recentlyStoredSecretMessages = allSecretMessages.TakeLast(5);
-//		var recentlyStoredSecretMessagesList = recentlyStoredSecretMessages.Select(m => m.Id).ToList();
-
-//		_secretMessagesRepository.GetDbSetAsQueryable().Returns(allSecretMessages.AsQueryable());
-
-//		// Act
-//		var result = _sut.GetRecentlyStoredSecretMessagesInfo(recentlyStoredSecretMessagesList);
-
-//		// Assert
-//		result.Should().BeEquivalentTo(recentlyStoredSecretMessages.Select(m => m.ToRecentlyStoredSecretMessage()));
-//	}
-//}
+		// Assert
+		result.Should().BeEquivalentTo(secretMessageEntities.Select(e => e.ToRecentlyStoredSecretMessage()));
+	}
+}

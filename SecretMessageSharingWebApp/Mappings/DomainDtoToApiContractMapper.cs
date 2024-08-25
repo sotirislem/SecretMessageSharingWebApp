@@ -1,4 +1,5 @@
-﻿using SecretMessageSharingWebApp.Models.Api.Responses;
+﻿using SecretMessageSharingWebApp.Extensions;
+using SecretMessageSharingWebApp.Models.Api.Responses;
 using SecretMessageSharingWebApp.Models.Domain;
 
 namespace SecretMessageSharingWebApp.Mappings;
@@ -10,17 +11,7 @@ public static class DomainDtoToApiContractMapper
 		MessageId = getLog.SecretMessageId,
 		MessageCreatedOn = getLog.SecretMessageCreatedDateTime!.Value,
 		MessageDeliveredOn = getLog.RequestDateTime,
-		RecipientIP = MaskIpAddress(getLog.RequestCreatorIP),
+		RecipientIP = getLog.RequestCreatorIP.MaskIpAddress(),
 		RecipientClientInfo = getLog.RequestClientInfo
 	};
-
-	private static string? MaskIpAddress(string? ipAddress)
-	{
-		if (ipAddress?.Contains('.') is false)
-		{
-			return ipAddress;
-		}
-
-		return string.Concat(ipAddress.AsSpan(0, ipAddress!.LastIndexOf('.')), ".xxx");
-	}
 }

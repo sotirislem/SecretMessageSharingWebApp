@@ -8,12 +8,15 @@ public abstract record ApiResult
 	public static NotFoundResult NotFound(string? message = null) => new(message);
 	public static InternalServerErrorResult InternalServerError(string? message = null) => new(message);
 
+	public virtual string ResultType { get; }
 	public virtual IResult HttpResult { get; }
 }
 
 public abstract record ApiResult<T> : ApiResult
 {
 	public static SuccessResult<T> SuccessWithData(T data) => new(data);
+
+	public override string ResultType => typeof(T).FullName ?? string.Empty;
 
 	public override IResult HttpResult
 	{
@@ -60,12 +63,12 @@ public abstract record ApiResult<T> : ApiResult
 
 public sealed record SuccessResult<T>(T Data) : ApiResult<T>;
 
-public sealed record SuccessNoContentResult() : ApiResult<object>;
+public sealed record SuccessNoContentResult() : ApiResult<object?>;
 
-public sealed record UnauthorizedResult() : ApiResult<object>;
+public sealed record UnauthorizedResult() : ApiResult<object?>;
 
-public sealed record BadRequestResult(string? Message) : ApiResult<object>;
+public sealed record BadRequestResult(string? Message) : ApiResult<string?>;
 
-public sealed record NotFoundResult(string? Message) : ApiResult<object>;
+public sealed record NotFoundResult(string? Message) : ApiResult<string?>;
 
-public sealed record InternalServerErrorResult(string? Message) : ApiResult<object>;
+public sealed record InternalServerErrorResult(string? Message) : ApiResult<string?>;

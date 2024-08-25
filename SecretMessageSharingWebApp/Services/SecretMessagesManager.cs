@@ -69,14 +69,14 @@ public class SecretMessagesManager(
 		var (exists, otpSettings) = await secretMessagesService.Exists(messageId);
 		var cacheResult = memoryCacheService.GetValue<OneTimePassword>(messageId, Constants.MemoryKeys.SecretMessageOtp, remove: false);
 
-		if (exists is false || otpSettings?.Required is not true ||	cacheResult.exists is false)
+		if (exists is false || otpSettings?.Required is not true || cacheResult.exists is false)
 		{
 			return ApiResult.BadRequest("No acquired OTP to validate");
 		}
 
 		string? jwtToken = null;
 
-		var (isValid, hasExpired) = otpService.Validate(otpCode, cacheResult.value!);
+		var (isValid, canRetry, hasExpired) = otpService.Validate(otpCode, cacheResult.value!);
 
 		if (isValid)
 		{
@@ -88,6 +88,7 @@ public class SecretMessagesManager(
 		return ApiResult<ValidateSecretMessageOtpResponse>.SuccessWithData(new()
 		{
 			IsValid = isValid,
+			CanRetry = canRetry,
 			HasExpired = hasExpired,
 			AuthToken = jwtToken
 		});

@@ -3,15 +3,16 @@ using FastEndpoints.Swagger;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using SecretMessageSharingWebApp;
+using SecretMessageSharingWebApp.BackgroundServices;
 using SecretMessageSharingWebApp.Configuration;
 using SecretMessageSharingWebApp.Data;
 using SecretMessageSharingWebApp.Extensions;
 using SecretMessageSharingWebApp.Hubs;
 using SecretMessageSharingWebApp.Middlewares;
+using SecretMessageSharingWebApp.Providers;
 using SecretMessageSharingWebApp.Repositories;
 using SecretMessageSharingWebApp.Repositories.Interfaces;
 using SecretMessageSharingWebApp.Services;
-using SecretMessageSharingWebApp.Services.BackgroundServices;
 using SecretMessageSharingWebApp.Services.Interfaces;
 
 // builder
@@ -37,7 +38,8 @@ builder.Services.AddSingleton<IDateTimeProviderService, DateTimeProviderService>
 builder.Services.AddSingleton<ISecretMessageDeliveryNotificationHubService, SecretMessageDeliveryNotificationHubService>();
 builder.Services.AddSingleton<IOtpService, OtpService>();
 builder.Services.AddSingleton<IJwtService, JwtService>();
-builder.Services.AddSingleton<ISendGridEmailService, SendGridEmailService>();
+
+builder.Services.AddScoped<ISendGridEmailService, SendGridEmailService>();
 
 builder.Services.AddScoped<ISecretMessagesRepository, SecretMessagesRepository>();
 builder.Services.AddScoped<ISecretMessagesService, SecretMessagesService>();
@@ -85,6 +87,7 @@ builder.Services.AddExceptionHandler<GlobalExceptionHandlerMiddleware>();
 builder.Services.AddProblemDetails();
 
 builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<ICancellationTokenProvider, CancellationTokenProvider>();
 
 // app
 var app = builder.Build();
