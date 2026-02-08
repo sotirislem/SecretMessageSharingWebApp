@@ -27,4 +27,13 @@ public static class Constants
 		public const string SecretMessageOtp = "SECRET_MESSAGE_OTP";
 		public const string SecretMessageDeliveryNotificationQueue = "SECRET_MESSAGE_DELIVERY_NOTIFICATION_QUEUE";
 	}
+
+	public static class RateLimit
+	{
+		public const string NoLimit = "no-limit";
+		public const string GlobalLimit = "global-rate-limit";
+
+		public const int GlobalPermitLimitPerMinute = 1000;
+		public const int EndpointHitLimitPerMinute = 30;
+	}
 }

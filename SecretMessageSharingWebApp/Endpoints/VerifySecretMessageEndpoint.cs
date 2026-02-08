@@ -12,7 +12,12 @@ public sealed class VerifySecretMessageEndpoint(
 		Verbs(Http.GET);
 		Routes("api/secret-messages/verify/{id}");
 		AllowAnonymous();
-
+		
+		Throttle(
+			hitLimit: Constants.RateLimit.EndpointHitLimitPerMinute,
+			durationSeconds: TimeSpan.FromMinutes(1).TotalSeconds
+		);
+		
 		Description(builder => builder
 			.ClearDefaultProduces()
 			.Produces(StatusCodes.Status200OK, typeof(VerifySecretMessageResponse))
@@ -38,6 +43,6 @@ public sealed class VerifySecretMessageEndpoint(
 			RequiresOtp = otpSettings?.Required
 		};
 
-		await SendOkAsync(response, cancellation: ct);
+		await Send.OkAsync(response, cancellation: ct);
 	}
 }

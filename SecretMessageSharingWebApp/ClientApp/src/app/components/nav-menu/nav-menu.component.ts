@@ -1,10 +1,14 @@
 import { Component } from '@angular/core';
+import { NgClass } from '@angular/common';
+import { RouterModule } from '@angular/router';
 import { Routes } from '../../../constants';
 
 @Component({
 	selector: 'app-nav-menu',
 	templateUrl: './nav-menu.component.html',
-	styleUrls: ['./nav-menu.component.css']
+	styleUrls: ['./nav-menu.component.css'],
+	standalone: true,
+	imports: [NgClass, RouterModule]
 })
 export class NavMenuComponent {
 	readonly Routes = Routes;

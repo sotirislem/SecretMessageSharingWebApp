@@ -20,9 +20,9 @@ public static class HttpContextExtensions
 		return $"{clientInfo.Device}, {clientInfo.OS}, {clientInfo.UA}";
 	}
 
-	public static string? GetClientIP(this HttpContext httpContext)
+	public static string GetClientIP(this HttpContext httpContext)
 	{
-		return httpContext.Connection.RemoteIpAddress?.ToString();
+		return httpContext.Connection.RemoteIpAddress?.ToString() ?? "Unknown";
 	}
 
 	public static DateTime GetRequestDateTime(this HttpContext httpContext)

@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { ChangeDetectorRef, AfterViewInit, Component, ElementRef, OnDestroy, ViewChild } from '@angular/core';
 
 import { Clipboard } from '@angular/cdk/clipboard';
 import { NgbTooltip } from '@ng-bootstrap/ng-bootstrap'
@@ -13,9 +13,15 @@ import * as QRCode from 'qrcode';
 import { SecretMessage } from '../../models/secret-message.model';
 import { Subject, takeUntil } from 'rxjs';
 
+import { NgClass } from '@angular/common';
+import { ClipboardModule } from '@angular/cdk/clipboard';
+import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
+
 @Component({
 	templateUrl: './new-secret-message.component.html',
-	styleUrls: ['./new-secret-message.component.css']
+	styleUrls: ['./new-secret-message.component.css'],
+	standalone: true,
+	imports: [NgClass, ClipboardModule, NgbModule]
 })
 export class NewSecretMessageComponent implements AfterViewInit, OnDestroy {
 	@ViewChild('ngbTooltipElement') ngbTooltip: NgbTooltip;
@@ -33,6 +39,7 @@ export class NewSecretMessageComponent implements AfterViewInit, OnDestroy {
 
 	constructor(
 		private clipboard: Clipboard,
+		private cdr: ChangeDetectorRef,
 		routerHelperService: RouterHelperService,
 		urlHelperService: UrlHelperService,
 		secretMessageDeliveryNotificationHubService: SecretMessageDeliveryNotificationHubService
@@ -80,6 +87,7 @@ export class NewSecretMessageComponent implements AfterViewInit, OnDestroy {
 		if (secretMessageId == this.secretMsgId) {
 			if (this.ngbTooltip.isOpen()) this.ngbTooltip.close();
 			this.secretMsgDelivered = true;
+			this.cdr.detectChanges();
 		}
 	}
 }

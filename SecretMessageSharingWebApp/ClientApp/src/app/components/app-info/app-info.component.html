@@ -18,110 +18,137 @@
 	<br />
 </p>
 
-<ngb-accordion [closeOthers]="true">
-	<ngb-panel>
-		<ng-template ngbPanelTitle>
-			Encryption library
-		</ng-template>
+<div ngbAccordion [closeOthers]="true">
+	<div ngbAccordionItem>
+		<h2 ngbAccordionHeader>
+			<button ngbAccordionButton>Encryption library</button>
+		</h2>
+		<div ngbAccordionCollapse>
+			<div ngbAccordionBody>
+				<ng-template>
+					Stanford JavaScript Crypto Library (SJCL)<br />
+					<a target="_blank" href="https://crypto.stanford.edu/sjcl/">Official Web Page</a>
+					/
+					<a target="_blank" href="https://github.com/bitwiseshiftleft/sjcl">Source code &#64; Github</a>
+				</ng-template>
+			</div>
+		</div>
+	</div>
 
-		<ng-template ngbPanelContent>
-			Stanford JavaScript Crypto Library (SJCL)<br />
-			<a target="_blank" href="https://crypto.stanford.edu/sjcl/">Official Web Page</a>
-			/
-			<a target="_blank" href="https://github.com/bitwiseshiftleft/sjcl">Source code &#64; Github</a>
-		</ng-template>
-	</ngb-panel>
+	<div ngbAccordionItem>
+		<h2 ngbAccordionHeader>
+			<button ngbAccordionButton>Encryption algorithm</button>
+		</h2>
+		<div ngbAccordionCollapse>
+			<div ngbAccordionBody>
+				<ng-template>
+					AES-256 in GCM mode with 128-bits tag
+				</ng-template>
+			</div>
+		</div>
+	</div>
 
-	<ngb-panel>
-		<ng-template ngbPanelTitle>
-			Encryption algorithm
-		</ng-template>
+	<div ngbAccordionItem>
+		<h2 ngbAccordionHeader>
+			<button ngbAccordionButton>Encryption key</button>
+		</h2>
+		<div ngbAccordionCollapse>
+			<div ngbAccordionBody>
+				<ng-template>
+					<ul class="m-0">
+						<li>Auto-generated at run-time (on browser) by using the SJCL library's provided features</li>
+						<li>Generated key length: 256 bits converted to base64/url-safe format</li>
+					</ul>
+				</ng-template>
+			</div>
+		</div>
+	</div>
 
-		<ng-template ngbPanelContent>
-			AES-256 in GCM mode with 128-bits tag
-		</ng-template>
-	</ngb-panel>
+	<div ngbAccordionItem>
+		<h2 ngbAccordionHeader>
+			<button ngbAccordionButton>What data does server store?</button>
+		</h2>
+		<div ngbAccordionCollapse>
+			<div ngbAccordionBody>
+				<ng-template>
+					The server stores only the minimum information required from the encryption library to decrypt the message, based on the data that was originally used to encrypt it.
+					<br />
+					Stored object: {{'{'}} IV, Salt, CT {{'}'}} where IV = 'Initialization Vector', CT = 'Cipher Text'.
+				</ng-template>
+			</div>
+		</div>
+	</div>
 
-	<ngb-panel>
-		<ng-template ngbPanelTitle>
-			Encryption key
-		</ng-template>
+	<div ngbAccordionItem>
+		<h2 ngbAccordionHeader>
+			<button ngbAccordionButton>For how long does the server keep stored messages?</button>
+		</h2>
+		<div ngbAccordionCollapse>
+			<div ngbAccordionBody>
+				<ng-template>
+					<ul class="m-0">
+						<li>Messages are accessible for 1 time only</li>
+						<li>Messages are being removed from database after retrieval</li>
+						<li>Unread messages are automatically destroyed 1 hour after their creation time</li>
+					</ul>
+				</ng-template>
+			</div>
+		</div>
+	</div>
 
-		<ng-template ngbPanelContent>
-			<ul class="m-0">
-				<li>Auto-generated at run-time (on browser) by using the SJCL library's provided features</li>
-				<li>Generated key length: 256 bits converted to base64/url-safe format</li>
-			</ul>
-		</ng-template>
-	</ngb-panel>
+	<div ngbAccordionItem>
+		<h2 ngbAccordionHeader>
+			<button ngbAccordionButton>Does server collect any client data?</button>
+		</h2>
+		<div ngbAccordionCollapse>
+			<div ngbAccordionBody>
+				<ng-template>
+					Υes, this is done purely for logging purposes.
+					The data concerns information such as client's: IP address, browser's user-agent identity.
+					Those logs are only kept for 24 hours and are automatically deleted after this period.
+				</ng-template>
+			</div>
+		</div>
+	</div>
 
-	<ngb-panel>
-		<ng-template ngbPanelTitle>
-			What data does server store?
-		</ng-template>
+	<div ngbAccordionItem>
+		<h2 ngbAccordionHeader>
+			<button ngbAccordionButton>What is its usefulness?</button>
+		</h2>
+		<div ngbAccordionCollapse>
+			<div ngbAccordionBody>
+				<ng-template>
+					The perfect use of this app is to securely share passwords and keys with family, friends, colleagues, etc.
+				</ng-template>
+			</div>
+		</div>
+	</div>
 
-		<ng-template ngbPanelContent>
-			The server stores only the minimum information required from the encryption library to decrypt the message, based on the data that was originally used to encrypt it.
-			<br />
-			Stored object: {{'{'}} IV, Salt, CT {{'}'}} where IV = 'Initialization Vector', CT = 'Cipher Text'.
-		</ng-template>
-	</ngb-panel>
+	<div ngbAccordionItem>
+		<h2 ngbAccordionHeader>
+			<button ngbAccordionButton>Development stack</button>
+		</h2>
+		<div ngbAccordionCollapse>
+			<div ngbAccordionBody>
+				<ng-template>
+					Angular 21, .NET 10, Entity Framework Core, SignalR.
+				</ng-template>
+			</div>
+		</div>
+	</div>
 
-	<ngb-panel>
-		<ng-template ngbPanelTitle>
-			For how long does the server keep stored messages?
-		</ng-template>
-
-		<ng-template ngbPanelContent>
-			<ul class="m-0">
-				<li>Messages are accessible for 1 time only</li>
-				<li>Messages are being removed from database after retrieval</li>
-				<li>Unread messages are automatically destroyed 1 hour after their creation time</li>
-			</ul>
-		</ng-template>
-	</ngb-panel>
-
-	<ngb-panel>
-		<ng-template ngbPanelTitle>
-			Does server collect any client data?
-		</ng-template>
-
-		<ng-template ngbPanelContent>
-			Υes, this is done purely for logging purposes.
-			The data concerns information such as client's: IP address, browser's user-agent identity.
-			Those logs are only kept for 24 hours and are automatically deleted after this period.
-		</ng-template>
-	</ngb-panel>
-
-	<ngb-panel>
-		<ng-template ngbPanelTitle>
-			What is its usefulness?
-		</ng-template>
-
-		<ng-template ngbPanelContent>
-			The perfect use of this app is to securely share passwords and keys with family, friends, colleagues, etc.
-		</ng-template>
-	</ngb-panel>
-
-	<ngb-panel>
-		<ng-template ngbPanelTitle>
-			Development stack
-		</ng-template>
-
-		<ng-template ngbPanelContent>
-			Angular 14, .NET 8, Entity Framework Core, SignalR.
-		</ng-template>
-	</ngb-panel>
-
-	<ngb-panel>
-		<ng-template ngbPanelTitle>
-			Hosting information
-		</ng-template>
-
-		<ng-template ngbPanelContent>
-			This web application is hosted on Azure by using Azure App Service, whereas, uses Azure Cosmos DB for data storage.
-			<br />
-			OTP codes are delivered by using the SendGrid email delivery platform.
-		</ng-template>
-	</ngb-panel>
-</ngb-accordion>
+	<div ngbAccordionItem>
+		<h2 ngbAccordionHeader>
+			<button ngbAccordionButton>Hosting information</button>
+		</h2>
+		<div ngbAccordionCollapse>
+			<div ngbAccordionBody>
+				<ng-template>
+					This web application is hosted on Azure by using Azure App Service, whereas, uses Azure Cosmos DB for data storage.
+					<br />
+					OTP codes are delivered by using the SendGrid email delivery platform.
+				</ng-template>
+			</div>
+		</div>
+	</div>
+</div>

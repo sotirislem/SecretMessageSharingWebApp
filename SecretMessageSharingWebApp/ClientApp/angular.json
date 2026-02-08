@@ -15,13 +15,16 @@
 			"prefix": "app",
 			"architect": {
 				"build": {
-					"builder": "@angular-devkit/build-angular:browser",
+					"builder": "@angular-devkit/build-angular:application",
 					"options": {
-						"progress": false,
 						"outputPath": "dist",
 						"index": "src/index.html",
-						"main": "src/main.ts",
-						"polyfills": "src/polyfills.ts",
+						"browser": "src/main.ts",
+						"polyfills": [
+							"zone.js",
+							"@angular/localize/init",
+							"src/polyfills.ts"
+						],
 						"tsConfig": "tsconfig.app.json",
 						"assets": [
 							"src/assets"
@@ -38,15 +41,14 @@
 							"sjcl",
 							"qrcode",
 							"file-saver"
-						],
-						"webWorkerTsConfig": "tsconfig.worker.json"
+						]
 					},
 					"configurations": {
 						"production": {
 							"budgets": [
 								{
 									"type": "initial",
-									"maximumWarning": "1mb",
+									"maximumWarning": "1.1mb",
 									"maximumError": "2mb"
 								},
 								{
@@ -72,9 +74,7 @@
 							}
 						},
 						"development": {
-							"buildOptimizer": false,
 							"optimization": false,
-							"vendorChunk": true,
 							"extractLicenses": false,
 							"sourceMap": true,
 							"namedChunks": true
@@ -86,10 +86,10 @@
 					"builder": "@angular-devkit/build-angular:dev-server",
 					"configurations": {
 						"production": {
-							"browserTarget": "SecretMessageSharingWebApp:build:production"
+							"buildTarget": "SecretMessageSharingWebApp:build:production"
 						},
 						"development": {
-							"browserTarget": "SecretMessageSharingWebApp:build:development",
+							"buildTarget": "SecretMessageSharingWebApp:build:development",
 							"proxyConfig": "proxy.conf.js"
 						}
 					},
@@ -98,7 +98,7 @@
 				"extract-i18n": {
 					"builder": "@angular-devkit/build-angular:extract-i18n",
 					"options": {
-						"browserTarget": "SecretMessageSharingWebApp:build"
+						"buildTarget": "SecretMessageSharingWebApp:build"
 					}
 				},
 				"test": {

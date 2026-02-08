@@ -1,17 +1,19 @@
 import { Component } from '@angular/core';
 import { LoaderService } from '../../services/loader.service';
+import { Observable } from 'rxjs';
+import { AsyncPipe } from '@angular/common';
 
 @Component({
 	selector: 'app-loader',
 	templateUrl: './loader.component.html',
-	styleUrls: ['./loader.component.css']
+	styleUrls: ['./loader.component.css'],
+	standalone: true,
+	imports: [AsyncPipe]
 })
 export class LoaderComponent {
-	loaderActive: boolean;
+	loaderActive$: Observable<boolean>;
 
 	constructor(private loaderService: LoaderService) {
-		this.loaderService.loadingObservable$.subscribe((isLoading) => {
-			this.loaderActive = isLoading;
-		});
+		this.loaderActive$ = this.loaderService.loadingObservable$;
 	}
 }

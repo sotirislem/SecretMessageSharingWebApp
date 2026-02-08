@@ -14,7 +14,12 @@ public sealed class StoreNewSecretMessageEndpoint(
 		Verbs(Http.POST);
 		Routes("api/secret-messages");
 		AllowAnonymous();
-
+		
+		Throttle(
+			hitLimit: Constants.RateLimit.EndpointHitLimitPerMinute,
+			durationSeconds: TimeSpan.FromMinutes(1).TotalSeconds
+		);
+		
 		Description(builder => builder
 			.ClearDefaultProduces()
 			.Produces(StatusCodes.Status201Created, typeof(string))
@@ -34,7 +39,7 @@ public sealed class StoreNewSecretMessageEndpoint(
 		var secretMessage = await secretMessagesService.Store(
 			req.ToSecretMessage(httpContextClientInfo));
 
-		await SendCreatedAtAsync<GetSecretMessageEndpoint>(
+		await Send.CreatedAtAsync<GetSecretMessageEndpoint>(
 			routeValues: new
 			{
 				id = secretMessage.Id

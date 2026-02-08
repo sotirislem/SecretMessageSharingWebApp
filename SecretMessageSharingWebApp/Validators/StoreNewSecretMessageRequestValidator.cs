@@ -15,22 +15,22 @@ public sealed class StoreNewSecretMessageRequestValidator : Validator<StoreNewSe
 		RuleFor(request => request.SecretMessageData).NotNull();
 		When(request => request.SecretMessageData is not null, () =>
 		{
-			RuleFor(request => request.SecretMessageData.IV).NotEmpty();
-			RuleFor(request => request.SecretMessageData.Salt).NotEmpty();
-			RuleFor(request => request.SecretMessageData.CT).NotEmpty();
+			RuleFor(request => request.SecretMessageData!.IV).NotEmpty();
+			RuleFor(request => request.SecretMessageData!.Salt).NotEmpty();
+			RuleFor(request => request.SecretMessageData!.CT).NotEmpty();
 		});
 
 		RuleFor(request => request.Otp).NotNull();
 		When(request => request.Otp is not null, () =>
 		{
-			RuleFor(request => request.Otp.RecipientsEmail)
+			RuleFor(request => request.Otp!.RecipientsEmail)
 				.NotEmpty()
 				.EmailAddress()
-				.When(request => request.Otp.Required);
+				.When(request => request.Otp!.Required);
 		});
 
 		RuleFor(request => request.EncryptionKeySha256)
-			.Matches(@"^[a-fA-F0-9]{64}$")
+			.Matches("^[a-fA-F0-9]{64}$")
 			.WithMessage($"'{nameof(StoreNewSecretMessageRequest.EncryptionKeySha256)}' must be a valid SHA-256 hexadecimal string.");
 	}
 }

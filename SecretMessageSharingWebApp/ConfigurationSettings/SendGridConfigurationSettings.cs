@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace SecretMessageSharingWebApp.Configuration;
+namespace SecretMessageSharingWebApp.ConfigurationSettings;
 
 public sealed record SendGridConfigurationSettings
 {

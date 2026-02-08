@@ -18,10 +18,12 @@ public sealed class SecretMessagesDbContext : DbContext
 
 		modelBuilder.Entity<SecretMessageEntity>()
 			.ToContainer("SecretMessages")
+			.HasPartitionKey(e => e.Id)
 			.HasNoDiscriminator();
 
 		modelBuilder.Entity<GetLogEntity>()
 			.ToContainer("GetLogs")
+			.HasPartitionKey(e => e.SecretMessageId)
 			.HasNoDiscriminator();
 	}
 

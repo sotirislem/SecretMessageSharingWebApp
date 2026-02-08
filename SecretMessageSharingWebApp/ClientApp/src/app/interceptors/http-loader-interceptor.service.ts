@@ -1,45 +1,22 @@
-import { Injectable } from '@angular/core';
+import { HttpEvent, HttpHandlerFn, HttpRequest } from '@angular/common/http';
+import { inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { finalize } from 'rxjs/operators';
 import { LoaderService } from '../services/loader.service';
-import {
-	HttpResponse,
-	HttpRequest,
-	HttpHandler,
-	HttpEvent,
-	HttpInterceptor
-} from '@angular/common/http';
 
-@Injectable()
-export class HttpLoaderInterceptor implements HttpInterceptor {
-	private pendingRequests: HttpRequest<any>[] = [];
+export function httpLoaderInterceptor(req: HttpRequest<any>, next: HttpHandlerFn): Observable<HttpEvent<any>> {
+	const loaderService = inject(LoaderService);
 
-	constructor(private loaderService: LoaderService) { }
-
-	intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
-		this.addPendingRequest(req);
-
-		return next.handle(req)
-			.pipe(
-				finalize(() => {
-					this.removePendingRequest(req);
-				})
-			);
+	// Skip loader for specific requests if needed (e.g. SignalR, background sync)
+	if (req.url.includes('signalr') || req.headers.has('X-Skip-Loader')) {
+		return next(req);
 	}
 
-	private addPendingRequest(req: HttpRequest<any>) {
-		this.pendingRequests.push(req);
-		this.loaderService.enableLoading();
-	}
+	loaderService.enableLoading();
 
-	private removePendingRequest(req: HttpRequest<any>) {
-		const i = this.pendingRequests.indexOf(req);
-		if (i >= 0) {
-			this.pendingRequests.splice(i, 1);
-		}
-
-		if (this.pendingRequests.length == 0) {
-			this.loaderService.disableLoading();
-		}
-	}
+	return next(req).pipe(
+		finalize(() => {
+			loaderService.disableLoading();
+		})
+	);
 }

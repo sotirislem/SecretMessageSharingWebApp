@@ -51,7 +51,7 @@ public sealed class DbAutoCleanerBackgroundService(
     {
         logger.LogInformation("DbAutoCleanerBackgroundService: Service triggered `DoWorkAsync()` at {localNow}", dateTimeProviderService.LocalNow());
 
-        using (var scope = services.CreateScope())
+        using (var scope = services.CreateAsyncScope())
         {
             IGetLogsRepository getLogsRepository = scope.ServiceProvider.GetRequiredService<IGetLogsRepository>();
             ISecretMessagesRepository secretMessagesRepository = scope.ServiceProvider.GetRequiredService<ISecretMessagesRepository>();

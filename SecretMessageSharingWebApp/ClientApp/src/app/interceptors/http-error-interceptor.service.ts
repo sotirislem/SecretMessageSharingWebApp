@@ -1,69 +1,56 @@
-import { Injectable } from '@angular/core';
+import { HttpErrorResponse, HttpEvent, HttpHandlerFn, HttpRequest } from '@angular/common/http';
+import { inject } from '@angular/core';
+import { ToastrService } from 'ngx-toastr';
 import { Observable, throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
-import {
-	HttpRequest,
-	HttpHandler,
-	HttpEvent,
-	HttpInterceptor,
-	HttpErrorResponse
-} from '@angular/common/http';
-import { ToastrService } from 'ngx-toastr';
 import { ApiErrorResponse } from '../models/api/api-error-response.model';
 import { ApiInternalErrorResponse } from '../models/api/api-internal-error-response.model';
 
-@Injectable()
-export class HttpErrorInterceptor implements HttpInterceptor {
+export function httpErrorInterceptor(req: HttpRequest<any>, next: HttpHandlerFn): Observable<HttpEvent<any>> {
+	const toastrService = inject(ToastrService);
 
-	constructor(private toastrService: ToastrService) { }
+	return next(req).pipe(
+		catchError((response: HttpErrorResponse) => {
+			let toastrTitle = 'API Error';
+			let toastrMessage = `Status Code: ${response.status}`;
 
-	intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
-		return next.handle(req)
-			.pipe(
-				catchError((response: HttpErrorResponse) => {
-					let toastrTitle: string = 'API Error';
-					let toastrMessage: string = `Status Code: ${response.status}`;
+			if (typeof response.error === 'string' && response.error.length > 0) {
+				toastrMessage += `<br><br>${response.error}`;
+			} else if (response.status === 400) {
+				const badRequestError = response.error as ApiErrorResponse;
 
-					if (typeof response.error === 'string' && response.error.length > 0) {
-						toastrMessage += `<br><br>${response.error}`
-					}
-					else if (response.status === 400) {
-						const badRequestError = response.error as ApiErrorResponse;
+				if (badRequestError) {
+					toastrMessage = `${badRequestError.message}<br>`;
 
-						if (badRequestError) {
-							toastrMessage = `${badRequestError.message}<br>`
-
-							if (badRequestError.errors) {
-								toastrMessage += "<ul>";
-								for (let errorKey in badRequestError.errors) {
-									const errorMessages = badRequestError.errors[errorKey];
-									for (let errorMessage of errorMessages) {
-										toastrMessage += '<li><b>' + errorKey + '</b>: ' + errorMessage + '</li>';
-									}
-								}
-								toastrMessage += "</ul>";
+					if (badRequestError.errors) {
+						toastrMessage += '<ul>';
+						for (const errorKey in badRequestError.errors) {
+							const errorMessages = badRequestError.errors[errorKey];
+							for (const errorMessage of errorMessages) {
+								toastrMessage += '<li><b>' + errorKey + '</b>: ' + errorMessage + '</li>';
 							}
 						}
+						toastrMessage += '</ul>';
 					}
-					else if (response.status === 500) {
-						const internalError = response.error as ApiInternalErrorResponse;
+				}
+			} else if (response.status === 500) {
+				const internalError = response.error as ApiInternalErrorResponse;
 
-						if (internalError) {
-							toastrTitle = internalError.status;
-							toastrMessage = internalError.reason;
-						}
-					}
+				if (internalError) {
+					toastrTitle = internalError.status;
+					toastrMessage = internalError.reason;
+				}
+			}
 
-					this.toastrService.error(toastrMessage, toastrTitle, {
-						timeOut: 15_000,
-						extendedTimeOut: 0,
-						closeButton: true,
-						progressBar: true,
-						enableHtml: true
-					});
+			toastrService.error(toastrMessage, toastrTitle, {
+				timeOut: 15_000,
+				extendedTimeOut: 0,
+				closeButton: true,
+				progressBar: true,
+				enableHtml: true
+			});
 
-					return throwError(response);
-				})
-			);
-	}
+			return throwError(() => response);
+		})
+	);
 }

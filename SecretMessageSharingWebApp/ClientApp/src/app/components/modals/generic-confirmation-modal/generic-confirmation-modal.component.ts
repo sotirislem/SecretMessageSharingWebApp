@@ -1,9 +1,12 @@
 import { Component, Input, TemplateRef } from '@angular/core';
 import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
+import { NgTemplateOutlet } from '@angular/common';
 
 @Component({
 	templateUrl: './generic-confirmation-modal.component.html',
-	styleUrls: ['./generic-confirmation-modal.component.css']
+	styleUrls: ['./generic-confirmation-modal.component.css'],
+	standalone: true,
+	imports: [NgTemplateOutlet]
 })
 export class GenericConfirmationModalComponent {
 

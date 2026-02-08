@@ -10,8 +10,10 @@
 		Message Id: <span class="font-weight-500">{{messageDeliveryDetails.messageId}}</span>
 	</p>
 	<hr />
-	<p *ngIf="isNotification">
-		Your message has been delivered to a recipient, please find more details below:
+	<p>
+		@if (isNotification) {
+			Your message has been delivered to a recipient, please find more details below:
+		}
 	</p>
 
 	<table class="table table-striped">

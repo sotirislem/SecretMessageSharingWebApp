@@ -1,5 +1,4 @@
 ﻿using FastEndpoints;
-using SecretMessageSharingWebApp.Models;
 using SecretMessageSharingWebApp.Models.Api.Requests;
 using SecretMessageSharingWebApp.Services.Interfaces;
 
@@ -13,7 +12,12 @@ public sealed class ValidateSecretMessageOtpEndpoint(
 		Verbs(Http.POST);
 		Routes("api/secret-messages/otp/{id}");
 		AllowAnonymous();
-
+		
+		Throttle(
+			hitLimit: Constants.RateLimit.EndpointHitLimitPerMinute,
+			durationSeconds: TimeSpan.FromMinutes(1).TotalSeconds
+		);
+		
 		Description(builder => builder
 			.ClearDefaultProduces()
 			.Produces(StatusCodes.Status200OK, typeof(ValidateSecretMessageOtpResponse))
@@ -32,6 +36,6 @@ public sealed class ValidateSecretMessageOtpEndpoint(
 
 		var apiResult = await secretMessagesManager.ValidateOtp(messageId, req.OtpCode);
 
-		await SendResultAsync(apiResult.HttpResult);
+		await Send.ResultAsync(apiResult.HttpResult);
 	}
 }

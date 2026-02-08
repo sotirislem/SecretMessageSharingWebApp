@@ -1,15 +1,18 @@
 import { Component, ElementRef, Input, ViewChild } from '@angular/core';
+import { NgClass } from '@angular/common';
 import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
-import { FormBuilder, NgForm, ValidationErrors, Validators } from '@angular/forms';
+import { FormBuilder, FormsModule, NgForm, ReactiveFormsModule, ValidationErrors } from '@angular/forms';
+import { DigitOnlyDirective } from '@uiowa/digit-only';
 
 import { Constants } from '../../../../constants';
 import { ApiClientService } from '../../../services/api-client.service';
-
 import { ValidateSecretMessageOtpResponse } from '../../../models/api/validate-secret-message-otp-response.model';
 
 @Component({
 	templateUrl: './otp-input-modal.component.html',
-	styleUrls: ['./otp-input-modal.component.css']
+	styleUrls: ['./otp-input-modal.component.css'],
+	standalone: true,
+	imports: [NgClass, FormsModule, ReactiveFormsModule, DigitOnlyDirective]
 })
 export class OtpInputModalComponent {
 	@Input() messageId: string;
@@ -22,17 +25,19 @@ export class OtpInputModalComponent {
 	expirationTimerWorker: Worker | null = null;
 	timerExpirationTime: string = '';
 
-	otpValidationForm = this.formBuilder.nonNullable.group({
-		otpCodeFormControl: ['',
-			[this.otpHasExpiredValidator.bind(this)]
-		]
-	});
+	otpValidationForm: any;
 
 	constructor(
 		public modal: NgbActiveModal,
 		private formBuilder: FormBuilder,
 		private apiClientService: ApiClientService)
-	{ }
+	{
+		this.otpValidationForm = this.formBuilder.nonNullable.group({
+			otpCodeFormControl: ['',
+				[this.otpHasExpiredValidator.bind(this)]
+			]
+		});
+	}
 
 	get otpCodeFormControl() { return this.otpValidationForm.controls.otpCodeFormControl }
 	get otpCode(): string { return this.otpCodeFormControl.value }
@@ -91,7 +96,7 @@ export class OtpInputModalComponent {
 		this.timerExpirationTime = `0${Constants.OTP_EXPIRATION_MINUTES}:00`;
 
 		this.expirationTimerWorker = new Worker(new URL('./expiration-timer.worker', import.meta.url));
-		
+
 		this.expirationTimerWorker.onmessage = ({ data }) => {
 			const { timerRemainingSeconds, timerExpirationTime }: { timerRemainingSeconds: number; timerExpirationTime: string } = data;
 

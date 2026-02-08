@@ -1,3 +1,7 @@
+html, body {
+	height: 100%;
+}
+
 /* Global styles */
 
 @media only screen and (max-width: 768px) {
@@ -77,4 +81,22 @@ span.as-link:hover {
 
 .form-check-input {
 	margin-top: 0.15em !important;
+}
+
+.footer {
+	font-size: 14px;
+}
+
+.text-gradient {
+    background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.welcome-hero {
+    padding: 3rem 0;
+}
+
+.welcome-hero h1 {
+    font-size: clamp(2rem, 8vw, 3.5rem);
 }

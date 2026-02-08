@@ -22,65 +22,53 @@ public class GeneralRepository<TEntity> : IGeneralRepository<TEntity> where TEnt
 	{
 		_dateTimeProviderService = dateTimeProviderService;
 		_cancellationTokenProvider = cancellationTokenProvider;
-
+		
 		_dbContext = context;
 		_dbSet = context.Set<TEntity>();
 	}
 
+	private CancellationToken GetToken(CancellationToken? ct) => ct ?? _cancellationTokenProvider.Token;
+
 	public async Task<TEntity?> GetById(string id, CancellationToken? ct = null)
 	{
-		ct ??= _cancellationTokenProvider.Token;
-
-		return await _dbSet.FindAsync(new object?[] { id }, (CancellationToken)ct);
+		return await _dbSet.FindAsync(new object?[] { id }, GetToken(ct));
 	}
 
 	public async Task<int> Insert(TEntity entity, CancellationToken? ct = null)
 	{
-		ct ??= _cancellationTokenProvider.Token;
-
-		_dbSet.Add(entity);
-
-		return await _dbContext.SaveChangesAsync((CancellationToken)ct);
+		await _dbSet.AddAsync(entity, GetToken(ct));
+		return await _dbContext.SaveChangesAsync(GetToken(ct));
 	}
 
 	public async Task<int> Delete(TEntity entity, CancellationToken? ct = null)
 	{
-		ct ??= _cancellationTokenProvider.Token;
-
-		if (_dbContext.Entry(entity).State == EntityState.Detached)
-		{
-			_dbSet.Attach(entity);
-		}
-
-		_dbSet.Remove(entity);
-
-		return await _dbContext.SaveChangesAsync((CancellationToken)ct);
+		_dbContext.Entry(entity).State = EntityState.Deleted;
+		return await _dbContext.SaveChangesAsync(GetToken(ct));
 	}
 
 	public async Task<ICollection<TEntity>> SelectEntitiesWhere(Expression<Func<TEntity, bool>> predicate, CancellationToken? ct = null)
 	{
-		ct ??= _cancellationTokenProvider.Token;
-
 		return await _dbSet
-			.Where(predicate)
 			.AsNoTracking()
-			.ToListAsync((CancellationToken)ct);
+			.Where(predicate)
+			.ToListAsync(GetToken(ct));
 	}
 
 	public async Task<int> DeleteRangeBasedOnPredicate(Expression<Func<TEntity, bool>> predicate, CancellationToken? ct = null)
 	{
-		ct ??= _cancellationTokenProvider.Token;
+		var token = GetToken(ct);
+		
+		var entitiesToDelete = await _dbSet
+			.Where(predicate)
+			.ToListAsync(token);
 
-		var results = _dbSet.Where(predicate);
-		var resultsCount = await results.CountAsync((CancellationToken)ct);
-
-		if (resultsCount > 0)
+		if (entitiesToDelete.Count == 0)
 		{
-			_dbSet.RemoveRange(results);
-
-			return await _dbContext.SaveChangesAsync((CancellationToken)ct);
+			return 0;
 		}
 
-		return 0;
+		_dbSet.RemoveRange(entitiesToDelete);
+		
+		return await _dbContext.SaveChangesAsync(token);
 	}
 }

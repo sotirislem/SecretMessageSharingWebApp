@@ -1,5 +1,7 @@
 import { Component } from '@angular/core';
-import { FormBuilder, FormControl } from '@angular/forms';
+import { NgClass } from '@angular/common';
+import { FormBuilder, FormControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { RouterModule } from '@angular/router';
 
 import { SjclService } from '../../services/sjcl.service';
 import { ApiClientService } from '../../services/api-client.service';
@@ -15,22 +17,15 @@ import { finalize } from 'rxjs';
 @Component({
 	selector: 'create-secret-message',
 	templateUrl: './create-secret-message.component.html',
-	styleUrls: ['./create-secret-message.component.css']
+	styleUrls: ['./create-secret-message.component.css'],
+	standalone: true,
+	imports: [NgClass, FormsModule, ReactiveFormsModule, RouterModule]
 })
 export class CreateSecretMessageComponent {
 	formSubmitted: boolean
 	attachedFile: File | null;
 
-	newSecretMessageForm = this.formBuilder.nonNullable.group({
-		secretMsgPlainTextFormControl: [''],
-		includeUsernameAndPasswordFormControl: [false],
-		usernameFormControl: [{ value: '', disabled: true }],
-		passwordFormControl: [{ value: '', disabled: true }],
-		includeAttachedFileFormControl: [false],
-		attachedFileFormControl: new FormControl({ value: '', disabled: true }),
-		secretMsgRequiresOtpFormControl: [false],
-		secretMsgOtpRecipientsEmailFormControl: [{ value: '', disabled: true }]
-	});
+	newSecretMessageForm: any;
 
 	constructor(
 		private formBuilder: FormBuilder,
@@ -38,7 +33,18 @@ export class CreateSecretMessageComponent {
 		private sjclService: SjclService,
 		private apiClientService: ApiClientService,
 		private fileService: FileService
-	) { }
+	) {
+		this.newSecretMessageForm = this.formBuilder.nonNullable.group({
+			secretMsgPlainTextFormControl: [''],
+			includeUsernameAndPasswordFormControl: [false],
+			usernameFormControl: [{ value: '', disabled: true }],
+			passwordFormControl: [{ value: '', disabled: true }],
+			includeAttachedFileFormControl: [false],
+			attachedFileFormControl: new FormControl({ value: '', disabled: true }),
+			secretMsgRequiresOtpFormControl: [false],
+			secretMsgOtpRecipientsEmailFormControl: [{ value: '', disabled: true }]
+		});
+	}
 
 	get secretMsgPlainTextFormControl() { return this.newSecretMessageForm.controls.secretMsgPlainTextFormControl }
 	get secretMsgPlainText(): string { return this.secretMsgPlainTextFormControl.value }

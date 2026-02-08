@@ -1,25 +1,13 @@
-import { Inject, Injectable } from '@angular/core';
+import { HttpEvent, HttpHandlerFn, HttpRequest } from '@angular/common/http';
+import { inject } from '@angular/core';
 import { Observable } from 'rxjs';
-import {
-	HttpRequest,
-	HttpHandler,
-	HttpEvent,
-	HttpInterceptor,
-    HttpHeaders
-} from '@angular/common/http';
 
-@Injectable()
-export class HttpHeadersInterceptor implements HttpInterceptor {
+export function httpHeadersInterceptor(req: HttpRequest<any>, next: HttpHandlerFn): Observable<HttpEvent<any>> {
+	const clientId = inject<string>('CLIENT_ID' as any);
 
-	constructor(@Inject('CLIENT_ID') private clientId: string)
-	{ }
+	req = req.clone({
+		headers: req.headers.set('Client-Id', clientId)
+	});
 
-	intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
-
-		req = req.clone({
-			headers: req.headers.set('Client-Id', this.clientId)
-		});
-
-		return next.handle(req);
-	}
+	return next(req);
 }

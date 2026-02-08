@@ -3,17 +3,11 @@ using FastEndpoints.Swagger;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using SecretMessageSharingWebApp;
-using SecretMessageSharingWebApp.BackgroundServices;
-using SecretMessageSharingWebApp.Configuration;
+using SecretMessageSharingWebApp.ConfigurationSettings;
 using SecretMessageSharingWebApp.Data;
 using SecretMessageSharingWebApp.Extensions;
 using SecretMessageSharingWebApp.Hubs;
 using SecretMessageSharingWebApp.Middlewares;
-using SecretMessageSharingWebApp.Providers;
-using SecretMessageSharingWebApp.Repositories;
-using SecretMessageSharingWebApp.Repositories.Interfaces;
-using SecretMessageSharingWebApp.Services;
-using SecretMessageSharingWebApp.Services.Interfaces;
 
 // builder
 var builder = WebApplication.CreateBuilder(args);
@@ -32,24 +26,8 @@ builder.Services.AddDbContext<SecretMessagesDbContext>((serviceProvider, options
 );
 
 builder.Services.AddMemoryCache();
-builder.Services.AddSingleton<IMemoryCacheService, MemoryCacheService>();
-
-builder.Services.AddSingleton<IDateTimeProviderService, DateTimeProviderService>();
-builder.Services.AddSingleton<ISecretMessageDeliveryNotificationHubService, SecretMessageDeliveryNotificationHubService>();
-builder.Services.AddSingleton<IOtpService, OtpService>();
-builder.Services.AddSingleton<IJwtService, JwtService>();
-
-builder.Services.AddScoped<ISendGridEmailService, SendGridEmailService>();
-
-builder.Services.AddScoped<ISecretMessagesRepository, SecretMessagesRepository>();
-builder.Services.AddScoped<ISecretMessagesService, SecretMessagesService>();
-builder.Services.AddScoped<IRecentlyStoredMessagesService, RecentlyStoredMessagesService>();
-builder.Services.AddScoped<ISecretMessagesManager, SecretMessagesManager>();
-
-builder.Services.AddScoped<IGetLogsRepository, GetLogsRepository>();
-builder.Services.AddScoped<IGetLogsService, GetLogsService>();
-
-builder.Services.AddHostedService<DbAutoCleanerBackgroundService>();
+builder.Services.AddServices();
+builder.Services.AddBackgroundServices();
 
 builder.Services.AddDistributedMemoryCache();
 builder.Services.AddSession(options =>
@@ -78,16 +56,19 @@ builder.Services.AddSignalR(hubOptions =>
 
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
 {
-	options.ForwardedHeaders =
-		ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+	options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+	
+	options.KnownIPNetworks.Clear();
+	options.KnownProxies.Clear();
+	
+	options.ForwardLimit = null; 
 });
 
-builder.Services.AddTransient<HttpRequestTimeMiddleware>();
-builder.Services.AddExceptionHandler<GlobalExceptionHandlerMiddleware>();
+builder.Services.AddMiddlewares();
 builder.Services.AddProblemDetails();
 
 builder.Services.AddHttpContextAccessor();
-builder.Services.AddScoped<ICancellationTokenProvider, CancellationTokenProvider>();
+builder.Services.SetRateLimiter();
 
 // app
 var app = builder.Build();
@@ -95,21 +76,21 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
 	var context = scope.ServiceProvider.GetService<SecretMessagesDbContext>()!;
-	context.Database.EnsureCreated();
+	await context.Database.EnsureCreatedAsync();
 }
 
 if (app.Environment.IsDevelopment())
 {
 	app.UseSwaggerGen();
 }
-else
-{
-	app.UseForwardedHeaders();
-	app.UseHsts();
-}
 
+app.UseForwardedHeaders();
+app.UseHsts();
+
+app.UseRateLimiter();
 app.UseHttpsRedirection();
 
+app.UseDefaultFiles();
 app.UseStaticFiles();
 app.UseRouting();
 app.UseSession();

@@ -10,11 +10,11 @@ Every generated message is removed from server upon its retrieval. Also, unread 
 For even more security, an OTP mechanism can seal the message further, allowing successful recovery only after the recipient provides a valid OTP that will be delivered to their email address.
 
 ### Made with:
-* Angular 14
-* .NET 8
-* Entity Framework Core
+* .NET 10
+* Angular 21
 
 ### Libraries used:
+* Entity Framework Core (with CosmosDB)
 * FastEndpoints (instead of MVC Controllers)
 * SignalR (for delivery notifications)
 * Stanford JavaScript Crypto Library (for local in-browser encryption)

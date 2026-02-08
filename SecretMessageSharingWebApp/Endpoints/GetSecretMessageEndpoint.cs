@@ -1,6 +1,5 @@
 ﻿using FastEndpoints;
 using SecretMessageSharingWebApp.Extensions;
-using SecretMessageSharingWebApp.Models;
 using SecretMessageSharingWebApp.Models.Api.Requests;
 using SecretMessageSharingWebApp.Models.Api.Responses;
 using SecretMessageSharingWebApp.Services.Interfaces;
@@ -15,7 +14,12 @@ public sealed class GetSecretMessageEndpoint(
 		Verbs(Http.GET);
 		Routes("api/secret-messages/{id}");
 		AllowAnonymous();
-
+		
+		Throttle(
+			hitLimit: Constants.RateLimit.EndpointHitLimitPerMinute,
+			durationSeconds: TimeSpan.FromMinutes(1).TotalSeconds
+		);
+		
 		Description(builder => builder
 			.ClearDefaultProduces()
 			.Produces(StatusCodes.Status200OK, typeof(GetSecretMessageResponse))
@@ -39,6 +43,6 @@ public sealed class GetSecretMessageEndpoint(
 
 		var apiResult = await secretMessagesManager.GetMessage(messageId, req.EncryptionKeySha256, jwtToken, httpContextClientInfo);
 
-		await SendResultAsync(apiResult.HttpResult);
+		await Send.ResultAsync(apiResult.HttpResult);
 	}
 }

@@ -9,25 +9,26 @@ import { environment } from '../environments/environment';
 })
 export class AppInsightsService {
 	private angularPlugin = new AngularPlugin();
-	private appInsights = new ApplicationInsights({
-		config: {
-			instrumentationKey: environment.applicationInsights.instrumentationKey,
-			extensions: [this.angularPlugin],
-			extensionConfig: {
-				[this.angularPlugin.identifier]: {
-					router: this.router,
-					errorServices: [new ErrorHandler()]
-				}
-			}
-		}
-	});
+	private appInsights!: ApplicationInsights;
 
 	constructor(private router: Router) {
+		this.appInsights = new ApplicationInsights({
+			config: {
+				instrumentationKey: environment.applicationInsights.instrumentationKey,
+				extensions: [this.angularPlugin],
+				extensionConfig: {
+					[this.angularPlugin.identifier]: {
+						router: this.router,
+						errorServices: [new ErrorHandler()]
+					}
+				}
+			}
+		});
 		this.appInsights.loadAppInsights();
 	}
 
 	// expose methods that can be used in components and services
-	trackEvent = this.appInsights.trackEvent;
-	trackTrace = this.appInsights.trackTrace;
-	trackException = this.appInsights.trackException;
+	trackEvent(arg: any) { this.appInsights.trackEvent(arg); }
+	trackTrace(arg: any) { this.appInsights.trackTrace(arg); }
+	trackException(arg: any) { this.appInsights.trackException(arg); }
 }

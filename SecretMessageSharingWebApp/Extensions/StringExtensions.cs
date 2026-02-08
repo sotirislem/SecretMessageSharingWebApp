@@ -9,7 +9,7 @@ public static class StringExtensions
 			return null;
 		}
 
-		if (ipAddress.Contains('.') is false)
+		if (!ipAddress.Contains('.'))
 		{
 			return ipAddress;
 		}

@@ -1,5 +1,5 @@
 ﻿using System.Diagnostics;
-using SecretMessageSharingWebApp.Configuration;
+using SecretMessageSharingWebApp.ConfigurationSettings;
 using SecretMessageSharingWebApp.Models.Domain;
 using SecretMessageSharingWebApp.Providers;
 using SecretMessageSharingWebApp.Services.Interfaces;

@@ -12,7 +12,12 @@ public sealed class GetRecentlyStoredSecretMessagesEndpoint(
 		Verbs(Http.GET);
 		Routes("api/secret-messages");
 		AllowAnonymous();
-
+		
+		Throttle(
+			hitLimit: Constants.RateLimit.EndpointHitLimitPerMinute,
+			durationSeconds: TimeSpan.FromMinutes(1).TotalSeconds
+		);
+		
 		Description(builder => builder
 			.ClearDefaultProduces()
 			.Produces(StatusCodes.Status200OK, typeof(RecentlyStoredSecretMessagesResponse))
@@ -33,6 +38,6 @@ public sealed class GetRecentlyStoredSecretMessagesEndpoint(
 			RecentlyStoredSecretMessages = recentlyStoredSecretMessages
 		};
 
-		await SendOkAsync(response, cancellation: ct);
+		await Send.OkAsync(response, cancellation: ct);
 	}
 }

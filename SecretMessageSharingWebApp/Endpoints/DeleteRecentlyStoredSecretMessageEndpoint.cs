@@ -11,7 +11,12 @@ public sealed class DeleteRecentlyStoredSecretMessageEndpoint(
 		Verbs(Http.DELETE);
 		Routes("api/secret-messages/{id}");
 		AllowAnonymous();
-
+		
+		Throttle(
+			hitLimit: Constants.RateLimit.EndpointHitLimitPerMinute,
+			durationSeconds: TimeSpan.FromMinutes(1).TotalSeconds
+		);
+		
 		Description(builder => builder
 			.ClearDefaultProduces()
 			.Produces(StatusCodes.Status204NoContent)
@@ -31,6 +36,6 @@ public sealed class DeleteRecentlyStoredSecretMessageEndpoint(
 
 		var apiResult = await secretMessagesManager.DeleteRecentMessage(id);
 
-		await SendResultAsync(apiResult.HttpResult);
+		await Send.ResultAsync(apiResult.HttpResult);
 	}
 }

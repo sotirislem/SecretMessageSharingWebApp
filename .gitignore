@@ -234,3 +234,6 @@ _Pvt_Extensions
 **/*Deploy*
 **/Properties/PublishProfiles
 **/Properties/ServiceDependencies
+
+# JetBrains Rider
+.idea/

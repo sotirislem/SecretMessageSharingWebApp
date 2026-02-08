@@ -5,12 +5,16 @@ import { ApiClientService } from '../../services/api-client.service';
 import { MessageDeliveryDetailsModalComponent } from '../modals/message-delivery-details-modal/message-delivery-details-modal.component';
 import { ModalService } from '../../services/modal.service';
 
+import { DateTimeFullPipe } from '../../pipes/date-time-full.pipe';
+
 @Component({
 	templateUrl: './recently-stored-messages.component.html',
-	styleUrls: ['./recently-stored-messages.component.css']
+	styleUrls: ['./recently-stored-messages.component.css'],
+	standalone: true,
+	imports: [DateTimeFullPipe]
 })
 export class RecentlyStoredMessagesComponent {
-	recentlyStoredSecretMessages: RecentlyStoredSecretMessage[];
+	recentlyStoredSecretMessages: RecentlyStoredSecretMessage[] = [];
 
 	constructor(
 		private apiClient: ApiClientService,

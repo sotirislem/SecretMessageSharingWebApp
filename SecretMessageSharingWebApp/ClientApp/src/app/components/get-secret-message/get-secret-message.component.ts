@@ -1,8 +1,10 @@
-import { Component, TemplateRef, ViewChild } from '@angular/core';
+import { ChangeDetectorRef, Component, TemplateRef, ViewChild } from '@angular/core';
+import { NgClass } from '@angular/common';
+import { RouterModule } from '@angular/router';
 import { IndividualConfig, ToastrService } from 'ngx-toastr';
 import { ActivatedRoute } from '@angular/router';
-import { NgbModalOptions, NgbTooltip } from '@ng-bootstrap/ng-bootstrap';
-import { Clipboard } from '@angular/cdk/clipboard';
+import { NgbModalOptions, NgbModule } from '@ng-bootstrap/ng-bootstrap';
+import { Clipboard, ClipboardModule } from '@angular/cdk/clipboard';
 
 import { GetSecretMessageResponse } from '../../models/api/get-secret-message-response.model';
 import { DecryptionResult, SjclDecryptionResult } from '../../models/sjcl-decryption-result.model';
@@ -26,7 +28,9 @@ enum ComponentState {
 
 @Component({
 	templateUrl: './get-secret-message.component.html',
-	styleUrls: ['./get-secret-message.component.css']
+	styleUrls: ['./get-secret-message.component.css'],
+	standalone: true,
+	imports: [NgClass, RouterModule, NgbModule, ClipboardModule]
 })
 export class GetSecretMessageComponent {
 	@ViewChild('getSecretMessageConfirmationModalBody') getSecretMessageConfirmationModalBody: TemplateRef<any>;
@@ -49,7 +53,8 @@ export class GetSecretMessageComponent {
 		private toastrService: ToastrService,
 		private fileService: FileService,
 		private clipboard: Clipboard,
-		private modalService: ModalService
+		private modalService: ModalService,
+		private cdr: ChangeDetectorRef
 	) {
 		this.messageId = route.snapshot.queryParams.id;
 		const encryptionKey = route.snapshot.fragment!;
@@ -59,11 +64,15 @@ export class GetSecretMessageComponent {
 		apiClientService.verifySecretMessage(this.messageId).subscribe((response: VerifySecretMessageResponse) => {
 			if (!response.exists) {
 				this.componentState = ComponentState.ReadyNoMessage;
+				this.cdr.detectChanges();
 				return;
 			}
 
 			this.tryGetSecretMessage(encryptionKey, response.requiresOtp!);
-		}, (error) => { this.componentState = ComponentState.Error; });
+		}, (error) => {
+			this.componentState = ComponentState.Error;
+			this.cdr.detectChanges();
+		});
 	}
 
 	reload() {
@@ -110,6 +119,7 @@ export class GetSecretMessageComponent {
 		).then((confirm) => {
 			if (!confirm) {
 				this.componentState = ComponentState.Aborted;
+				this.cdr.detectChanges();
 				return;
 			}
 
@@ -118,6 +128,9 @@ export class GetSecretMessageComponent {
 			} else {
 				this.getSecretMessage(encryptionKey);
 			}
+		}).catch(() => {
+			this.componentState = ComponentState.Aborted;
+			this.cdr.detectChanges();
 		});
 	}
 
@@ -130,8 +143,12 @@ export class GetSecretMessageComponent {
 			if (authToken) {
 				this.getSecretMessage(encryptionKey, authToken);
 			} else {
-				this.componentState = ComponentState.Error;
+				this.componentState = ComponentState.Aborted;
+				this.cdr.detectChanges();
 			}
+		}).catch(() => {
+			this.componentState = ComponentState.Aborted;
+			this.cdr.detectChanges();
 		});
 	}
 
@@ -150,7 +167,11 @@ export class GetSecretMessageComponent {
 				}
 
 				this.displayDeliveryNotificationSentToast(response.deliveryNotificationSent);
-			}, (error) => { this.componentState = ComponentState.Error; });
+				this.cdr.detectChanges();
+			}, (error) => {
+				this.componentState = ComponentState.Error;
+				this.cdr.detectChanges();
+			});
 		}, 500);
 	}
 
@@ -167,6 +188,7 @@ export class GetSecretMessageComponent {
 
 				this.decryptionResult.decryptedMsg = {} as SecretMessage;
 				this.secretMessageTextAsHtml = '--- Message auto deleted ---';
+				this.cdr.detectChanges();
 			}
 		};
 	}

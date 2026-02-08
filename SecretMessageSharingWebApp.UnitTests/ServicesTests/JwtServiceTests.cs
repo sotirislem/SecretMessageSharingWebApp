@@ -1,11 +1,11 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
-using SecretMessageSharingWebApp.Configuration;
 using SecretMessageSharingWebApp.Services.Interfaces;
 using SecretMessageSharingWebApp.Services;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using SecretMessageSharingWebApp.ConfigurationSettings;
 
 namespace SecretMessageSharingWebApp.UnitTests.ServicesTests;
 

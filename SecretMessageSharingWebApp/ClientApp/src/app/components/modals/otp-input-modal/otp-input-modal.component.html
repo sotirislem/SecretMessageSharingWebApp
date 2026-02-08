@@ -13,16 +13,14 @@
 	</p>
 	<hr />
 
-	<ng-container *ngIf="!otpSent; then otpNotSentBlock else otpSentBlock"></ng-container>
-	<ng-template #otpNotSentBlock>
+	@if (!otpSent) {
 		<p>
 			By pressing the button 'Get OTP' an 8 digit password will be sent to your email, as this was provided by the creator of the message.
 		</p>
 		<div class="mt-4 text-center">
 			<button class="btn btn-primary col-6" (click)="getOtp()">Get OTP</button>
 		</div>
-	</ng-template>
-	<ng-template #otpSentBlock>
+	} @else {
 		<form #form="ngForm" [formGroup]="otpValidationForm" (ngSubmit)="submitOtpValidationForm()">
 			<p>
 				Enter the OTP you received in your email address.<br />
@@ -43,31 +41,41 @@
 					   digitOnly>
 
 				<div class="form-text">
-					<ng-container *ngIf="timerActive; then timerRunningBlock else timerExpiredBlock"></ng-container>
-					<ng-template #timerRunningBlock>
+					@if (timerActive) {
 						Expires in: {{timerExpirationTime}}
-					</ng-template>
-					<ng-template #timerExpiredBlock>
+					} @else {
 						Sent OTP Expired | <span class="as-link" (click)="getOtp()">Resend OTP</span>
-					</ng-template>
+					}
 				</div>
 
-				<div class="invalid-feedback" *ngIf="form.submitted && otpCodeFormControl.invalid">
-					<div *ngIf="otpCodeFormControl.errors?.required">
-						Please provide an OTP.
-					</div>
-					<div *ngIf="otpCodeFormControl.errors?.minlength">
-						The code must be 8 digits long.
-					</div>
-					<div *ngIf="otpCodeFormControl.errors?.otpInvalid">
-						Entered OTP is invalid.
-					</div>
-					<div *ngIf="otpCodeFormControl.errors?.otpMaxAttemptsLimitReached">
-						You have exceeded the maximum retry attempts, please request an OTP resend.
-					</div>
-					<div *ngIf="otpCodeFormControl.errors?.otpHasExpired">
-						Previously sent OTP has expired, please request an OTP resend.
-					</div>
+				<div class="invalid-feedback">
+					@if (form.submitted && otpCodeFormControl.invalid) {
+						@if (otpCodeFormControl.errors?.required) {
+							<div>
+								Please provide an OTP.
+							</div>
+						}
+						@if (otpCodeFormControl.errors?.minlength) {
+							<div>
+								The code must be 8 digits long.
+							</div>
+						}
+						@if (otpCodeFormControl.errors?.otpInvalid) {
+							<div>
+								Entered OTP is invalid.
+							</div>
+						}
+						@if (otpCodeFormControl.errors?.otpMaxAttemptsLimitReached) {
+							<div>
+								You have exceeded the maximum retry attempts, please request an OTP resend.
+							</div>
+						}
+						@if (otpCodeFormControl.errors?.otpHasExpired) {
+							<div>
+								Previously sent OTP has expired, please request an OTP resend.
+							</div>
+						}
+					}
 				</div>
 			</div>
 
@@ -75,5 +83,5 @@
 				<button type="submit" class="btn btn-primary col-6">Submit</button>
 			</div>
 		</form>
-	</ng-template>
+	}
 </div>

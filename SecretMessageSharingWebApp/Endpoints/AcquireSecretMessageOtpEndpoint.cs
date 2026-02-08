@@ -11,7 +11,12 @@ public sealed class AcquireSecretMessageOtpEndpoint(
 		Verbs(Http.GET);
 		Routes("api/secret-messages/otp/{id}");
 		AllowAnonymous();
-
+		
+		Throttle(
+			hitLimit: Constants.RateLimit.EndpointHitLimitPerMinute,
+			durationSeconds: TimeSpan.FromMinutes(1).TotalSeconds
+		);
+		
 		Description(builder => builder
 			.ClearDefaultProduces()
 			.Produces(StatusCodes.Status204NoContent)
@@ -30,6 +35,6 @@ public sealed class AcquireSecretMessageOtpEndpoint(
 
 		var apiResult = await secretMessagesManager.SendOtp(messageId);
 
-		await SendResultAsync(apiResult.HttpResult);
+		await Send.ResultAsync(apiResult.HttpResult);
 	}
 }
