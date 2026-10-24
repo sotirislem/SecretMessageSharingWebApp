@@ -2,6 +2,7 @@
 using SecretMessageSharingWebApp.Models.Api.Requests;
 using SecretMessageSharingWebApp.Models.Common;
 using SecretMessageSharingWebApp.Models.Domain;
+using SecretMessageSharingWebApp.Security;
 
 namespace SecretMessageSharingWebApp.Mappings;
 
@@ -13,7 +14,6 @@ public static class ApiContractToDomainDtoMapper
 		Data = new SecretMessageData()
 		{
 			IV = request.SecretMessageData.IV,
-			Salt = request.SecretMessageData.Salt,
 			CT = request.SecretMessageData.CT
 		},
 		Otp = new OtpSettings()
@@ -21,7 +21,7 @@ public static class ApiContractToDomainDtoMapper
 			Required = request.Otp.Required,
 			RecipientsEmail = request.Otp.RecipientsEmail.Trim()
 		},
-		EncryptionKeySha256 = request.EncryptionKeySha256,
+		EncryptionKeySha256 = KeyHashVerifier.Create(request.EncryptionKeySha256),
 		CreatorClientId = request.ClientId,
 		CreatorIP = httpContextClientInfo.ClientIP,
 		CreatorClientInfo = httpContextClientInfo.ClientInfo

@@ -17,6 +17,11 @@ public static class Constants
 
 	public const int JwtTokenExpirationMinutes = 1;
 
+	// The UI limits attachments to 1.2 MB, which becomes roughly 1.6 MB after Base64 encoding.
+	// 4 MiB leaves room for the message text while still bounding memory/DB usage per request.
+	public const int MaxSecretMessageCipherTextBytes = 4 * 1024 * 1024;
+	public const int MaxRequestBodyBytes = 8 * 1024 * 1024;
+
 	public static class SessionKeys
 	{
 		public const string RecentlyStoredSecretMessagesList = "RECENTLY_STORED_SECRET_MESSAGES_LIST";

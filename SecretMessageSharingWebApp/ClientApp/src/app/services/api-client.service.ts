@@ -1,4 +1,4 @@
-import { HttpClient, HttpHeaders, HttpParams, HttpResponse } from '@angular/common/http';
+import { HttpClient, HttpHeaders, HttpResponse } from '@angular/common/http';
 import { Inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 
@@ -43,15 +43,14 @@ export class ApiClientService {
 	getSecretMessage(id: string, keyHash: string, authToken?: string): Observable<GetSecretMessageResponse> {
 		const url = this.getApiUrl(id);
 
-		let params = new HttpParams();
-		params = params.append('keyHash', keyHash);
-
-		let headers = new HttpHeaders();
+		// Keep the key-hash verifier out of the URL so it cannot leak through
+		// browser history, server access logs, proxies, or analytics.
+		let headers = new HttpHeaders().set('X-Key-Hash', keyHash);
 		if (authToken) {
 			headers = headers.append('Authorization', 'Bearer ' + authToken);
 		}
 
-		return this.httpClient.get<GetSecretMessageResponse>(url, { headers, params });
+		return this.httpClient.get<GetSecretMessageResponse>(url, { headers });
 	}
 
 	getRecentlyStoredSecretMessages(): Observable<RecentlyStoredSecretMessagesResponse> {

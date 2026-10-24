@@ -26,10 +26,10 @@
 		<div ngbAccordionCollapse>
 			<div ngbAccordionBody>
 				<ng-template>
-					Stanford JavaScript Crypto Library (SJCL)<br />
-					<a target="_blank" href="https://crypto.stanford.edu/sjcl/">Official Web Page</a>
+					Web Crypto API (SubtleCrypto)<br />
+					<a target="_blank" rel="noopener noreferrer" href="https://developer.mozilla.org/en-US/docs/Web/API/Web_Crypto_API">MDN documentation</a>
 					/
-					<a target="_blank" href="https://github.com/bitwiseshiftleft/sjcl">Source code &#64; Github</a>
+					<a target="_blank" rel="noopener noreferrer" href="https://w3c.github.io/webcrypto/">W3C specification</a>
 				</ng-template>
 			</div>
 		</div>
@@ -42,7 +42,7 @@
 		<div ngbAccordionCollapse>
 			<div ngbAccordionBody>
 				<ng-template>
-					AES-256 in GCM mode with 128-bits tag
+					AES-256 in GCM mode with a 128-bit authentication tag and a unique 96-bit random IV per message
 				</ng-template>
 			</div>
 		</div>
@@ -56,7 +56,7 @@
 			<div ngbAccordionBody>
 				<ng-template>
 					<ul class="m-0">
-						<li>Auto-generated at run-time (on browser) by using the SJCL library's provided features</li>
+						<li>Auto-generated at run-time (on browser) by using the native Web Crypto API's cryptographically secure random number generator</li>
 						<li>Generated key length: 256 bits converted to base64/url-safe format</li>
 					</ul>
 				</ng-template>
@@ -71,9 +71,11 @@
 		<div ngbAccordionCollapse>
 			<div ngbAccordionBody>
 				<ng-template>
-					The server stores only the minimum information required from the encryption library to decrypt the message, based on the data that was originally used to encrypt it.
+					The server stores only the minimum information required to decrypt the message on the recipient's browser.
 					<br />
-					Stored object: {{'{'}} IV, Salt, CT {{'}'}} where IV = 'Initialization Vector', CT = 'Cipher Text'.
+					Stored object: {{'{'}} IV, CT {{'}'}} where IV = 'Initialization Vector', CT = 'Cipher Text'.
+					<br />
+					The encryption key is never sent to the server; it is only included in the message URL fragment, which browsers do not transmit over the network.
 				</ng-template>
 			</div>
 		</div>

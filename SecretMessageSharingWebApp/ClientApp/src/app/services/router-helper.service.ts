@@ -8,10 +8,6 @@ export class RouterHelperService {
 
 	constructor(private router: Router) { }
 
-	getCurrentNavigationStateData(key: string) {
-		return this.router.getCurrentNavigation()?.extras.state?.[key];
-	}
-
 	reloadCurrentPage() {
 		const shouldReuseRoute = this.router.routeReuseStrategy.shouldReuseRoute;
 		const onSameUrlNavigation = this.router.onSameUrlNavigation;

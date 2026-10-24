@@ -1,6 +1,7 @@
 using System.Linq.Expressions;
 using System.Text.Json;
 using Microsoft.AspNetCore.Http;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SecretMessageSharingWebApp.Data.Entities;
 using SecretMessageSharingWebApp.Mappings;
@@ -68,7 +69,7 @@ public class SecretMessagesServiceTests
 	}
 
 	[Fact]
-	public async Task Retrieve_ShouldDeleteMessageAndLogInformation_WhenMessageExists()
+	public async Task Get_ShouldReturnMessageAndLogInformation_WhenMessageExists()
 	{
 		// Arrange
 		var secretMessageEntity = _fixture.Build<SecretMessageEntity>()
@@ -76,26 +77,25 @@ public class SecretMessagesServiceTests
 			.Create();
 
 		_secretMessagesRepository.GetById(secretMessageEntity.Id).Returns(secretMessageEntity);
-		_secretMessagesRepository.Delete(secretMessageEntity).Returns(1);
 
 		// Act
-		var result = await _sut.Retrieve(secretMessageEntity.Id);
+		var result = await _sut.Get(secretMessageEntity.Id);
 
 		// Assert
-		await _secretMessagesRepository.Received(1).Delete(secretMessageEntity);
+		await _secretMessagesRepository.DidNotReceive().Delete(Arg.Any<SecretMessageEntity>());
 		_logger.ReceivedWithAnyArgs().LogInformation(default);
 		result.Should().BeEquivalentTo(secretMessageEntity.ToDomain());
 	}
 
 	[Fact]
-	public async Task Retrieve_ShouldNotDeleteMessageAndLogInformation_WhenMessageDoesNotExist()
+	public async Task Get_ShouldReturnNullAndLogInformation_WhenMessageDoesNotExist()
 	{
 		// Arrange
 		var nonExistentId = _fixture.Create<string>();
 		_secretMessagesRepository.GetById(nonExistentId).Returns((SecretMessageEntity?)null);
 
 		// Act
-		var result = await _sut.Retrieve(nonExistentId);
+		var result = await _sut.Get(nonExistentId);
 
 		// Assert
 		await _secretMessagesRepository.DidNotReceive().Delete(Arg.Any<SecretMessageEntity>());
@@ -133,6 +133,23 @@ public class SecretMessagesServiceTests
 		// Assert
 		await _secretMessagesRepository.DidNotReceive().Delete(Arg.Any<SecretMessageEntity>());
 		_logger.ReceivedWithAnyArgs().LogInformation(default);
+		result.Should().BeFalse();
+	}
+
+	[Fact]
+	public async Task Delete_ShouldReturnFalse_WhenConcurrentRequestAlreadyDeletedMessage()
+	{
+		// Arrange
+		var secretMessageEntity = _fixture.Create<SecretMessageEntity>();
+		_secretMessagesRepository.GetById(secretMessageEntity.Id).Returns(secretMessageEntity);
+		_secretMessagesRepository.Delete(secretMessageEntity)
+			.Returns(Task.FromException<int>(new DbUpdateConcurrencyException("The message was deleted by another request.")));
+
+		// Act
+		var result = await _sut.Delete(secretMessageEntity.Id);
+
+		// Assert
+		await _secretMessagesRepository.Received(1).Delete(secretMessageEntity);
 		result.Should().BeFalse();
 	}
 

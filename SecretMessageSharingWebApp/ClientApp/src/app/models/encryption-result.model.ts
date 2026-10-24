@@ -1,7 +1,7 @@
 import { SecretMessageData } from "./common/secret-message-data.model"
 
-export type SjclEncryptionResult = {
+export interface EncryptionResult {
 	secretMessageData: SecretMessageData,
-	encryptionKeyAsBase64url: string,
+	encryptionKeyAsBase64Url: string,
 	encryptionKeySha256: string
 }

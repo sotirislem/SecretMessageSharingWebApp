@@ -1,13 +1,15 @@
 import { ErrorHandler, Injectable } from '@angular/core';
 import { Router } from '@angular/router';
 import { AngularPlugin } from '@microsoft/applicationinsights-angularplugin-js';
-import { ApplicationInsights } from '@microsoft/applicationinsights-web';
+import { ApplicationInsights, ITelemetryItem } from '@microsoft/applicationinsights-web';
 import { environment } from '../environments/environment';
 
 @Injectable({
 	providedIn: 'root'
 })
 export class AppInsightsService {
+	private static readonly sensitiveQueryParams = ['id', 'keyHash', 'key'];
+
 	private angularPlugin = new AngularPlugin();
 	private appInsights!: ApplicationInsights;
 
@@ -24,7 +26,38 @@ export class AppInsightsService {
 				}
 			}
 		});
+
+		// Page-view telemetry includes the URL, which contains the message id.
+		// Strip the fragment and identifying query parameters before upload.
+		this.appInsights.addTelemetryInitializer((envelope: ITelemetryItem) => {
+			const baseData = envelope.data?.['baseData'] as Record<string, unknown> | undefined;
+			if (!baseData) return;
+
+			if (typeof baseData['uri'] === 'string') {
+				baseData['uri'] = this.sanitizeUrl(baseData['uri']);
+			}
+
+			if (typeof baseData['name'] === 'string' && /^https?:\/\//i.test(baseData['name'])) {
+				baseData['name'] = this.sanitizeUrl(baseData['name']);
+			}
+		});
+
 		this.appInsights.loadAppInsights();
+	}
+
+	private sanitizeUrl(url: string): string {
+		try {
+			const parsed = new URL(url, window.location.origin);
+			parsed.hash = '';
+
+			for (const param of AppInsightsService.sensitiveQueryParams) {
+				parsed.searchParams.delete(param);
+			}
+
+			return parsed.toString();
+		} catch {
+			return url;
+		}
 	}
 
 	// expose methods that can be used in components and services

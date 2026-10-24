@@ -66,7 +66,7 @@ public class StoreNewSecretMessageRequestValidatorTests
 	public void StoreNewSecretMessageRequestValidator_ShouldHaveError_WhenSecretMessageDataPropertiesAreEmpty()
 	{
 		// Arrange
-		var secretMessageData = new SecretMessageData { IV = "", Salt = "", CT = "" };
+		var secretMessageData = new SecretMessageData { IV = "", CT = "" };
 		var request = _fixture.Build<StoreNewSecretMessageRequest>()
 			.With(r => r.SecretMessageData, secretMessageData)
 			.Create();
@@ -76,7 +76,6 @@ public class StoreNewSecretMessageRequestValidatorTests
 
 		// Assert
 		result.ShouldHaveValidationErrorFor(r => r.SecretMessageData.IV);
-		result.ShouldHaveValidationErrorFor(r => r.SecretMessageData.Salt);
 		result.ShouldHaveValidationErrorFor(r => r.SecretMessageData.CT);
 	}
 
@@ -85,9 +84,8 @@ public class StoreNewSecretMessageRequestValidatorTests
 	{
 		// Arrange
 		var secretMessageData = _fixture.Build<SecretMessageData>()
-			.With(smd => smd.IV, "non-empty-IV")
-			.With(smd => smd.Salt, "non-empty-Salt")
-			.With(smd => smd.CT, "non-empty-CT")
+			.With(smd => smd.IV, Convert.ToBase64String(new byte[12]))
+			.With(smd => smd.CT, Convert.ToBase64String(new byte[32]))
 			.Create();
 
 		var request = _fixture.Build<StoreNewSecretMessageRequest>()
@@ -99,7 +97,107 @@ public class StoreNewSecretMessageRequestValidatorTests
 
 		// Assert
 		result.ShouldNotHaveValidationErrorFor(r => r.SecretMessageData.IV);
-		result.ShouldNotHaveValidationErrorFor(r => r.SecretMessageData.Salt);
+		result.ShouldNotHaveValidationErrorFor(r => r.SecretMessageData.CT);
+	}
+
+	[Fact]
+	public void StoreNewSecretMessageRequestValidator_ShouldHaveError_WhenSecretMessageDataIsNotValidBase64()
+	{
+		// Arrange
+		var secretMessageData = new SecretMessageData { IV = "not-base64!", CT = "also-not-base64!" };
+		var request = _fixture.Build<StoreNewSecretMessageRequest>()
+			.With(r => r.SecretMessageData, secretMessageData)
+			.Create();
+
+		// Act
+		var result = _validator.TestValidate(request);
+
+		// Assert
+		result.ShouldHaveValidationErrorFor(r => r.SecretMessageData.IV);
+		result.ShouldHaveValidationErrorFor(r => r.SecretMessageData.CT);
+	}
+
+	[Theory]
+	[InlineData(8)]
+	[InlineData(16)]
+	public void StoreNewSecretMessageRequestValidator_ShouldHaveError_WhenInitializationVectorHasUnsupportedLength(int ivLength)
+	{
+		// Arrange
+		var secretMessageData = new SecretMessageData
+		{
+			IV = Convert.ToBase64String(new byte[ivLength]),
+			CT = Convert.ToBase64String(new byte[32])
+		};
+		var request = _fixture.Build<StoreNewSecretMessageRequest>()
+			.With(r => r.SecretMessageData, secretMessageData)
+			.Create();
+
+		// Act
+		var result = _validator.TestValidate(request);
+
+		// Assert
+		result.ShouldHaveValidationErrorFor(r => r.SecretMessageData.IV);
+		result.ShouldNotHaveValidationErrorFor(r => r.SecretMessageData.CT);
+	}
+
+	[Fact]
+	public void StoreNewSecretMessageRequestValidator_ShouldHaveError_WhenCipherTextIsShorterThanAuthenticationTag()
+	{
+		// Arrange
+		var secretMessageData = new SecretMessageData
+		{
+			IV = Convert.ToBase64String(new byte[12]),
+			CT = Convert.ToBase64String(new byte[8])
+		};
+		var request = _fixture.Build<StoreNewSecretMessageRequest>()
+			.With(r => r.SecretMessageData, secretMessageData)
+			.Create();
+
+		// Act
+		var result = _validator.TestValidate(request);
+
+		// Assert
+		result.ShouldNotHaveValidationErrorFor(r => r.SecretMessageData.IV);
+		result.ShouldHaveValidationErrorFor(r => r.SecretMessageData.CT);
+	}
+
+	[Fact]
+	public void StoreNewSecretMessageRequestValidator_ShouldHaveError_WhenCipherTextExceedsMaximumSize()
+	{
+		// Arrange
+		var secretMessageData = new SecretMessageData
+		{
+			IV = Convert.ToBase64String(new byte[12]),
+			CT = Convert.ToBase64String(new byte[Constants.MaxSecretMessageCipherTextBytes + 1])
+		};
+		var request = _fixture.Build<StoreNewSecretMessageRequest>()
+			.With(r => r.SecretMessageData, secretMessageData)
+			.Create();
+
+		// Act
+		var result = _validator.TestValidate(request);
+
+		// Assert
+		result.ShouldHaveValidationErrorFor(r => r.SecretMessageData.CT);
+	}
+
+	[Fact]
+	public void StoreNewSecretMessageRequestValidator_ShouldNotHaveError_WhenCipherTextIsAtMaximumSize()
+	{
+		// Arrange
+		var secretMessageData = new SecretMessageData
+		{
+			IV = Convert.ToBase64String(new byte[12]),
+			CT = Convert.ToBase64String(new byte[Constants.MaxSecretMessageCipherTextBytes])
+		};
+		var request = _fixture.Build<StoreNewSecretMessageRequest>()
+			.With(r => r.SecretMessageData, secretMessageData)
+			.Create();
+
+		// Act
+		var result = _validator.TestValidate(request);
+
+		// Assert
 		result.ShouldNotHaveValidationErrorFor(r => r.SecretMessageData.CT);
 	}
 

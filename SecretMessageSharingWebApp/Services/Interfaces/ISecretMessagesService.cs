@@ -9,7 +9,7 @@ public interface ISecretMessagesService
 
 	Task<(bool exists, OtpSettings? otpSettings)> Exists(string id);
 
-	Task<SecretMessage?> Retrieve(string id);
+	Task<SecretMessage?> Get(string id);
 
 	Task<bool> Delete(string id);
 

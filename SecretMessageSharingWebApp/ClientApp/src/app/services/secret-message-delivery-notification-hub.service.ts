@@ -66,6 +66,8 @@ export class SecretMessageDeliveryNotificationHubService {
 			MessageDeliveryDetailsModalComponent,
 			{ isNotification: true, messageDeliveryDetails: secretMessageDeliveryNotification },
 			<NgbModalOptions>{ centered: true }
-		);
+		).catch(() => {
+			// The notification can be dismissed with Escape or a backdrop click.
+		});
 	}
 }

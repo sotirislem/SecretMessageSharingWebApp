@@ -2,10 +2,12 @@ import { Component } from '@angular/core';
 import { NgClass } from '@angular/common';
 import { FormBuilder, FormControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
+import { ToastrService } from 'ngx-toastr';
 
-import { SjclService } from '../../services/sjcl.service';
+import { CryptoService } from '../../services/crypto.service';
 import { ApiClientService } from '../../services/api-client.service';
 import { FileService } from '../../services/file.service';
+import { NewSecretMessageStateService } from '../../services/new-secret-message-state.service';
 
 import { Router } from '@angular/router';
 import { Routes, Constants } from '../../../constants';
@@ -30,9 +32,11 @@ export class CreateSecretMessageComponent {
 	constructor(
 		private formBuilder: FormBuilder,
 		private router: Router,
-		private sjclService: SjclService,
+		private cryptoService: CryptoService,
 		private apiClientService: ApiClientService,
-		private fileService: FileService
+		private fileService: FileService,
+		private newSecretMessageStateService: NewSecretMessageStateService,
+		private toastrService: ToastrService
 	) {
 		this.newSecretMessageForm = this.formBuilder.nonNullable.group({
 			secretMsgPlainTextFormControl: [''],
@@ -110,18 +114,18 @@ export class CreateSecretMessageComponent {
 	}
 
 	async createSecretMessage() {
-		const secretMsgObj = <SecretMessage>{
-			plainText: this.secretMsgPlainText.trim(),
-			containsFile: this.includeAttachedFile,
-			fileName: this.attachedFile?.name ?? null,
-			base64BlobFile: this.includeAttachedFile ? await this.fileService.readFileAsBase64Blob(this.attachedFile!) : null,
-			containsUsernameAndPassword: this.includeUsernameAndPassword,
-			username: this.username.trim(),
-			password: this.password.trim()
-		};
+		try {
+			const secretMsgObj = <SecretMessage>{
+				plainText: this.secretMsgPlainText.trim(),
+				containsFile: this.includeAttachedFile,
+				fileName: this.attachedFile?.name ?? null,
+				base64BlobFile: this.includeAttachedFile ? await this.fileService.readFileAsBase64Blob(this.attachedFile!) : null,
+				containsUsernameAndPassword: this.includeUsernameAndPassword,
+				username: this.username.trim(),
+				password: this.password.trim()
+			};
 
-		setTimeout(() => {
-			const encryptionResult = this.sjclService.encryptMessage(secretMsgObj);
+			const encryptionResult = await this.cryptoService.encryptMessage(secretMsgObj);
 
 			const request = <StoreNewSecretMessageRequest>{
 				secretMessageData: encryptionResult.secretMessageData,
@@ -139,9 +143,17 @@ export class CreateSecretMessageComponent {
 					})
 				)
 				.subscribe(secretMsgId => {
-					this.navigateToNewSecretMessagePage(secretMsgObj, secretMsgId, encryptionResult.encryptionKeyAsBase64url);
+					this.navigateToNewSecretMessagePage(secretMsgObj, secretMsgId, encryptionResult.encryptionKeyAsBase64Url);
 				});
-		}, 250);
+		} catch {
+			this.formSubmitted = false;
+
+			this.toastrService.error(
+				'Could not encrypt the message. Please try again.',
+				'',
+				{ positionClass: 'toast-top-center' }
+			);
+		}
 	}
 
 	onFileSelection(event: Event) {
@@ -171,12 +183,14 @@ export class CreateSecretMessageComponent {
 	}
 
 	private navigateToNewSecretMessagePage(secretMsgObj: SecretMessage, secretMsgId: string, secretMsgKey: string) {
-		this.router.navigate([Routes.NewSecretMessage], {
-			state: {
-				secretMsgObj: secretMsgObj,
-				secretMsgId: secretMsgId,
-				secretMsgKey: secretMsgKey
-			}
+		// Keep the plaintext and key out of history.state. The new-message
+		// component clears this in-memory state when it is destroyed.
+		this.newSecretMessageStateService.set({
+			secretMsgObj,
+			secretMsgId,
+			secretMsgKey
 		});
+
+		this.router.navigate([Routes.NewSecretMessage]);
 	}
 }

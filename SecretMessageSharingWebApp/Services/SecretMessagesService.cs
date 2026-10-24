@@ -1,4 +1,5 @@
-﻿using SecretMessageSharingWebApp.Models.Domain;
+﻿using Microsoft.EntityFrameworkCore;
+using SecretMessageSharingWebApp.Models.Domain;
 using SecretMessageSharingWebApp.Mappings;
 using SecretMessageSharingWebApp.Services.Interfaces;
 using SecretMessageSharingWebApp.Repositories.Interfaces;
@@ -35,17 +36,13 @@ public sealed class SecretMessagesService(
 		return (exists, otpSettings);
 	}
 
-	public async Task<SecretMessage?> Retrieve(string id)
+	public async Task<SecretMessage?> Get(string id)
 	{
 		var secretMessageEntity = await secretMessagesRepository.GetById(id);
 
 		var secretMessageExists = secretMessageEntity is not null;
-		if (secretMessageExists)
-		{
-			await secretMessagesRepository.Delete(secretMessageEntity!);
-		}
 
-		logger.LogInformation("SecretMessagesService:Retrieve => ID: {secretMessageId}, Exists: {secretMessageExists}",
+		logger.LogInformation("SecretMessagesService:Get => ID: {secretMessageId}, Exists: {secretMessageExists}",
 			id, secretMessageExists);
 
 		return secretMessageEntity?.ToDomain();
@@ -59,8 +56,17 @@ public sealed class SecretMessagesService(
 
 		if (secretMessageEntity is not null)
 		{
-			var deleteResult = await secretMessagesRepository.Delete(secretMessageEntity);
-			deleted = deleteResult > 0;
+			try
+			{
+				var deleteResult = await secretMessagesRepository.Delete(secretMessageEntity);
+				deleted = deleteResult > 0;
+			}
+			catch (DbUpdateConcurrencyException ex)
+			{
+				// Another request retrieved/deleted the message first. Treat this
+				// as "already consumed" rather than returning the ciphertext twice.
+				logger.LogWarning(ex, "SecretMessagesService:Delete => Concurrent deletion for ID: {secretMessageId}", id);
+			}
 		}
 
 		logger.LogInformation("SecretMessagesService:Delete => ID: {secretMessageId}, Deleted: {deleted}", id, deleted);

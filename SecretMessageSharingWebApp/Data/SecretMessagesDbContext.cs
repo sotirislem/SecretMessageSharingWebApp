@@ -13,6 +13,11 @@ public sealed class SecretMessagesDbContext : DbContext
 		modelBuilder.Entity<SecretMessageEntity>()
 			.HasKey(e => e.Id);
 
+		// Cosmos ETags make deletion optimistic: if another request consumed the
+		// message first, SaveChanges throws instead of silently deleting twice.
+		modelBuilder.Entity<SecretMessageEntity>()
+			.UseETagConcurrency();
+
 		modelBuilder.Entity<GetLogEntity>()
 			.HasKey(e => e.Id);
 

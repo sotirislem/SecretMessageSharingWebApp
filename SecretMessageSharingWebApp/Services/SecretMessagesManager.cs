@@ -3,6 +3,7 @@ using SecretMessageSharingWebApp.Models;
 using SecretMessageSharingWebApp.Models.Api.Requests;
 using SecretMessageSharingWebApp.Models.Api.Responses;
 using SecretMessageSharingWebApp.Models.Domain;
+using SecretMessageSharingWebApp.Security;
 using SecretMessageSharingWebApp.Services.Interfaces;
 
 namespace SecretMessageSharingWebApp.Services;
@@ -78,10 +79,15 @@ public class SecretMessagesManager(
 
 		var (isValid, canRetry, hasExpired) = otpService.Validate(otpCode, cacheResult.value!);
 
+		if (isValid || hasExpired)
+		{
+			// A successful OTP is single-use. An expired/attempt-exhausted OTP is
+			// also removed so it cannot be retried indefinitely.
+			memoryCacheService.RemoveValue(messageId, Constants.MemoryKeys.SecretMessageOtp);
+		}
+
 		if (isValid)
 		{
-			memoryCacheService.RemoveValue(messageId, Constants.MemoryKeys.SecretMessageOtp);
-
 			jwtToken = jwtService.GenerateToken(messageId);
 		}
 
@@ -96,25 +102,16 @@ public class SecretMessagesManager(
 
 	public async Task<ApiResult> GetMessage(string messageId, string encryptionKeySha256, string? jwtToken, HttpContextClientInfo httpContextClientInfo)
 	{
-		var secretMessage = await secretMessagesService.Retrieve(messageId);
-
-		var getLog = await getLogsService.CreateNewLog(new GetLog
-		{
-			SecretMessageId = messageId,
-			RequestDateTime = httpContextClientInfo.RequestDateTime,
-			RequestCreatorIP = httpContextClientInfo.ClientIP,
-			RequestClientInfo = httpContextClientInfo.ClientInfo,
-			SecretMessageCreatedDateTime = secretMessage?.CreatedDateTime,
-			SecretMessageCreatorIP = secretMessage?.CreatorIP,
-			SecretMessageCreatorClientInfo = secretMessage?.CreatorClientInfo
-		});
+		var secretMessage = await secretMessagesService.Get(messageId);
 
 		if (secretMessage is null)
 		{
 			return ApiResult.NotFound();
 		}
 
-		if (secretMessage.EncryptionKeySha256 != encryptionKeySha256)
+		// The message must only be deleted after the caller has proven knowledge of the encryption key
+		// (and, when required, a valid OTP). Otherwise anybody who knows the message id could destroy it.
+		if (!KeyHashVerifier.Matches(secretMessage.EncryptionKeySha256, encryptionKeySha256))
 		{
 			return ApiResult.BadRequest("Bad encryption key hash");
 		}
@@ -129,12 +126,32 @@ public class SecretMessagesManager(
 			}
 		}
 
+		// Only a proven retrieval is logged. Logging earlier would let failed key/OTP
+		// attempts create rows (write amplification) and would make the message look
+		// retrieved in the creator's history.
+		var getLog = await getLogsService.CreateNewLog(new GetLog
+		{
+			SecretMessageId = messageId,
+			RequestDateTime = httpContextClientInfo.RequestDateTime,
+			RequestCreatorIP = httpContextClientInfo.ClientIP,
+			RequestClientInfo = httpContextClientInfo.ClientInfo,
+			SecretMessageCreatedDateTime = secretMessage.CreatedDateTime,
+			SecretMessageCreatorIP = secretMessage.CreatorIP,
+			SecretMessageCreatorClientInfo = secretMessage.CreatorClientInfo
+		});
+
+		var deleted = await secretMessagesService.Delete(messageId);
+		if (deleted is false)
+		{
+			return ApiResult.NotFound();
+		}
+
 		var secretMessageDeliveryNotification = getLog.ToSecretMessageDeliveryNotification();
 		var deliveryNotificationSent = await notificationHubService.SendNotification(secretMessage.CreatorClientId, secretMessageDeliveryNotification);
 
 		return ApiResult<GetSecretMessageResponse>.SuccessWithData(new()
 		{
-			Data = secretMessage!.Data,
+			Data = secretMessage.Data,
 			DeliveryNotificationSent = deliveryNotificationSent
 		});
 	}

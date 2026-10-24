@@ -1,4 +1,7 @@
-﻿namespace SecretMessageSharingWebApp.Models.Domain;
+﻿using System.Security.Cryptography;
+using System.Text;
+
+namespace SecretMessageSharingWebApp.Models.Domain;
 
 public sealed record OneTimePassword
 {
@@ -6,13 +9,23 @@ public sealed record OneTimePassword
 
 	public DateTimeOffset ExpiresAt { get; init; }
 
-	public int CodeValidationAttempts { get; private set; } = 0;
+	private int _codeValidationAttempts;
 
+	public int CodeValidationAttempts => Volatile.Read(ref _codeValidationAttempts);
 
 	public bool Validate(string codeToValidate)
 	{
-		CodeValidationAttempts++;
+		Interlocked.Increment(ref _codeValidationAttempts);
 
-		return codeToValidate == Code;
+		if (string.IsNullOrEmpty(Code) || string.IsNullOrEmpty(codeToValidate))
+		{
+			return false;
+		}
+
+		var expectedBytes = Encoding.UTF8.GetBytes(Code);
+		var providedBytes = Encoding.UTF8.GetBytes(codeToValidate);
+
+		return expectedBytes.Length == providedBytes.Length
+			&& CryptographicOperations.FixedTimeEquals(expectedBytes, providedBytes);
 	}
 }

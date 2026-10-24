@@ -12,6 +12,12 @@ using SecretMessageSharingWebApp.Middlewares;
 // builder
 var builder = WebApplication.CreateBuilder(args);
 
+builder.WebHost.ConfigureKestrel(options =>
+{
+	options.AddServerHeader = false;
+	options.Limits.MaxRequestBodySize = Constants.MaxRequestBodyBytes;
+});
+
 builder.Services.BindConfigurationSettings<CosmosDbConfigurationSettings>(builder.Configuration.GetSection("CosmosDb"));
 builder.Services.BindConfigurationSettings<SendGridConfigurationSettings>(builder.Configuration.GetSection("SendGrid"));
 builder.Services.BindConfigurationSettings<JwtConfigurationSettings>(builder.Configuration.GetSection("Jwt"));
@@ -35,6 +41,15 @@ builder.Services.AddSession(options =>
 	options.IdleTimeout = TimeSpan.FromMinutes(Constants.SessionIdleTimeoutInMinutes);
 	options.Cookie.HttpOnly = true;
 	options.Cookie.IsEssential = true;
+	options.Cookie.SameSite = SameSiteMode.Strict;
+	options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+});
+
+builder.Services.AddHsts(options =>
+{
+	options.MaxAge = TimeSpan.FromDays(365);
+	options.IncludeSubDomains = true;
+	options.Preload = false;
 });
 
 builder.Services.AddFastEndpoints();
@@ -60,8 +75,10 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
 	
 	options.KnownIPNetworks.Clear();
 	options.KnownProxies.Clear();
-	
-	options.ForwardLimit = null; 
+
+	// Only trust the closest proxy's forwarded values. Processing an unlimited
+	// chain allows a client to spoof its IP and bypass per-IP rate limiting.
+	options.ForwardLimit = 1;
 });
 
 builder.Services.AddMiddlewares();
@@ -85,10 +102,15 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseForwardedHeaders();
-app.UseHsts();
 
-app.UseRateLimiter();
+if (app.Environment.IsDevelopment() is false)
+{
+	app.UseHsts();
+}
+
+app.UseMiddleware<SecurityHeadersMiddleware>();
 app.UseHttpsRedirection();
+app.UseRateLimiter();
 
 app.UseDefaultFiles();
 app.UseStaticFiles();

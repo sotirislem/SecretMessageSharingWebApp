@@ -16,7 +16,18 @@ export class ModalService {
 			modal.componentInstance[inputObjName] = inputs[inputObjName];
 		}
 
-		return modal.result;
+		// Wait until the closing animation has finished before handing the result to
+		// the caller. Otherwise follow-up UI (toasts, another modal) can appear while
+		// this modal and its backdrop are still fading out, which looks like flicker.
+		return new Promise<T>((resolve, reject) => {
+			modal.result.then(
+				result => modal.hidden.subscribe({
+					next: () => resolve(result),
+					complete: () => resolve(result)
+				}),
+				error => reject(error)
+			);
+		});
 	}
 
 	openConfirmationModal(bodyTemplateRef: TemplateRef<any>, title?: string): Promise<boolean> {

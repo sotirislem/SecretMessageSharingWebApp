@@ -1,4 +1,6 @@
 using Microsoft.Extensions.Logging;
+using System.Security.Cryptography;
+using System.Text;
 using SecretMessageSharingWebApp.Models.Api.Requests;
 using SecretMessageSharingWebApp.Models.Api.Responses;
 using SecretMessageSharingWebApp.Models;
@@ -6,6 +8,7 @@ using SecretMessageSharingWebApp.Models.Domain;
 using SecretMessageSharingWebApp.Services;
 using SecretMessageSharingWebApp.Services.Interfaces;
 using SecretMessageSharingWebApp.Mappings;
+using SecretMessageSharingWebApp.Security;
 using OtpSettings = SecretMessageSharingWebApp.Models.Common.OtpSettings;
 
 namespace SecretMessageSharingWebApp.UnitTests.ServicesTests;
@@ -251,6 +254,43 @@ public class SecretMessagesManagerTests
 	}
 
 	[Fact]
+	public async Task ValidateOtp_ShouldRemoveOtp_WhenOtpHasExpired()
+	{
+		// Arrange
+		var messageId = _fixture.Create<string>();
+		var otpCode = _fixture.Create<string>();
+		var otp = _fixture.Create<OneTimePassword>();
+		var otpSettings = new OtpSettings()
+		{
+			Required = true,
+			RecipientsEmail = _fixture.Create<string>()
+		};
+
+		_secretMessagesService.Exists(messageId)
+			.Returns((true, otpSettings));
+
+		_memoryCacheService.GetValue<OneTimePassword>(messageId, Constants.MemoryKeys.SecretMessageOtp, remove: false)
+			.Returns((true, otp));
+
+		_otpService.Validate(otpCode, otp)
+			.Returns((false, false, true));
+
+		// Act
+		var result = await _sut.ValidateOtp(messageId, otpCode);
+
+		// Assert
+		result.Should().BeEquivalentTo(ApiResult<ValidateSecretMessageOtpResponse>.SuccessWithData(new ValidateSecretMessageOtpResponse
+		{
+			IsValid = false,
+			CanRetry = false,
+			HasExpired = true,
+			AuthToken = null
+		}));
+		_memoryCacheService.Received(1).RemoveValue(messageId, Constants.MemoryKeys.SecretMessageOtp);
+		_jwtService.DidNotReceive().GenerateToken(Arg.Any<string>());
+	}
+
+	[Fact]
 	public async Task GetMessage_ShouldReturnNotFound_WhenSecretMessageNotExists()
 	{
 		// Arrange
@@ -259,7 +299,7 @@ public class SecretMessagesManagerTests
 		var jwtToken = _fixture.Create<string>();
 		var httpContextClientInfo = _fixture.Create<HttpContextClientInfo>();
 
-		_secretMessagesService.Retrieve(messageId)
+		_secretMessagesService.Get(messageId)
 			.Returns((SecretMessage?)null);
 
 		// Act
@@ -267,19 +307,24 @@ public class SecretMessagesManagerTests
 
 		// Assert
 		result.Should().BeEquivalentTo(ApiResult.NotFound());
+		await _secretMessagesService.DidNotReceive().Delete(Arg.Any<string>());
+		await _getLogsService.DidNotReceive().CreateNewLog(Arg.Any<GetLog>());
 	}
 
 	[Fact]
 	public async Task GetMessage_ShouldReturnBadRequest_WhenEncryptionKeyMismatch()
 	{
 		// Arrange
-		var secretMessage = _fixture.Create<SecretMessage>();
+		var secretMessage = _fixture.Create<SecretMessage>() with
+		{
+			EncryptionKeySha256 = KeyHashVerifier.Create(_fixture.Create<string>())
+		};
 		var messageId = secretMessage.Id;
 		var wrongEncryptionKeySha256 = _fixture.Create<string>();
 		var jwtToken = _fixture.Create<string>();
 		var httpContextClientInfo = _fixture.Create<HttpContextClientInfo>();
 
-		_secretMessagesService.Retrieve(messageId)
+		_secretMessagesService.Get(messageId)
 			.Returns(secretMessage);
 
 		// Act
@@ -287,14 +332,18 @@ public class SecretMessagesManagerTests
 
 		// Assert
 		result.Should().BeEquivalentTo(ApiResult.BadRequest("Bad encryption key hash"));
+		await _secretMessagesService.DidNotReceive().Delete(Arg.Any<string>());
+		await _getLogsService.DidNotReceive().CreateNewLog(Arg.Any<GetLog>());
 	}
 
 	[Fact]
 	public async Task GetMessage_ShouldReturnUnauthorized_WhenJwtTokenInvalidForOtpMessage()
 	{
 		// Arrange
+		var encryptionKeySha256 = _fixture.Create<string>();
 		var secretMessage = _fixture.Create<SecretMessage>() with
 		{
+			EncryptionKeySha256 = KeyHashVerifier.Create(encryptionKeySha256),
 			Otp = new OtpSettings
 			{
 				Required = true,
@@ -302,11 +351,10 @@ public class SecretMessagesManagerTests
 			}
 		};
 		var messageId = secretMessage.Id;
-		var encryptionKeySha256 = secretMessage.EncryptionKeySha256;
 		var jwtToken = _fixture.Create<string>();
 		var httpContextClientInfo = _fixture.Create<HttpContextClientInfo>();
 
-		_secretMessagesService.Retrieve(messageId)
+		_secretMessagesService.Get(messageId)
 			.Returns(secretMessage);
 
 		_jwtService.ValidateToken(jwtToken, messageId)
@@ -317,14 +365,18 @@ public class SecretMessagesManagerTests
 
 		// Assert
 		result.Should().BeEquivalentTo(ApiResult.Unauthorized());
+		await _secretMessagesService.DidNotReceive().Delete(Arg.Any<string>());
+		await _getLogsService.DidNotReceive().CreateNewLog(Arg.Any<GetLog>());
 	}
 
 	[Fact]
 	public async Task GetMessage_ShouldReturnSuccessWithData_WhenMessageExistsAndJwtTokenValid()
 	{
 		// Arrange
+		var encryptionKeySha256 = _fixture.Create<string>();
 		var secretMessage = _fixture.Create<SecretMessage>() with
 		{
+			EncryptionKeySha256 = KeyHashVerifier.Create(encryptionKeySha256),
 			Otp = new OtpSettings
 			{
 				Required = false,
@@ -332,15 +384,17 @@ public class SecretMessagesManagerTests
 			}
 		};
 		var messageId = secretMessage.Id;
-		var encryptionKeySha256 = secretMessage.EncryptionKeySha256;
 		var jwtToken = _fixture.Create<string>();
 		var httpContextClientInfo = _fixture.Create<HttpContextClientInfo>();
 
 		var getLog = _fixture.Create<GetLog>();
 		var secretMessageDeliveryNotification = getLog.ToSecretMessageDeliveryNotification();
 
-		_secretMessagesService.Retrieve(messageId)
+		_secretMessagesService.Get(messageId)
 			.Returns(secretMessage);
+
+		_secretMessagesService.Delete(messageId)
+			.Returns(true);
 
 		_getLogsService.CreateNewLog(Arg.Any<GetLog>())
 			.Returns(getLog);
@@ -360,5 +414,85 @@ public class SecretMessagesManagerTests
 			Data = secretMessage.Data,
 			DeliveryNotificationSent = true
 		}));
+		await _secretMessagesService.Received(1).Delete(messageId);
+	}
+
+	[Fact]
+	public async Task GetMessage_ShouldReturnSuccessWithData_WhenStoredVerifierIsDomainSeparated()
+	{
+		// Arrange
+		var keyHash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(Guid.NewGuid().ToString()))).ToLowerInvariant();
+
+		var secretMessage = _fixture.Create<SecretMessage>() with
+		{
+			EncryptionKeySha256 = KeyHashVerifier.Create(keyHash),
+			Otp = new OtpSettings
+			{
+				Required = false,
+				RecipientsEmail = ""
+			}
+		};
+		var messageId = secretMessage.Id;
+		var jwtToken = _fixture.Create<string>();
+		var httpContextClientInfo = _fixture.Create<HttpContextClientInfo>();
+
+		var getLog = _fixture.Create<GetLog>();
+
+		_secretMessagesService.Get(messageId)
+			.Returns(secretMessage);
+
+		_secretMessagesService.Delete(messageId)
+			.Returns(true);
+
+		_getLogsService.CreateNewLog(Arg.Any<GetLog>())
+			.Returns(getLog);
+
+		// Act
+		var result = await _sut.GetMessage(messageId, keyHash, jwtToken, httpContextClientInfo);
+
+		// Assert
+		result.Should().BeEquivalentTo(ApiResult<GetSecretMessageResponse>.SuccessWithData(new GetSecretMessageResponse
+		{
+			Data = secretMessage.Data,
+			DeliveryNotificationSent = false
+		}));
+		await _secretMessagesService.Received(1).Delete(messageId);
+	}
+
+	[Fact]
+	public async Task GetMessage_ShouldReturnNotFound_WhenMessageWasAlreadyRetrieved()
+	{
+		// Arrange
+		var encryptionKeySha256 = _fixture.Create<string>();
+		var secretMessage = _fixture.Create<SecretMessage>() with
+		{
+			EncryptionKeySha256 = KeyHashVerifier.Create(encryptionKeySha256),
+			Otp = new OtpSettings
+			{
+				Required = false,
+				RecipientsEmail = ""
+			}
+		};
+		var messageId = secretMessage.Id;
+		var jwtToken = _fixture.Create<string>();
+		var httpContextClientInfo = _fixture.Create<HttpContextClientInfo>();
+
+		var getLog = _fixture.Create<GetLog>();
+
+		_secretMessagesService.Get(messageId)
+			.Returns(secretMessage);
+
+		_secretMessagesService.Delete(messageId)
+			.Returns(false);
+
+		_getLogsService.CreateNewLog(Arg.Any<GetLog>())
+			.Returns(getLog);
+
+		// Act
+		var result = await _sut.GetMessage(messageId, encryptionKeySha256, jwtToken, httpContextClientInfo);
+
+		// Assert
+		result.Should().BeEquivalentTo(ApiResult.NotFound());
+		await _notificationHubService.DidNotReceive().SendNotification(Arg.Any<string>(), Arg.Any<SecretMessageDeliveryNotification>());
 	}
 }

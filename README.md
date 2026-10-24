@@ -17,7 +17,7 @@ For even more security, an OTP mechanism can seal the message further, allowing 
 * Entity Framework Core (with CosmosDB)
 * FastEndpoints (instead of MVC Controllers)
 * SignalR (for delivery notifications)
-* Stanford JavaScript Crypto Library (for local in-browser encryption)
+* Web Crypto API (SubtleCrypto) with AES-256-GCM (for local in-browser encryption)
 
 ### Hosting:
 The App is hosted on Azure by using Azure App Service, whereas, uses Azure Cosmos DB for data storage.

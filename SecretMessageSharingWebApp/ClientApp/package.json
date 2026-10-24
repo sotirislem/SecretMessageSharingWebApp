@@ -31,7 +31,6 @@
     "@ng-bootstrap/ng-bootstrap": "^20.0.0",
     "@popperjs/core": "^2.11.8",
     "@types/file-saver": "^2.0.7",
-    "@types/sjcl": "^1.0.34",
     "@uiowa/digit-only": "^4.1.0",
     "autoprefixer": "^10.4.24",
     "bootstrap": "^5.3.8",
@@ -44,7 +43,6 @@
     "qrcode": "^1.5.4",
     "run-script-os": "^1.1.6",
     "rxjs": "~7.8.2",
-    "sjcl": "^1.0.8",
     "tslib": "^2.8.1",
     "zone.js": "~0.16.0"
   },
