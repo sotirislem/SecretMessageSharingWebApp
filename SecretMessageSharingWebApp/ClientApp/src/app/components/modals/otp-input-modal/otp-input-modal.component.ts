@@ -1,66 +1,73 @@
-import { Component, ElementRef, Input, ViewChild } from '@angular/core';
-import { NgClass } from '@angular/common';
+import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, inject, signal, viewChild } from '@angular/core';
+import { FormGroupDirective, NonNullableFormBuilder, ReactiveFormsModule, ValidationErrors } from '@angular/forms';
 import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
-import { FormBuilder, FormsModule, NgForm, ReactiveFormsModule, ValidationErrors } from '@angular/forms';
+import { firstValueFrom } from 'rxjs';
 import { DigitOnlyDirective } from '@uiowa/digit-only';
 
 import { Constants } from '../../../../constants';
 import { ApiClientService } from '../../../services/api-client.service';
 import { ValidateSecretMessageOtpResponse } from '../../../models/api/validate-secret-message-otp-response.model';
+import { MODAL_DATA } from '../../../tokens';
+
+export interface OtpInputModalData {
+	messageId: string;
+}
 
 @Component({
 	templateUrl: './otp-input-modal.component.html',
-	styleUrls: ['./otp-input-modal.component.css'],
-	standalone: true,
-	imports: [NgClass, FormsModule, ReactiveFormsModule, DigitOnlyDirective]
+	styleUrl: './otp-input-modal.component.css',
+	changeDetection: ChangeDetectionStrategy.OnPush,
+	imports: [ReactiveFormsModule, DigitOnlyDirective]
 })
 export class OtpInputModalComponent {
-	@Input() messageId: string;
+	readonly data = inject(MODAL_DATA) as OtpInputModalData;
 
-	@ViewChild('form') form: NgForm;
-	@ViewChild('otpCodeFormControlRef') otpCodeFormControlRef: ElementRef;
+	readonly modal = inject(NgbActiveModal);
 
-	otpSent: boolean;
+	private readonly formBuilder = inject(NonNullableFormBuilder);
+	private readonly apiClientService = inject(ApiClientService);
+	private readonly destroyRef = inject(DestroyRef);
 
-	expirationTimerWorker: Worker | null = null;
-	timerExpirationTime: string = '';
+	private readonly form = viewChild<FormGroupDirective>('form');
+	private readonly otpCodeFormControlRef = viewChild<ElementRef<HTMLInputElement>>('otpCodeFormControlRef');
 
-	otpValidationForm: any;
+	readonly otpSent = signal(false);
+	readonly timerActive = signal(false);
+	readonly timerExpirationTime = signal('');
 
-	constructor(
-		public modal: NgbActiveModal,
-		private formBuilder: FormBuilder,
-		private apiClientService: ApiClientService)
-	{
-		this.otpValidationForm = this.formBuilder.nonNullable.group({
-			otpCodeFormControl: ['',
-				[this.otpHasExpiredValidator.bind(this)]
-			]
-		});
+	readonly otpValidationForm = this.formBuilder.group({
+		otpCodeFormControl: ['', [this.otpHasExpiredValidator.bind(this)]]
+	});
+
+	private expirationTimerWorker: Worker | null = null;
+
+	constructor() {
+		this.destroyRef.onDestroy(() => this.stopExpirationTimer());
 	}
 
-	get otpCodeFormControl() { return this.otpValidationForm.controls.otpCodeFormControl }
-	get otpCode(): string { return this.otpCodeFormControl.value }
+	get otpCodeFormControl() { return this.otpValidationForm.controls.otpCodeFormControl; }
+	get otpCode(): string { return this.otpCodeFormControl.value; }
 
-	get timerActive(): boolean { return this.expirationTimerWorker !== null }
+	async getOtp(): Promise<void> {
+		if (this.otpSent() && this.timerActive()) return;
 
-	getOtp() {
-		if (this.otpSent && this.timerActive) return;
+		try {
+			await firstValueFrom(this.apiClientService.acquireSecretMessageOtp(this.data.messageId));
 
-		this.apiClientService.acquireSecretMessageOtp(this.messageId).subscribe(() => {
-			this.otpSent = true;
+			this.otpSent.set(true);
 			this.startExpirationTimer();
 
 			setTimeout(() => {
-				this.form?.resetForm();
-				this.otpCodeFormControlRef?.nativeElement.focus();
+				this.form()?.resetForm();
+				this.otpCodeFormControlRef()?.nativeElement.focus();
 			});
-		});
+		} catch {
+			// The error interceptor already reported the failure.
+		}
 	}
 
-	submitOtpValidationForm() {
-		if (this.otpValidationForm.invalid || !this.timerActive)
-			return;
+	async submitOtpValidationForm(): Promise<void> {
+		if (this.otpValidationForm.invalid || !this.timerActive()) return;
 
 		if (!this.otpCode) {
 			this.otpCodeFormControl.setErrors({ required: true });
@@ -72,35 +79,38 @@ export class OtpInputModalComponent {
 			return;
 		}
 
-		this.apiClientService.validateSecretMessageOtp(this.messageId, this.otpCode).subscribe((response: ValidateSecretMessageOtpResponse) => {
+		try {
+			const response: ValidateSecretMessageOtpResponse = await firstValueFrom(
+				this.apiClientService.validateSecretMessageOtp(this.data.messageId, this.otpCode));
+
 			if (response.isValid) {
 				this.modal.close(response.authToken);
-			}
-			else if (response.hasExpired) {
+			} else if (response.hasExpired) {
 				this.stopExpirationTimer();
 				this.otpCodeFormControl.setErrors({ otpHasExpired: true });
-			}
-			else if (!response.canRetry) {
+			} else if (!response.canRetry) {
 				this.stopExpirationTimer();
 				this.otpCodeFormControl.setErrors({ otpInvalid: true, otpMaxAttemptsLimitReached: true });
-			}
-			else {
+			} else {
 				this.otpCodeFormControl.setErrors({ otpInvalid: true });
 			}
-		});
+		} catch {
+			// The error interceptor already reported the failure.
+		}
 	}
 
-	private startExpirationTimer() {
-		if (this.timerActive) return;
+	private startExpirationTimer(): void {
+		if (this.timerActive()) return;
 
-		this.timerExpirationTime = `0${Constants.OTP_EXPIRATION_MINUTES}:00`;
+		this.timerActive.set(true);
+		this.timerExpirationTime.set(`0${Constants.OTP_EXPIRATION_MINUTES}:00`);
 
 		this.expirationTimerWorker = new Worker(new URL('./expiration-timer.worker', import.meta.url));
 
 		this.expirationTimerWorker.onmessage = ({ data }) => {
 			const { timerRemainingSeconds, timerExpirationTime }: { timerRemainingSeconds: number; timerExpirationTime: string } = data;
 
-			this.timerExpirationTime = timerExpirationTime;
+			this.timerExpirationTime.set(timerExpirationTime);
 
 			if (timerRemainingSeconds == 0) {
 				this.stopExpirationTimer();
@@ -108,13 +118,13 @@ export class OtpInputModalComponent {
 		};
 	}
 
-	private stopExpirationTimer() {
+	private stopExpirationTimer(): void {
 		this.expirationTimerWorker?.terminate();
 		this.expirationTimerWorker = null;
+		this.timerActive.set(false);
 	}
 
 	private otpHasExpiredValidator(): ValidationErrors | null {
-		const otpHasExpired = !this.timerActive;
-		return otpHasExpired ? { otpHasExpired: true } : null;
+		return this.timerActive() ? null : { otpHasExpired: true };
 	}
 }

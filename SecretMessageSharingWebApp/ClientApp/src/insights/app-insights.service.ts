@@ -1,4 +1,4 @@
-import { ErrorHandler, Injectable } from '@angular/core';
+import { ErrorHandler, inject, Injectable } from '@angular/core';
 import { Router } from '@angular/router';
 import { AngularPlugin } from '@microsoft/applicationinsights-angularplugin-js';
 import { ApplicationInsights, ITelemetryItem } from '@microsoft/applicationinsights-web';
@@ -10,10 +10,11 @@ import { environment } from '../environments/environment';
 export class AppInsightsService {
 	private static readonly sensitiveQueryParams = ['id', 'keyHash', 'key'];
 
-	private angularPlugin = new AngularPlugin();
+	private readonly router = inject(Router);
+	private readonly angularPlugin = new AngularPlugin();
 	private appInsights!: ApplicationInsights;
 
-	constructor(private router: Router) {
+	constructor() {
 		this.appInsights = new ApplicationInsights({
 			config: {
 				instrumentationKey: environment.applicationInsights.instrumentationKey,

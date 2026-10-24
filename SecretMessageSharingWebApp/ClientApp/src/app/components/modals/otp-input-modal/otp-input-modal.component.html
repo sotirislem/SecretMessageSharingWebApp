@@ -6,14 +6,14 @@
 
 <div class="modal-body">
 	<p class="text-center word-wrap">
-		Message Id: <span class="font-weight-500">{{messageId}}</span>
+		Message Id: <span class="font-weight-500">{{data.messageId}}</span>
 	</p>
 	<p class="text-center text-danger">
 		The message you are trying to retrieve requires an OTP
 	</p>
 	<hr />
 
-	@if (!otpSent) {
+	@if (!otpSent()) {
 		<p>
 			By pressing the button 'Get OTP' an 8 digit password will be sent to your email, as this was provided by the creator of the message.
 		</p>
@@ -33,7 +33,7 @@
 				<input type="text" id="otp" class="form-control"
 					   formControlName="otpCodeFormControl"
 					   #otpCodeFormControlRef
-					   [ngClass]="{ 'is-invalid': form.submitted && otpCodeFormControl.invalid }"
+					   [class.is-invalid]="form.submitted && otpCodeFormControl.invalid"
 					   placeholder="********"
 					   maxlength="8"
 					   inputmode="numeric"
@@ -41,8 +41,8 @@
 					   digitOnly>
 
 				<div class="form-text">
-					@if (timerActive) {
-						Expires in: {{timerExpirationTime}}
+					@if (timerActive()) {
+						Expires in: {{timerExpirationTime()}}
 					} @else {
 						Sent OTP Expired | <span class="as-link" (click)="getOtp()">Resend OTP</span>
 					}
@@ -50,27 +50,27 @@
 
 				<div class="invalid-feedback">
 					@if (form.submitted && otpCodeFormControl.invalid) {
-						@if (otpCodeFormControl.errors?.required) {
+						@if (otpCodeFormControl.errors?.['required']) {
 							<div>
 								Please provide an OTP.
 							</div>
 						}
-						@if (otpCodeFormControl.errors?.minlength) {
+						@if (otpCodeFormControl.errors?.['minlength']) {
 							<div>
 								The code must be 8 digits long.
 							</div>
 						}
-						@if (otpCodeFormControl.errors?.otpInvalid) {
+						@if (otpCodeFormControl.errors?.['otpInvalid']) {
 							<div>
 								Entered OTP is invalid.
 							</div>
 						}
-						@if (otpCodeFormControl.errors?.otpMaxAttemptsLimitReached) {
+						@if (otpCodeFormControl.errors?.['otpMaxAttemptsLimitReached']) {
 							<div>
 								You have exceeded the maximum retry attempts, please request an OTP resend.
 							</div>
 						}
-						@if (otpCodeFormControl.errors?.otpHasExpired) {
+						@if (otpCodeFormControl.errors?.['otpHasExpired']) {
 							<div>
 								Previously sent OTP has expired, please request an OTP resend.
 							</div>

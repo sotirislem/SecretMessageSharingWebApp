@@ -1,29 +1,24 @@
-import { Component } from '@angular/core';
-import { NgClass } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
+import { RouterLink, RouterLinkActive } from '@angular/router';
+
 import { Routes } from '../../../constants';
 
 @Component({
 	selector: 'app-nav-menu',
 	templateUrl: './nav-menu.component.html',
-	styleUrls: ['./nav-menu.component.css'],
-	standalone: true,
-	imports: [NgClass, RouterModule]
+	styleUrl: './nav-menu.component.css',
+	changeDetection: ChangeDetectionStrategy.OnPush,
+	imports: [RouterLink, RouterLinkActive]
 })
 export class NavMenuComponent {
 	readonly Routes = Routes;
+	readonly isExpanded = signal(false);
 
-	isExpanded: boolean;
-
-	constructor() {
-		this.isExpanded = false;
+	toggle(): void {
+		this.isExpanded.update(expanded => !expanded);
 	}
 
-	toggle() {
-		this.isExpanded = !this.isExpanded;
-	}
-
-	collapse() {
-		this.isExpanded = false;
+	collapse(): void {
+		this.isExpanded.set(false);
 	}
 }

@@ -1,55 +1,43 @@
-/***************************************************************************************************
- * Load `$localize` onto the global scope - used if i18n tags appear in Angular templates.
- */
-import { enableProdMode, importProvidersFrom } from '@angular/core';
+import { ApplicationConfig, provideBrowserGlobalErrorListeners, provideZonelessChangeDetection } from '@angular/core';
 import { bootstrapApplication } from '@angular/platform-browser';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
-import { provideAnimations } from '@angular/platform-browser/animations';
 import { provideRouter, withInMemoryScrolling } from '@angular/router';
+
 import { AppRootComponent } from './app/components/app-root/app-root.component';
-import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
-import { ToastrModule } from 'ngx-toastr';
-import { DigitOnlyDirective } from '@uiowa/digit-only';
 import { httpLoaderInterceptor } from './app/interceptors/http-loader-interceptor.service';
 import { httpHeadersInterceptor } from './app/interceptors/http-headers-interceptor.service';
 import { httpErrorInterceptor } from './app/interceptors/http-error-interceptor.service';
-import { environment } from './environments/environment';
-import { AppInsightsModule } from './insights/app-insights.module';
 import { AppRoutes } from './app/app.routes';
+import { API_URL, BASE_URL, CLIENT_ID } from './app/tokens';
+import { environment } from './environments/environment';
+import { provideAppInsights } from './insights/app-insights.providers';
 
 import './extensions/string.extensions';
 
-const appInsightsModule = (environment.production && environment.applicationInsights.enable ? [importProvidersFrom(AppInsightsModule)] : []);
-
 if (environment.production) {
-	enableProdMode();
-
 	window.console.log = function () { };
 	window.console.warn = function () { };
 	window.console.error = function () { };
 }
 
-bootstrapApplication(AppRootComponent, {
+const appConfig: ApplicationConfig = {
 	providers: [
-		{ provide: 'BASE_URL', useFactory: getBaseUrl, deps: [] },
-		{ provide: 'API_URL', useFactory: getApiUrl, deps: [] },
-		{ provide: 'CLIENT_ID', useFactory: getClientId, deps: [] },
+		provideBrowserGlobalErrorListeners(),
+		provideZonelessChangeDetection(),
+		{ provide: BASE_URL, useFactory: getBaseUrl },
+		{ provide: API_URL, useFactory: getApiUrl },
+		{ provide: CLIENT_ID, useFactory: getClientId },
 		provideHttpClient(withInterceptors([
 			httpLoaderInterceptor,
 			httpHeadersInterceptor,
 			httpErrorInterceptor
 		])),
-		provideAnimations(),
 		provideRouter(AppRoutes, withInMemoryScrolling({ scrollPositionRestoration: 'enabled' })),
-		importProvidersFrom(
-			NgbModule,
-			ToastrModule.forRoot()
-		),
-		DigitOnlyDirective,
-		...appInsightsModule
+		...(environment.production && environment.applicationInsights.enable ? provideAppInsights() : [])
 	]
-}).catch(err => console.log(err));
+};
 
+bootstrapApplication(AppRootComponent, appConfig).catch(err => console.error(err));
 
 // providers => Factory functions
 function getBaseUrl(): string {

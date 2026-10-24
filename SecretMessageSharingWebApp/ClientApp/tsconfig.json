@@ -1,20 +1,14 @@
 {
 	"compileOnSave": false,
 	"compilerOptions": {
-		"baseUrl": "./",
-		"paths": {
-			"crypto": [
-				"node_modules/crypto-js"
-			]
-		},
 		"outDir": "./dist/out-tsc",
-		"forceConsistentCasingInFileNames": true,
+    "forceConsistentCasingInFileNames": true,
+    "esModuleInterop": true,
 		"strict": true,
 		"noImplicitReturns": true,
 		"noFallthroughCasesInSwitch": true,
 		"sourceMap": true,
-		"declaration": false,
-		"downlevelIteration": true,
+    "declaration": false,
 		"experimentalDecorators": true,
 		"moduleResolution": "bundler",
 		"importHelpers": true,
@@ -24,8 +18,11 @@
 			"ES2022",
 			"dom"
 		],
-		"strictPropertyInitialization": false,
-		"allowSyntheticDefaultImports":  true
+    "strictPropertyInitialization": false,
+    "skipLibCheck": true,
+    "types": [
+      "jasmine"
+    ]
 	},
 	"angularCompilerOptions": {
 		"enableI18nLegacyMessageIdFormat": false,

@@ -1,48 +1,41 @@
-import { HttpClient, HttpHeaders, HttpResponse } from '@angular/common/http';
-import { Inject, Injectable } from '@angular/core';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 
 import { StoreNewSecretMessageRequest } from '../models/api/store-new-secret-message-request.model';
 import { ValidateSecretMessageOtpRequest } from '../models/api/validate-secret-message-otp-request.model';
-
 import { GetSecretMessageResponse } from '../models/api/get-secret-message-response.model';
 import { RecentlyStoredSecretMessagesResponse } from '../models/api/recently-stored-secret-messages-response.model';
 import { VerifySecretMessageResponse } from '../models/api/verify-secret-message-response.model';
 import { ValidateSecretMessageOtpResponse } from '../models/api/validate-secret-message-otp-response.model';
+import { API_URL } from '../tokens';
 
 @Injectable({
 	providedIn: 'root'
 })
 export class ApiClientService {
-	private readonly baseApiUrl: string;
-
-	constructor(@Inject('API_URL') apiUrl: string, private httpClient: HttpClient) {
-		this.baseApiUrl = `${apiUrl}/api/secret-messages`;
-	}
+	private readonly httpClient = inject(HttpClient);
+	private readonly baseApiUrl = `${inject(API_URL)}/api/secret-messages`;
 
 	storeSecretMessage(request: StoreNewSecretMessageRequest): Observable<string> {
-		const url = this.getApiUrl();
-		return this.httpClient.post<string>(url, request);
+		return this.httpClient.post<string>(this.getApiUrl(), request);
 	}
 
 	verifySecretMessage(id: string): Observable<VerifySecretMessageResponse> {
-		const url = this.getApiUrl('verify/' + id);
-		return this.httpClient.get<VerifySecretMessageResponse>(url);
+		return this.httpClient.get<VerifySecretMessageResponse>(this.getApiUrl('verify/' + id));
 	}
 
 	acquireSecretMessageOtp(id: string): Observable<void> {
-		const url = this.getApiUrl('otp/' + id);
-		return this.httpClient.get<void>(url);
+		return this.httpClient.get<void>(this.getApiUrl('otp/' + id));
 	}
 
 	validateSecretMessageOtp(id: string, otpCode: string): Observable<ValidateSecretMessageOtpResponse> {
-		const url = this.getApiUrl('otp/' + id);
-		return this.httpClient.post<ValidateSecretMessageOtpResponse>(url, <ValidateSecretMessageOtpRequest>{ otpCode });
+		return this.httpClient.post<ValidateSecretMessageOtpResponse>(
+			this.getApiUrl('otp/' + id),
+			<ValidateSecretMessageOtpRequest>{ otpCode });
 	}
 
 	getSecretMessage(id: string, keyHash: string, authToken?: string): Observable<GetSecretMessageResponse> {
-		const url = this.getApiUrl(id);
-
 		// Keep the key-hash verifier out of the URL so it cannot leak through
 		// browser history, server access logs, proxies, or analytics.
 		let headers = new HttpHeaders().set('X-Key-Hash', keyHash);
@@ -50,24 +43,22 @@ export class ApiClientService {
 			headers = headers.append('Authorization', 'Bearer ' + authToken);
 		}
 
-		return this.httpClient.get<GetSecretMessageResponse>(url, { headers });
+		return this.httpClient.get<GetSecretMessageResponse>(this.getApiUrl(id), { headers });
 	}
 
 	getRecentlyStoredSecretMessages(): Observable<RecentlyStoredSecretMessagesResponse> {
-		const url = this.getApiUrl();
-		return this.httpClient.get<RecentlyStoredSecretMessagesResponse>(url);
+		return this.httpClient.get<RecentlyStoredSecretMessagesResponse>(this.getApiUrl());
+	}
+
+	getRecentlyStoredSecretMessagesUrl(): string {
+		return this.getApiUrl();
 	}
 
 	deleteRecentlyStoredSecretMessage(id: string): Observable<void> {
-		const url = this.getApiUrl(id);
-		return this.httpClient.delete<void>(url);
+		return this.httpClient.delete<void>(this.getApiUrl(id));
 	}
 
-	private getApiUrl(apiPath: string = "") {
-		if (apiPath) {
-			return `${this.baseApiUrl}/${apiPath}`;
-		}
-
-		return this.baseApiUrl;
+	private getApiUrl(apiPath: string = ''): string {
+		return apiPath ? `${this.baseApiUrl}/${apiPath}` : this.baseApiUrl;
 	}
 }

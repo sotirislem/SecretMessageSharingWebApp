@@ -1,27 +1,12 @@
-import { Injectable } from '@angular/core';
-import { ActivatedRouteSnapshot, CanActivate, Router, RouterStateSnapshot, UrlTree } from '@angular/router';
-import { Observable } from 'rxjs';
+import { inject } from '@angular/core';
+import { CanActivateFn, Router } from '@angular/router';
+
 import { Routes } from '../../constants';
-import { RouterHelperService } from '../services/router-helper.service';
 
-@Injectable({
-	providedIn: 'root'
-})
-export class GetSecretMessageRouteGuard implements CanActivate {
+export const getSecretMessageRouteGuard: CanActivateFn = (route) => {
+	const id = route.queryParams['id'];
 
-	constructor(private router: Router, private routerHelperService: RouterHelperService) { }
-
-	canActivate(
-		route: ActivatedRouteSnapshot,
-		state: RouterStateSnapshot
-	): Observable<boolean | UrlTree> | Promise<boolean | UrlTree> | boolean | UrlTree {
-		const id = route.queryParams.id;
-
-		if (id) {
-			return true;
-		}
-
-		this.router.navigate([Routes.Root]);
-		return false;
-	}
-}
+	// Allow a URL without an encryption key: an already-used link must still be
+	// able to show the "no message found" / "key missing" state.
+	return id ? true : inject(Router).createUrlTree([Routes.Root]);
+};

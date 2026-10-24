@@ -15,31 +15,22 @@
 			"prefix": "app",
 			"architect": {
 				"build": {
-					"builder": "@angular-devkit/build-angular:application",
+					"builder": "@angular/build:application",
 					"options": {
 						"outputPath": "dist",
 						"index": "src/index.html",
 						"browser": "src/main.ts",
-						"polyfills": [
-							"zone.js",
-							"@angular/localize/init",
-							"src/polyfills.ts"
-						],
+						"polyfills": [],
 						"tsConfig": "tsconfig.app.json",
 						"assets": [
 							"src/assets"
 						],
 						"styles": [
 							"src/styles.css",
-							"node_modules/bootstrap/dist/css/bootstrap.min.css",
-							"node_modules/ngx-toastr/toastr.css"
-						],
-						"scripts": [
-							"node_modules/bootstrap/dist/js/bootstrap.min.js"
+							"node_modules/bootstrap/dist/css/bootstrap.min.css"
 						],
 						"allowedCommonJsDependencies": [
-							"qrcode",
-							"file-saver"
+							"qrcode"
 						]
 					},
 					"configurations": {
@@ -82,7 +73,7 @@
 					"defaultConfiguration": "production"
 				},
 				"serve": {
-					"builder": "@angular-devkit/build-angular:dev-server",
+					"builder": "@angular/build:dev-server",
 					"configurations": {
 						"production": {
 							"buildTarget": "SecretMessageSharingWebApp:build:production"
@@ -95,7 +86,7 @@
 					"defaultConfiguration": "development"
 				},
 				"extract-i18n": {
-					"builder": "@angular-devkit/build-angular:extract-i18n",
+					"builder": "@angular/build:extract-i18n",
 					"options": {
 						"buildTarget": "SecretMessageSharingWebApp:build"
 					}
@@ -107,8 +98,7 @@
 						"karmaConfig": "karma.conf.js",
 						"polyfills": [
 							"zone.js",
-							"zone.js/testing",
-							"@angular/localize/init"
+							"zone.js/testing"
 						],
 						"assets": [
 							"src/assets"

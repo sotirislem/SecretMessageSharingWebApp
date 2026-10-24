@@ -1,66 +1,63 @@
-import { Inject, Injectable } from '@angular/core';
+import { DestroyRef, inject, Injectable, signal } from '@angular/core';
 import { NgbModalOptions } from '@ng-bootstrap/ng-bootstrap';
-import { Subject } from 'rxjs';
 
 import { ModalService } from './modal.service';
+import { ToastService } from './toast.service';
 import { MessageDeliveryDetailsModalComponent } from '../components/modals/message-delivery-details-modal/message-delivery-details-modal.component';
 import { SecretMessageDeliveryNotification } from '../models/api/secret-message-delivery-notification.model';
-
+import { API_URL, CLIENT_ID } from '../tokens';
 
 @Injectable({
 	providedIn: 'root'
 })
 export class SecretMessageDeliveryNotificationHubService {
-	private readonly hubWorker: Worker;
+	private readonly apiUrl = inject(API_URL);
+	private readonly clientId = inject(CLIENT_ID);
+	private readonly modalService = inject(ModalService);
+	private readonly toastService = inject(ToastService);
+	private readonly destroyRef = inject(DestroyRef);
 
-	private _hubConnectionId: string | null;
-	private receivedDeliveryNotifications$: Subject<string> = new Subject();
+	private readonly hubWorker = new Worker(new URL('./secret-message-delivery-notification-hub.worker', import.meta.url));
 
-	readonly receivedDeliveryNotificationsObservable$ = this.receivedDeliveryNotifications$.asObservable();
+	private readonly _hubConnectionId = signal<string | null>(null);
+	private readonly _deliveredMessageIds = signal<readonly string[]>([]);
 
-	constructor(
-		@Inject('API_URL') apiUrl: string,
-		@Inject('CLIENT_ID') clientId: string,
-		private modalService: ModalService)
-	{
-		this.hubWorker = new Worker(new URL('./secret-message-delivery-notification-hub.worker', import.meta.url));
+	readonly deliveredMessageIds = this._deliveredMessageIds.asReadonly();
 
+	constructor() {
 		this.hubWorker.onmessage = ({ data }) => {
 			switch (data.action) {
 				case 'CONNECTION_ID':
-					this._hubConnectionId = data.connectionId;
+					this._hubConnectionId.set(data.connectionId);
 					break;
 				case 'NOTIFICATION':
 					this.handleIncomingNotification(data.secretMessageDeliveryNotification);
 					break;
 				case 'ERROR':
-					alert('SignalR\r\n' + data.error);
+					this.toastService.error(String(data.error), 'SignalR');
 					break;
 				default:
 					throw Error('Unknown action');
 			}
 		};
 
-		this.hubWorker.postMessage({ action: 'INIT_START', apiUrl, clientId });
-		this.addVisibilityChangeEventListener();
+		this.hubWorker.postMessage({ action: 'INIT_START', apiUrl: this.apiUrl, clientId: this.clientId });
+		document.addEventListener('visibilitychange', this.handleVisibilityChange);
+
+		this.destroyRef.onDestroy(() => {
+			document.removeEventListener('visibilitychange', this.handleVisibilityChange);
+			this.hubWorker.terminate();
+		});
 	}
 
-	get hubConnectionId(): string | null {
-		return this._hubConnectionId;
-	}
-
-	private addVisibilityChangeEventListener() {
-		const handleVisibilityChange = () => {
-			if (document.visibilityState === "visible" && !this._hubConnectionId) {
-				this.hubWorker.postMessage({ action: 'START' });
-			}
+	private readonly handleVisibilityChange = () => {
+		if (document.visibilityState === 'visible' && !this._hubConnectionId()) {
+			this.hubWorker.postMessage({ action: 'START' });
 		}
+	};
 
-		document.addEventListener("visibilitychange", handleVisibilityChange, false);
-	}
-
-	private handleIncomingNotification(secretMessageDeliveryNotification: SecretMessageDeliveryNotification) {
-		this.receivedDeliveryNotifications$.next(secretMessageDeliveryNotification.messageId);
+	private handleIncomingNotification(secretMessageDeliveryNotification: SecretMessageDeliveryNotification): void {
+		this._deliveredMessageIds.update(ids => [...ids, secretMessageDeliveryNotification.messageId]);
 
 		this.modalService.openModal(
 			MessageDeliveryDetailsModalComponent,

@@ -1,38 +1,42 @@
-import { ActivatedRouteSnapshot, Router, RouterStateSnapshot } from '@angular/router';
-import { GetSecretMessageRouteGuard } from './get-secret-message-route-guard';
-import { RouterHelperService } from '../services/router-helper.service';
+import { TestBed } from '@angular/core/testing';
+import { ActivatedRouteSnapshot, Router, RouterStateSnapshot, UrlTree } from '@angular/router';
 
-describe('GetSecretMessageRouteGuard', () => {
+import { getSecretMessageRouteGuard } from './get-secret-message-route-guard';
+
+describe('getSecretMessageRouteGuard', () => {
 	let router: jasmine.SpyObj<Router>;
-	let guard: GetSecretMessageRouteGuard;
+	const routerState = {} as RouterStateSnapshot;
 
 	beforeEach(() => {
-		router = jasmine.createSpyObj<Router>('Router', ['navigate']);
-		guard = new GetSecretMessageRouteGuard(router, {} as RouterHelperService);
+		router = jasmine.createSpyObj<Router>('Router', ['createUrlTree']);
+		router.createUrlTree.and.returnValue({} as UrlTree);
+
+		TestBed.configureTestingModule({
+			providers: [{ provide: Router, useValue: router }]
+		});
 	});
 
+	function runGuard(route: Partial<ActivatedRouteSnapshot>) {
+		return TestBed.runInInjectionContext(() =>
+			getSecretMessageRouteGuard(route as ActivatedRouteSnapshot, routerState));
+	}
+
 	it('allows a URL that has an id and an encryption key', () => {
-		const result = guard.canActivate(
-			{ queryParams: { id: 'message-id' }, fragment: 'encryption-key' } as unknown as ActivatedRouteSnapshot,
-			{} as unknown as RouterStateSnapshot);
+		const result = runGuard({ queryParams: { id: 'message-id' }, fragment: 'encryption-key' });
 
 		expect(result).toBeTrue();
 	});
 
 	it('allows a URL that has an id but no encryption key, so a used link can show the missing-message state', () => {
-		const result = guard.canActivate(
-			{ queryParams: { id: 'message-id' }, fragment: null } as unknown as ActivatedRouteSnapshot,
-			{} as unknown as RouterStateSnapshot);
+		const result = runGuard({ queryParams: { id: 'message-id' }, fragment: null });
 
 		expect(result).toBeTrue();
 	});
 
 	it('redirects to the home page when the id is missing', () => {
-		const result = guard.canActivate(
-			{ queryParams: {}, fragment: 'encryption-key' } as unknown as ActivatedRouteSnapshot,
-			{} as unknown as RouterStateSnapshot);
+		const result = runGuard({ queryParams: {}, fragment: 'encryption-key' });
 
-		expect(result).toBeFalse();
-		expect(router.navigate).toHaveBeenCalledWith(['/']);
+		expect(result).not.toBeTrue();
+		expect(router.createUrlTree).toHaveBeenCalledWith(['/']);
 	});
 });

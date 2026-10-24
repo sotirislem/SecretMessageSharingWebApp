@@ -1,20 +1,42 @@
 ﻿import { Route } from '@angular/router';
+
 import { Routes as RouteConstants } from '../constants';
-import { HomeComponent } from './components/home/home.component';
-import { CreateSecretMessageComponent } from './components/create-secret-message/create-secret-message.component';
-import { NewSecretMessageComponent } from './components/new-secret-message/new-secret-message.component';
-import { GetSecretMessageComponent } from './components/get-secret-message/get-secret-message.component';
-import { RecentlyStoredMessagesComponent } from './components/recent-stored-messages/recently-stored-messages.component';
-import { AppInfoComponent } from './components/app-info/app-info.component';
-import { NewSecretMessageRouteGuard } from './guards/new-secret-message-route-guard';
-import { GetSecretMessageRouteGuard } from './guards/get-secret-message-route-guard';
+import { getSecretMessageRouteGuard } from './guards/get-secret-message-route-guard';
+import { newSecretMessageRouteGuard } from './guards/new-secret-message-route-guard';
 
 export const AppRoutes: Route[] = [
-	{ path: '', component: HomeComponent, pathMatch: 'full' },
-	{ path: RouteConstants.CreateSecretMessage, component: CreateSecretMessageComponent },
-	{ path: RouteConstants.NewSecretMessage, component: NewSecretMessageComponent, canActivate: [NewSecretMessageRouteGuard] },
-	{ path: RouteConstants.GetSecretMessage, component: GetSecretMessageComponent, canActivate: [GetSecretMessageRouteGuard] },
-	{ path: RouteConstants.RecentlyStoredMessages, component: RecentlyStoredMessagesComponent },
-	{ path: RouteConstants.AppInfo, component: AppInfoComponent },
+	{
+		path: '',
+		pathMatch: 'full',
+		title: 'Share Secrets Securely',
+		loadComponent: () => import('./components/home/home.component').then(m => m.HomeComponent)
+	},
+	{
+		path: RouteConstants.CreateSecretMessage,
+		title: 'Create a Message',
+		loadComponent: () => import('./components/create-secret-message/create-secret-message.component').then(m => m.CreateSecretMessageComponent)
+	},
+	{
+		path: RouteConstants.NewSecretMessage,
+		title: 'New Message',
+		canActivate: [newSecretMessageRouteGuard],
+		loadComponent: () => import('./components/new-secret-message/new-secret-message.component').then(m => m.NewSecretMessageComponent)
+	},
+	{
+		path: RouteConstants.GetSecretMessage,
+		title: 'Secret Message',
+		canActivate: [getSecretMessageRouteGuard],
+		loadComponent: () => import('./components/get-secret-message/get-secret-message.component').then(m => m.GetSecretMessageComponent)
+	},
+	{
+		path: RouteConstants.RecentlyStoredMessages,
+		title: 'Recently stored Messages',
+		loadComponent: () => import('./components/recent-stored-messages/recently-stored-messages.component').then(m => m.RecentlyStoredMessagesComponent)
+	},
+	{
+		path: RouteConstants.AppInfo,
+		title: 'App Info',
+		loadComponent: () => import('./components/app-info/app-info.component').then(m => m.AppInfoComponent)
+	},
 	{ path: '**', redirectTo: '' }
 ];

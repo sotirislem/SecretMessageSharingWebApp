@@ -1,17 +1,17 @@
 <div class="modal-header bg-dark bg-gradient text-light">
 	<h5 id="modal-basic-title" class="modal-title">
-		Message delivery {{isNotification ? 'notification' : 'details'}}
+		Message delivery {{data.isNotification ? 'notification' : 'details'}}
 	</h5>
 	<button type="button" aria-label="Close" class="btn-close btn btn-dark bg-light" (click)="dismiss()"></button>
 </div>
 
 <div class="modal-body">
 	<p class="text-center">
-		Message Id: <span class="font-weight-500">{{messageDeliveryDetails.messageId}}</span>
+		Message Id: <span class="font-weight-500">{{data.messageDeliveryDetails.messageId}}</span>
 	</p>
 	<hr />
 	<p>
-		@if (isNotification) {
+		@if (data.isNotification) {
 			Your message has been delivered to a recipient, please find more details below:
 		}
 	</p>
@@ -20,19 +20,19 @@
 		<tbody>
 			<tr>
 				<th>Message created on</th>
-				<td>{{messageDeliveryDetails.messageCreatedOn | dateTimeFull}}</td>
+				<td>{{data.messageDeliveryDetails.messageCreatedOn | dateTimeFull}}</td>
 			</tr>
 			<tr>
 				<th>Message delivered on</th>
-				<td>{{messageDeliveryDetails.messageDeliveredOn | dateTimeFull}}</td>
+				<td>{{data.messageDeliveryDetails.messageDeliveredOn | dateTimeFull}}</td>
 			</tr>
 			<tr>
 				<th>Recipient's IP</th>
-				<td>{{messageDeliveryDetails.recipientIP}}</td>
+				<td>{{data.messageDeliveryDetails.recipientIP}}</td>
 			</tr>
 			<tr>
 				<th>Recipient's Device</th>
-				<td>{{messageDeliveryDetails.recipientClientInfo}}</td>
+				<td>{{data.messageDeliveryDetails.recipientClientInfo}}</td>
 			</tr>
 		</tbody>
 	</table>

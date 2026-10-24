@@ -1,6 +1,6 @@
 export abstract class Constants {
 	static readonly ATTACHMENT_FILESIZE_MAX_MB = 1.2;
-	static readonly AUTOCLEAR_INTERVAL_MINUTES = 5;
+	static readonly AUTOCLEAR_INTERVAL_MINUTES = 0.1;
 	static readonly OTP_EXPIRATION_MINUTES = 3;
 }
 

@@ -1,13 +1,12 @@
-import { HttpEvent, HttpHandlerFn, HttpRequest } from '@angular/common/http';
+import { HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
-import { Observable } from 'rxjs';
 
-export function httpHeadersInterceptor(req: HttpRequest<any>, next: HttpHandlerFn): Observable<HttpEvent<any>> {
-	const clientId = inject<string>('CLIENT_ID' as any);
+import { CLIENT_ID } from '../tokens';
 
-	req = req.clone({
-		headers: req.headers.set('Client-Id', clientId)
-	});
+export const httpHeadersInterceptor: HttpInterceptorFn = (req, next) => {
+	const clientId = inject(CLIENT_ID);
 
-	return next(req);
-}
+	return next(req.clone({
+		setHeaders: { 'Client-Id': clientId }
+	}));
+};

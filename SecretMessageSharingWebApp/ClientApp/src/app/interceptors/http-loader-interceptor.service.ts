@@ -1,10 +1,10 @@
-import { HttpEvent, HttpHandlerFn, HttpRequest } from '@angular/common/http';
+import { HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
-import { Observable } from 'rxjs';
-import { finalize } from 'rxjs/operators';
+import { finalize } from 'rxjs';
+
 import { LoaderService } from '../services/loader.service';
 
-export function httpLoaderInterceptor(req: HttpRequest<any>, next: HttpHandlerFn): Observable<HttpEvent<any>> {
+export const httpLoaderInterceptor: HttpInterceptorFn = (req, next) => {
 	const loaderService = inject(LoaderService);
 
 	// Skip loader for specific requests if needed (e.g. SignalR, background sync)
@@ -15,8 +15,6 @@ export function httpLoaderInterceptor(req: HttpRequest<any>, next: HttpHandlerFn
 	loaderService.enableLoading();
 
 	return next(req).pipe(
-		finalize(() => {
-			loaderService.disableLoading();
-		})
+		finalize(() => loaderService.disableLoading())
 	);
-}
+};

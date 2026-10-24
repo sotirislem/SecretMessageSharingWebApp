@@ -1,16 +1,13 @@
-import { Component } from '@angular/core';
-import { RouterModule } from '@angular/router';
+import { ChangeDetectionStrategy, Component } from '@angular/core';
+
 import { CreateSecretMessageComponent } from '../create-secret-message/create-secret-message.component';
-import { Routes } from '../../../constants';
+
 @Component({
 	selector: 'app-home',
 	templateUrl: './home.component.html',
-	styleUrls: ['./home.component.css'],
-	standalone: true,
-	imports: [RouterModule, CreateSecretMessageComponent]
+	styleUrl: './home.component.css',
+	changeDetection: ChangeDetectionStrategy.OnPush,
+	imports: [CreateSecretMessageComponent]
 })
 export class HomeComponent {
-	readonly Routes = Routes;
-
-	constructor() { }
 }

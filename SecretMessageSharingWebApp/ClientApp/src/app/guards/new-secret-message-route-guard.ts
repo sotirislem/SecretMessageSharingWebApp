@@ -1,28 +1,11 @@
-import { Injectable } from '@angular/core';
-import { ActivatedRouteSnapshot, CanActivate, Router, RouterStateSnapshot, UrlTree } from '@angular/router';
-import { Observable } from 'rxjs';
+import { inject } from '@angular/core';
+import { CanActivateFn, Router } from '@angular/router';
+
 import { Routes } from '../../constants';
 import { NewSecretMessageStateService } from '../services/new-secret-message-state.service';
 
-@Injectable({
-	providedIn: 'root'
-})
-export class NewSecretMessageRouteGuard implements CanActivate {
+export const newSecretMessageRouteGuard: CanActivateFn = () => {
+	const hasInMemoryState = inject(NewSecretMessageStateService).get() !== null;
 
-	constructor(
-		private router: Router,
-		private newSecretMessageStateService: NewSecretMessageStateService
-	) { }
-
-	canActivate(
-		route: ActivatedRouteSnapshot,
-		state: RouterStateSnapshot
-	): Observable<boolean | UrlTree> | Promise<boolean | UrlTree> | boolean | UrlTree {
-		if (this.newSecretMessageStateService.get()) {
-			return true;
-		}
-
-		this.router.navigate([Routes.Root]);
-		return false;
-	}
-}
+	return hasInMemoryState ? true : inject(Router).createUrlTree([Routes.Root]);
+};

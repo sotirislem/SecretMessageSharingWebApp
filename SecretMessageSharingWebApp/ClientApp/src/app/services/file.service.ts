@@ -1,13 +1,9 @@
 import { Injectable } from '@angular/core';
-import * as FileSaver from 'file-saver';
 
 @Injectable({
 	providedIn: 'root'
 })
 export class FileService {
-
-	constructor() { }
-
 	readFileAsBase64Blob(file: File): Promise<string> {
 		return new Promise<string>((resolve, reject) => {
 			const fileReader = new FileReader();
@@ -19,10 +15,14 @@ export class FileService {
 			fileReader.onerror = reject;
 
 			fileReader.readAsDataURL(file);
-		})
+		});
 	}
 
-	saveBase64BlobAsFile(base64Blob: string, saveFileName: string) {
-		FileSaver.saveAs(base64Blob, saveFileName);
+	saveBase64BlobAsFile(base64Blob: string, saveFileName: string): void {
+		const link = document.createElement('a');
+		link.href = base64Blob;
+		link.download = saveFileName;
+		link.rel = 'noopener';
+		link.click();
 	}
 }

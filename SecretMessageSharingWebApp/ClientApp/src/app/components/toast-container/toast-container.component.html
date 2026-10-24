@@ -1,0 +1,24 @@
+<div class="toast-stack" aria-live="polite" aria-atomic="true">
+	@for (toast of toastService.toasts(); track toast.id) {
+		<div class="toast-item alert shadow-sm"
+			 [class.alert-success]="toast.type === 'success'"
+			 [class.alert-danger]="toast.type === 'error'"
+			 [class.alert-warning]="toast.type === 'warning'"
+			 [class.alert-info]="toast.type === 'info'"
+			 role="alert">
+			@if (toast.title) {
+				<div class="toast-title">{{ toast.title }}</div>
+			}
+			<div class="toast-message">{{ toast.message }}</div>
+
+			@if (toast.closeButton) {
+				<button type="button" class="btn-close toast-close" aria-label="Close"
+						(click)="toastService.dismiss(toast.id)"></button>
+			}
+
+			@if (toast.timeOut > 0) {
+				<div class="toast-progress" [style.animation-duration.ms]="toast.timeOut"></div>
+			}
+		</div>
+	}
+</div>

@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, signal } from '@angular/core';
 
 import { SecretMessage } from '../models/secret-message.model';
 
@@ -19,17 +19,17 @@ export interface NewSecretMessageState {
 	providedIn: 'root'
 })
 export class NewSecretMessageStateService {
-	private state: NewSecretMessageState | null = null;
+	private readonly _state = signal<NewSecretMessageState | null>(null);
 
 	set(state: NewSecretMessageState): void {
-		this.state = state;
+		this._state.set(state);
 	}
 
 	get(): NewSecretMessageState | null {
-		return this.state;
+		return this._state();
 	}
 
 	clear(): void {
-		this.state = null;
+		this._state.set(null);
 	}
 }

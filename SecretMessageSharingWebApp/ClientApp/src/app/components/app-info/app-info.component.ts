@@ -1,15 +1,12 @@
-import { Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component } from '@angular/core';
 
 import { NgbAccordionModule } from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
 	templateUrl: './app-info.component.html',
-	styleUrls: ['./app-info.component.css'],
-	standalone: true,
+	styleUrl: './app-info.component.css',
+	changeDetection: ChangeDetectionStrategy.OnPush,
 	imports: [NgbAccordionModule]
 })
 export class AppInfoComponent {
-
-	constructor() { }
-
 }

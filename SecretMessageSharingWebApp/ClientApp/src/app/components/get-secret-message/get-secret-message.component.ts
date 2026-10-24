@@ -1,22 +1,19 @@
-import { ChangeDetectorRef, Component, DestroyRef, OnDestroy, TemplateRef, ViewChild } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { NgClass } from '@angular/common';
-import { RouterModule } from '@angular/router';
-import { IndividualConfig, ToastrService } from 'ngx-toastr';
+import { ChangeDetectionStrategy, Component, DestroyRef, inject, signal, TemplateRef, viewChild } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
-import { NgbModalOptions, NgbModule } from '@ng-bootstrap/ng-bootstrap';
-import { Clipboard, ClipboardModule } from '@angular/cdk/clipboard';
+import { Clipboard } from '@angular/cdk/clipboard';
+import { NgbModalOptions, NgbTooltip } from '@ng-bootstrap/ng-bootstrap';
+import { firstValueFrom } from 'rxjs';
 
 import { GetSecretMessageResponse } from '../../models/api/get-secret-message-response.model';
 import { DecryptionResult, DecryptionStatus } from '../../models/decryption-result.model';
-import { VerifySecretMessageResponse } from '../../models/api/verify-secret-message-response.model';
+import { SecretMessage } from '../../models/secret-message.model';
 
 import { ApiClientService } from '../../services/api-client.service';
 import { CryptoService } from '../../services/crypto.service';
 import { FileService } from '../../services/file.service';
 import { ModalService } from '../../services/modal.service';
-import { OtpInputModalComponent } from '../modals/otp-input-modal/otp-input-modal.component';
-import { RouterHelperService } from '../../services/router-helper.service';
+import { ToastService } from '../../services/toast.service';
+import { OtpInputModalComponent, OtpInputModalData } from '../modals/otp-input-modal/otp-input-modal.component';
 
 enum ComponentState {
 	LoadingMessage,
@@ -27,230 +24,236 @@ enum ComponentState {
 	Error
 }
 
+const EMPTY_SECRET_MESSAGE: SecretMessage = {
+	plainText: '',
+	containsFile: false,
+	fileName: '',
+	base64BlobFile: '',
+	containsUsernameAndPassword: false,
+	username: '',
+	password: ''
+};
+
 @Component({
 	templateUrl: './get-secret-message.component.html',
-	styleUrls: ['./get-secret-message.component.css'],
-	standalone: true,
-	imports: [NgClass, RouterModule, NgbModule, ClipboardModule]
+	styleUrl: './get-secret-message.component.css',
+	changeDetection: ChangeDetectionStrategy.OnPush,
+	imports: [NgbTooltip]
 })
-export class GetSecretMessageComponent implements OnDestroy {
-	@ViewChild('getSecretMessageConfirmationModalBody') getSecretMessageConfirmationModalBody: TemplateRef<any>;
+export class GetSecretMessageComponent {
+	private readonly route = inject(ActivatedRoute);
+	private readonly apiClientService = inject(ApiClientService);
+	private readonly cryptoService = inject(CryptoService);
+	private readonly toastService = inject(ToastService);
+	private readonly fileService = inject(FileService);
+	private readonly clipboard = inject(Clipboard);
+	private readonly modalService = inject(ModalService);
+	private readonly destroyRef = inject(DestroyRef);
+
+	private readonly confirmationModalBody = viewChild.required<TemplateRef<unknown>>('getSecretMessageConfirmationModalBody');
+
+	// The fragment is only removed from the address bar after a successful
+	// retrieval, so it is still available when the user retries.
+	private readonly encryptionKey = this.route.snapshot.fragment ?? '';
 
 	readonly ComponentState = ComponentState;
 	readonly DecryptionStatus = DecryptionStatus;
 
-	componentState: ComponentState;
-
-	messageId: string;
-	decryptionResult: DecryptionResult;
-	msgAutoClearTimeoutTriggered: boolean;
-	secretMessageTextAsHtml: string;
+	readonly componentState = signal(ComponentState.LoadingMessage);
+	readonly messageId = signal('');
+	readonly decryptionResult = signal<DecryptionResult | null>(null);
+	readonly msgAutoClearTimeoutTriggered = signal(false);
+	readonly secretMessageTextAsHtml = signal('');
 
 	private autoClearWorker: Worker | null = null;
 
-	constructor(
-		route: ActivatedRoute,
-		private routerHelperService: RouterHelperService,
-		private apiClientService: ApiClientService,
-		private cryptoService: CryptoService,
-		private toastrService: ToastrService,
-		private fileService: FileService,
-		private clipboard: Clipboard,
-		private modalService: ModalService,
-		private cdr: ChangeDetectorRef,
-		private destroyRef: DestroyRef
-	) {
-		this.messageId = route.snapshot.queryParams.id;
-		const encryptionKey = route.snapshot.fragment ?? '';
+	constructor() {
+		this.messageId.set(this.route.snapshot.queryParams['id'] ?? '');
 
-		this.componentState = ComponentState.LoadingMessage;
+		void this.verifyMessage();
 
-		apiClientService.verifySecretMessage(this.messageId)
-			.pipe(takeUntilDestroyed(this.destroyRef))
-			.subscribe((response: VerifySecretMessageResponse) => {
-				if (!response.exists) {
-					this.removeEncryptionKeyFromAddressBar();
-					this.componentState = ComponentState.ReadyNoMessage;
-					this.cdr.detectChanges();
-					return;
-				}
+		this.destroyRef.onDestroy(() => {
+			this.autoClearWorker?.terminate();
+			this.autoClearWorker = null;
 
-				// The route guard allows an id without a fragment so that an already-used
-				// link can still show the "no message found" state. An existing message
-				// without its key cannot be retrieved, so explain why instead of opening
-				// a confirmation modal that could only fail.
-				if (!encryptionKey) {
-					this.componentState = ComponentState.MissingEncryptionKey;
-					this.cdr.detectChanges();
-					return;
-				}
-
-				this.tryGetSecretMessage(encryptionKey, response.requiresOtp!);
-			}, (error) => {
-				this.componentState = ComponentState.Error;
-				this.cdr.detectChanges();
-			});
+			// Do not leave plaintext or key material reachable through the destroyed component.
+			this.decryptionResult.set(null);
+			this.secretMessageTextAsHtml.set('');
+		});
 	}
 
-	ngOnDestroy(): void {
-		this.autoClearWorker?.terminate();
-		this.autoClearWorker = null;
-
-		// Do not leave plaintext or key material reachable through the destroyed component.
-		this.decryptionResult = null!;
-		this.secretMessageTextAsHtml = '';
-	}
-
-	reload() {
-		this.routerHelperService.reloadCurrentPage();
+	/**
+	 * Retries the retrieval without reloading the route. The route guard has
+	 * already accepted this URL and the encryption key is still in the fragment,
+	 * so only the verification/confirmation flow has to run again.
+	 */
+	retry(): void {
+		this.componentState.set(ComponentState.LoadingMessage);
+		void this.verifyMessage();
 	}
 
 	downloadAttachment(): void {
-		if (this.decryptionResult.decryptedMsg.containsFile) {
-			const base64Blob = this.decryptionResult.decryptedMsg.base64BlobFile;
-			const saveFileName = this.decryptionResult.decryptedMsg.fileName;
+		const decryptedMsg = this.decryptionResult()?.decryptedMsg;
+		if (!decryptedMsg?.containsFile) return;
 
-			if (!base64Blob || !saveFileName) return;
+		const base64Blob = decryptedMsg.base64BlobFile;
+		const saveFileName = decryptedMsg.fileName;
 
-			this.fileService.saveBase64BlobAsFile(base64Blob, saveFileName);
+		if (!base64Blob || !saveFileName) return;
+
+		this.fileService.saveBase64BlobAsFile(base64Blob, saveFileName);
+	}
+
+	copyUsernameToClipboard(): void {
+		if (this.msgAutoClearTimeoutTriggered()) return;
+
+		const username = this.decryptionResult()?.decryptedMsg.username;
+		if (username) {
+			this.clipboard.copy(username);
 		}
 	}
 
-	copyUsernameToClipboard() {
-		if (this.msgAutoClearTimeoutTriggered) return;
+	copyPasswordToClipboard(): void {
+		if (this.msgAutoClearTimeoutTriggered()) return;
 
-		this.clipboard.copy(this.decryptionResult.decryptedMsg.username);
+		const password = this.decryptionResult()?.decryptedMsg.password;
+		if (password) {
+			this.clipboard.copy(password);
+		}
 	}
 
-	copyPasswordToClipboard() {
-		if (this.msgAutoClearTimeoutTriggered) return;
+	copyMessageContentToClipboard(): void {
+		if (this.msgAutoClearTimeoutTriggered()) return;
 
-		this.clipboard.copy(this.decryptionResult.decryptedMsg.password);
-	}
+		const decryptedMsg = this.decryptionResult()?.decryptedMsg;
+		if (!decryptedMsg) return;
 
-	copyMessageContentToClipboard() {
-		if (this.msgAutoClearTimeoutTriggered) return;
-
-		let msgContent = this.decryptionResult.decryptedMsg.plainText;
-		if (this.decryptionResult.decryptedMsg.containsUsernameAndPassword) {
-			msgContent += `\r\nUsername: ${this.decryptionResult.decryptedMsg.username}`;
-			msgContent += `\r\nPassword: ${this.decryptionResult.decryptedMsg.password}`;
+		let msgContent = decryptedMsg.plainText;
+		if (decryptedMsg.containsUsernameAndPassword) {
+			msgContent += `\r\nUsername: ${decryptedMsg.username}`;
+			msgContent += `\r\nPassword: ${decryptedMsg.password}`;
 		}
 
 		this.clipboard.copy(msgContent);
 	}
 
-	private tryGetSecretMessage(encryptionKey: string, requiresOtp: boolean) {
-		this.modalService.openConfirmationModal(
-			this.getSecretMessageConfirmationModalBody,
-			'Message Retrieve Confirmation'
-		).then((confirm) => {
-			if (!confirm) {
-				this.componentState = ComponentState.Aborted;
-				this.cdr.detectChanges();
+	private async verifyMessage(): Promise<void> {
+		try {
+			const response = await firstValueFrom(this.apiClientService.verifySecretMessage(this.messageId()));
+
+			if (!response.exists) {
+				this.removeEncryptionKeyFromAddressBar();
+				this.componentState.set(ComponentState.ReadyNoMessage);
+				return;
+			}
+
+			// The route guard allows an id without a fragment so that an already-used
+			// link can still show the "no message found" state. An existing message
+			// without its key cannot be retrieved, so explain why instead of opening
+			// a confirmation modal that could only fail.
+			if (!this.encryptionKey) {
+				this.componentState.set(ComponentState.MissingEncryptionKey);
+				return;
+			}
+
+			await this.tryGetSecretMessage(response.requiresOtp ?? false);
+		} catch {
+			if (!this.destroyRef.destroyed) {
+				this.componentState.set(ComponentState.Error);
+			}
+		}
+	}
+
+	private async tryGetSecretMessage(requiresOtp: boolean): Promise<void> {
+		try {
+			const confirmed = await this.modalService.openConfirmationModal(
+				this.confirmationModalBody(),
+				'Message Retrieve Confirmation');
+
+			if (this.destroyRef.destroyed) return;
+
+			if (!confirmed) {
+				this.componentState.set(ComponentState.Aborted);
 				return;
 			}
 
 			if (requiresOtp) {
-				this.openOtpInputModal(encryptionKey);
+				const authToken = await this.modalService.openModal<string, OtpInputModalData>(
+					OtpInputModalComponent,
+					{ messageId: this.messageId() },
+					<NgbModalOptions>{ centered: true, backdrop: 'static' });
+
+				if (this.destroyRef.destroyed) return;
+
+				if (!authToken) {
+					this.componentState.set(ComponentState.Aborted);
+					return;
+				}
+
+				await this.getSecretMessage(authToken);
 			} else {
-				this.getSecretMessage(encryptionKey);
+				await this.getSecretMessage();
 			}
-		}).catch(() => {
-			this.componentState = ComponentState.Aborted;
-			this.cdr.detectChanges();
-		});
+		} catch {
+			if (!this.destroyRef.destroyed) {
+				this.componentState.set(ComponentState.Aborted);
+			}
+		}
 	}
 
-	private openOtpInputModal(encryptionKey: string) {
-		this.modalService.openModal<string>(
-			OtpInputModalComponent,
-			{ messageId: this.messageId },
-			<NgbModalOptions>{ centered: true, backdrop: 'static' }
-		).then((authToken?: string) => {
-			if (authToken) {
-				this.getSecretMessage(encryptionKey, authToken);
-			} else {
-				this.componentState = ComponentState.Aborted;
-				this.cdr.detectChanges();
-			}
-		}).catch(() => {
-			this.componentState = ComponentState.Aborted;
-			this.cdr.detectChanges();
-		});
-	}
-
-	private async getSecretMessage(encryptionKey: string, authToken?: string) {
+	private async getSecretMessage(authToken?: string): Promise<void> {
 		try {
-			const encryptionKeySha256 = await this.cryptoService.getSha256(encryptionKey);
+			const encryptionKeySha256 = await this.cryptoService.getSha256(this.encryptionKey);
 
 			// The user may have navigated away while the OTP modal or hashing was pending.
 			// Do not consume the one-time message after the component is gone.
 			if (this.destroyRef.destroyed) return;
 
-			this.apiClientService.getSecretMessage(this.messageId, encryptionKeySha256, authToken)
-				.pipe(takeUntilDestroyed(this.destroyRef))
-				.subscribe({
-					next: async (response: GetSecretMessageResponse) => {
-						// The server deletes the message before returning it, so the key
-						// in the fragment is no longer useful and should not stay in history.
-						this.removeEncryptionKeyFromAddressBar();
+			const response: GetSecretMessageResponse = await firstValueFrom(
+				this.apiClientService.getSecretMessage(this.messageId(), encryptionKeySha256, authToken));
 
-						const decryptionResult = await this.cryptoService.decryptMessage(response.data, encryptionKey);
+			// The server deletes the message before returning it, so the key
+			// in the fragment is no longer useful and should not stay in history.
+			this.removeEncryptionKeyFromAddressBar();
 
-						// Decryption is asynchronous; the user may have navigated away meanwhile.
-						// Touching the destroyed view or starting a worker would leak/throw.
-						if (this.destroyRef.destroyed) return;
+			const decryptionResult = await this.cryptoService.decryptMessage(response.data, this.encryptionKey);
 
-						this.componentState = ComponentState.ReadyWithMessage;
-						this.decryptionResult = decryptionResult;
+			// Decryption is asynchronous; the user may have navigated away meanwhile.
+			// Touching the destroyed view or starting a worker would leak/throw.
+			if (this.destroyRef.destroyed) return;
 
-						if (this.decryptionResult.status === DecryptionStatus.OK) {
-							this.convertDecryptedMsgPlainTextToHtml();
-							this.setDecryptedMsgAutoclearTimeout();
-						}
+			this.componentState.set(ComponentState.ReadyWithMessage);
+			this.decryptionResult.set(decryptionResult);
 
-						this.displayDeliveryNotificationSentToast(response.deliveryNotificationSent);
-						this.cdr.detectChanges();
-					},
-					error: () => {
-						this.componentState = ComponentState.Error;
-						this.cdr.detectChanges();
-					}
-				});
+			if (decryptionResult.status === DecryptionStatus.OK) {
+				this.secretMessageTextAsHtml.set(decryptionResult.decryptedMsg.plainText.linkify());
+				this.setDecryptedMsgAutoclearTimeout();
+			}
+
+			this.displayDeliveryNotificationSentToast(response.deliveryNotificationSent);
 		} catch {
-			this.componentState = ComponentState.Error;
-			this.cdr.detectChanges();
+			if (!this.destroyRef.destroyed) {
+				this.componentState.set(ComponentState.Error);
+			}
 		}
 	}
 
-	private convertDecryptedMsgPlainTextToHtml(): void {
-		this.secretMessageTextAsHtml = this.decryptionResult.decryptedMsg.plainText.linkify();
-	}
-
-	private setDecryptedMsgAutoclearTimeout() {
+	private setDecryptedMsgAutoclearTimeout(): void {
 		this.autoClearWorker?.terminate();
 		this.autoClearWorker = new Worker(new URL('../../workers/auto-clear-timeout.worker', import.meta.url));
 
 		this.autoClearWorker.onmessage = ({ data }) => {
-			if (data.clear) {
-				this.msgAutoClearTimeoutTriggered = true;
+			if (!data.clear) return;
 
-				this.decryptionResult.decryptedMsg = {
-					plainText: '',
-					containsFile: false,
-					fileName: '',
-					base64BlobFile: '',
-					containsUsernameAndPassword: false,
-					username: '',
-					password: ''
-				};
-				this.secretMessageTextAsHtml = '--- Message auto deleted ---';
-				this.cdr.detectChanges();
+			this.msgAutoClearTimeoutTriggered.set(true);
 
-				this.autoClearWorker?.terminate();
-				this.autoClearWorker = null;
-			}
+			this.decryptionResult.update(result => result
+				? { ...result, decryptedMsg: { ...EMPTY_SECRET_MESSAGE } }
+				: result);
+			this.secretMessageTextAsHtml.set('--- Message auto deleted ---');
+
+			this.autoClearWorker?.terminate();
+			this.autoClearWorker = null;
 		};
 	}
 
@@ -262,16 +265,11 @@ export class GetSecretMessageComponent implements OnDestroy {
 		window.history.replaceState(window.history.state, '', urlWithoutFragment);
 	}
 
-	private displayDeliveryNotificationSentToast(deliveryNotificationSent: boolean) {
-		const toastConfig = <IndividualConfig>{
-			timeOut: 7_000,
-			positionClass: 'toast-top-center',
-			extendedTimeOut: 0
-		};
-
-		if (deliveryNotificationSent)
-			this.toastrService.success('Delivery notification was sent', '', toastConfig);
-		else
-			this.toastrService.warning('Delivery notification could not be sent', '', toastConfig);
+	private displayDeliveryNotificationSentToast(deliveryNotificationSent: boolean): void {
+		if (deliveryNotificationSent) {
+			this.toastService.success('Delivery notification was sent', '', { timeOut: 7_000 });
+		} else {
+			this.toastService.warning('Delivery notification could not be sent', '', { timeOut: 7_000 });
+		}
 	}
 }

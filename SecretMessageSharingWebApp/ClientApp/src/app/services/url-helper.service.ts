@@ -1,18 +1,24 @@
-import { HttpParams } from '@angular/common/http';
-import { Inject, Injectable } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
+
+import { BASE_URL } from '../tokens';
 
 @Injectable({
 	providedIn: 'root'
 })
 export class UrlHelperService {
+	private readonly baseUrl = inject(BASE_URL);
 
-	constructor(@Inject('BASE_URL') private baseUrl: string) { }
+	createLocalUrlWithParams(routeName: string, params: Record<string, string>, fragment?: string): string {
+		const url = new URL(`${this.baseUrl}/${routeName}`);
 
-	createLocalUrlWithParams(routeName: string, params: { [param: string]: string }, fragment?: string) {
-		let httpParams = new HttpParams();
-		for (let param in params) {
-			httpParams = httpParams.append(param, params[param]);
+		for (const [param, value] of Object.entries(params)) {
+			url.searchParams.set(param, value);
 		}
-		return `${this.baseUrl}/${routeName}?${httpParams}` + (fragment ? `#${fragment}` : '');
+
+		if (fragment) {
+			url.hash = fragment;
+		}
+
+		return url.toString();
 	}
 }

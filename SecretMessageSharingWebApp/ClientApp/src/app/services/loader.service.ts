@@ -1,28 +1,18 @@
-import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable } from 'rxjs';
+import { computed, Injectable, signal } from '@angular/core';
 
 @Injectable({
 	providedIn: 'root'
 })
 export class LoaderService {
-	private loading$ = new BehaviorSubject(false);
-	private pendingRequestsCount = 0;
+	private readonly pendingRequests = signal(0);
 
-	readonly loadingObservable$ = this.loading$.asObservable();
+	readonly loading = computed(() => this.pendingRequests() > 0);
 
-	constructor()
-	{ }
-
-	enableLoading() {
-		this.pendingRequestsCount++;
-		this.loading$.next(true);
+	enableLoading(): void {
+		this.pendingRequests.update(count => count + 1);
 	}
 
-	disableLoading() {
-		this.pendingRequestsCount--;
-		if (this.pendingRequestsCount <= 0) {
-			this.pendingRequestsCount = 0;
-			this.loading$.next(false);
-		}
+	disableLoading(): void {
+		this.pendingRequests.update(count => Math.max(0, count - 1));
 	}
 }

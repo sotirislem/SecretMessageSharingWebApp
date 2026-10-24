@@ -2,8 +2,7 @@ import { formatDate } from '@angular/common';
 import { Pipe, PipeTransform } from '@angular/core';
 
 @Pipe({
-	name: 'dateTimeFull',
-	standalone: true
+	name: 'dateTimeFull'
 })
 export class DateTimeFullPipe implements PipeTransform {
 

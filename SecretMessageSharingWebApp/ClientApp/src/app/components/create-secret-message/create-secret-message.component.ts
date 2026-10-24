@@ -1,80 +1,77 @@
-import { Component } from '@angular/core';
-import { NgClass } from '@angular/common';
-import { FormBuilder, FormControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { RouterModule } from '@angular/router';
-import { ToastrService } from 'ngx-toastr';
+import { HttpErrorResponse } from '@angular/common/http';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { FormControl, NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Router } from '@angular/router';
+import { firstValueFrom } from 'rxjs';
 
 import { CryptoService } from '../../services/crypto.service';
 import { ApiClientService } from '../../services/api-client.service';
 import { FileService } from '../../services/file.service';
 import { NewSecretMessageStateService } from '../../services/new-secret-message-state.service';
+import { ToastService } from '../../services/toast.service';
 
-import { Router } from '@angular/router';
-import { Routes, Constants } from '../../../constants';
-
+import { Constants, Routes } from '../../../constants';
 import { SecretMessage } from '../../models/secret-message.model';
 import { OtpSettings, StoreNewSecretMessageRequest } from '../../models/api/store-new-secret-message-request.model';
-import { finalize } from 'rxjs';
 
 @Component({
 	selector: 'create-secret-message',
 	templateUrl: './create-secret-message.component.html',
-	styleUrls: ['./create-secret-message.component.css'],
-	standalone: true,
-	imports: [NgClass, FormsModule, ReactiveFormsModule, RouterModule]
+	styleUrl: './create-secret-message.component.css',
+	changeDetection: ChangeDetectionStrategy.OnPush,
+	imports: [ReactiveFormsModule]
 })
 export class CreateSecretMessageComponent {
-	formSubmitted: boolean
-	attachedFile: File | null;
+	private readonly formBuilder = inject(NonNullableFormBuilder);
+	private readonly router = inject(Router);
+	private readonly cryptoService = inject(CryptoService);
+	private readonly apiClientService = inject(ApiClientService);
+	private readonly fileService = inject(FileService);
+	private readonly newSecretMessageStateService = inject(NewSecretMessageStateService);
+	private readonly toastService = inject(ToastService);
 
-	newSecretMessageForm: any;
+	readonly formSubmitted = signal(false);
 
-	constructor(
-		private formBuilder: FormBuilder,
-		private router: Router,
-		private cryptoService: CryptoService,
-		private apiClientService: ApiClientService,
-		private fileService: FileService,
-		private newSecretMessageStateService: NewSecretMessageStateService,
-		private toastrService: ToastrService
-	) {
-		this.newSecretMessageForm = this.formBuilder.nonNullable.group({
-			secretMsgPlainTextFormControl: [''],
-			includeUsernameAndPasswordFormControl: [false],
-			usernameFormControl: [{ value: '', disabled: true }],
-			passwordFormControl: [{ value: '', disabled: true }],
-			includeAttachedFileFormControl: [false],
-			attachedFileFormControl: new FormControl({ value: '', disabled: true }),
-			secretMsgRequiresOtpFormControl: [false],
-			secretMsgOtpRecipientsEmailFormControl: [{ value: '', disabled: true }]
-		});
-	}
+	attachedFile: File | null = null;
 
-	get secretMsgPlainTextFormControl() { return this.newSecretMessageForm.controls.secretMsgPlainTextFormControl }
-	get secretMsgPlainText(): string { return this.secretMsgPlainTextFormControl.value }
+	readonly newSecretMessageForm = this.formBuilder.group({
+		secretMsgPlainTextFormControl: ['', Validators.required],
+		includeUsernameAndPasswordFormControl: [false],
+		usernameFormControl: [{ value: '', disabled: true }, Validators.required],
+		passwordFormControl: [{ value: '', disabled: true }, Validators.required],
+		includeAttachedFileFormControl: [false],
+		attachedFileFormControl: new FormControl<string | null>({ value: null, disabled: true }, Validators.required),
+		secretMsgRequiresOtpFormControl: [false],
+		secretMsgOtpRecipientsEmailFormControl: [{ value: '', disabled: true }, [
+			Validators.required,
+			Validators.pattern(/[\w.]+@[a-zA-Z_-]+?(?:\.[a-zA-Z]{2,6})+$/)
+		]]
+	});
 
-	get includeUsernameAndPasswordFormControl() { return this.newSecretMessageForm.controls.includeUsernameAndPasswordFormControl }
-	get includeUsernameAndPassword(): boolean { return this.includeUsernameAndPasswordFormControl.value }
+	get secretMsgPlainTextFormControl() { return this.newSecretMessageForm.controls.secretMsgPlainTextFormControl; }
+	get secretMsgPlainText(): string { return this.secretMsgPlainTextFormControl.value; }
 
-	get usernameFormControl() { return this.newSecretMessageForm.controls.usernameFormControl }
-	get username(): string { return this.usernameFormControl.value }
+	get includeUsernameAndPasswordFormControl() { return this.newSecretMessageForm.controls.includeUsernameAndPasswordFormControl; }
+	get includeUsernameAndPassword(): boolean { return this.includeUsernameAndPasswordFormControl.value; }
 
-	get passwordFormControl() { return this.newSecretMessageForm.controls.passwordFormControl }
-	get password(): string { return this.passwordFormControl.value }
+	get usernameFormControl() { return this.newSecretMessageForm.controls.usernameFormControl; }
+	get username(): string { return this.usernameFormControl.value; }
 
-	get includeAttachedFileFormControl() { return this.newSecretMessageForm.controls.includeAttachedFileFormControl }
-	get includeAttachedFile(): boolean { return this.includeAttachedFileFormControl.value }
+	get passwordFormControl() { return this.newSecretMessageForm.controls.passwordFormControl; }
+	get password(): string { return this.passwordFormControl.value; }
 
-	get attachedFileFormControl() { return this.newSecretMessageForm.controls.attachedFileFormControl }
-	get attachedFileName(): string | null { return this.attachedFileFormControl.value }
+	get includeAttachedFileFormControl() { return this.newSecretMessageForm.controls.includeAttachedFileFormControl; }
+	get includeAttachedFile(): boolean { return this.includeAttachedFileFormControl.value; }
 
-	get secretMsgRequiresOtpFormControl() { return this.newSecretMessageForm.controls.secretMsgRequiresOtpFormControl }
-	get secretMsgRequiresOtp(): boolean { return this.secretMsgRequiresOtpFormControl.value }
+	get attachedFileFormControl() { return this.newSecretMessageForm.controls.attachedFileFormControl; }
 
-	get secretMsgOtpRecipientsEmailFormControl() { return this.newSecretMessageForm.controls.secretMsgOtpRecipientsEmailFormControl }
-	get secretMsgOtpRecipientsEmail(): string { return this.secretMsgOtpRecipientsEmailFormControl.value }
+	get secretMsgRequiresOtpFormControl() { return this.newSecretMessageForm.controls.secretMsgRequiresOtpFormControl; }
+	get secretMsgRequiresOtp(): boolean { return this.secretMsgRequiresOtpFormControl.value; }
 
-	includeUsernameAndPasswordCheckboxToggle() {
+	get secretMsgOtpRecipientsEmailFormControl() { return this.newSecretMessageForm.controls.secretMsgOtpRecipientsEmailFormControl; }
+	get secretMsgOtpRecipientsEmail(): string { return this.secretMsgOtpRecipientsEmailFormControl.value; }
+
+	includeUsernameAndPasswordCheckboxToggle(): void {
 		this.usernameFormControl.setValue('');
 		this.passwordFormControl.setValue('');
 
@@ -87,39 +84,42 @@ export class CreateSecretMessageComponent {
 		}
 	}
 
-	includeAttachedFileCheckboxToggle() {
+	includeAttachedFileCheckboxToggle(): void {
 		this.resetAttachedFile();
 
-		if (this.includeAttachedFile)
+		if (this.includeAttachedFile) {
 			this.attachedFileFormControl.enable();
-		else
+		} else {
 			this.attachedFileFormControl.disable();
+		}
 	}
 
-	secretMsgRequiresOtpCheckboxToggle() {
+	secretMsgRequiresOtpCheckboxToggle(): void {
 		this.secretMsgOtpRecipientsEmailFormControl.setValue('');
 
-		if (this.secretMsgRequiresOtp)
+		if (this.secretMsgRequiresOtp) {
 			this.secretMsgOtpRecipientsEmailFormControl.enable();
-		else
+		} else {
 			this.secretMsgOtpRecipientsEmailFormControl.disable();
+		}
 	}
 
-	submitNewSecretMessageForm() {
+	submitNewSecretMessageForm(): void {
 		if (this.newSecretMessageForm.invalid) return;
 
-		this.formSubmitted = true;
-
+		this.formSubmitted.set(true);
 		this.createSecretMessage();
 	}
 
-	async createSecretMessage() {
+	async createSecretMessage(): Promise<void> {
 		try {
 			const secretMsgObj = <SecretMessage>{
 				plainText: this.secretMsgPlainText.trim(),
 				containsFile: this.includeAttachedFile,
 				fileName: this.attachedFile?.name ?? null,
-				base64BlobFile: this.includeAttachedFile ? await this.fileService.readFileAsBase64Blob(this.attachedFile!) : null,
+				base64BlobFile: this.includeAttachedFile && this.attachedFile
+					? await this.fileService.readFileAsBase64Blob(this.attachedFile)
+					: null,
 				containsUsernameAndPassword: this.includeUsernameAndPassword,
 				username: this.username.trim(),
 				password: this.password.trim()
@@ -136,27 +136,20 @@ export class CreateSecretMessageComponent {
 				encryptionKeySha256: encryptionResult.encryptionKeySha256
 			};
 
-			this.apiClientService.storeSecretMessage(request)
-				.pipe(
-					finalize(() => {
-						this.formSubmitted = false;
-					})
-				)
-				.subscribe(secretMsgId => {
-					this.navigateToNewSecretMessagePage(secretMsgObj, secretMsgId, encryptionResult.encryptionKeyAsBase64Url);
-				});
-		} catch {
-			this.formSubmitted = false;
+			const secretMsgId = await firstValueFrom(this.apiClientService.storeSecretMessage(request));
 
-			this.toastrService.error(
-				'Could not encrypt the message. Please try again.',
-				'',
-				{ positionClass: 'toast-top-center' }
-			);
+			this.navigateToNewSecretMessagePage(secretMsgObj, secretMsgId, encryptionResult.encryptionKeyAsBase64Url);
+		} catch (error) {
+			// HTTP failures have already been reported by httpErrorInterceptor.
+			if (!(error instanceof HttpErrorResponse)) {
+				this.toastService.error('Could not encrypt the message. Please try again.');
+			}
+		} finally {
+			this.formSubmitted.set(false);
 		}
 	}
 
-	onFileSelection(event: Event) {
+	onFileSelection(event: Event): void {
 		const fileInput = event.target as HTMLInputElement;
 
 		if (!fileInput.files?.length) {
@@ -165,10 +158,10 @@ export class CreateSecretMessageComponent {
 		}
 
 		const selectedFile = fileInput.files[0];
-		const selectedFileSize = ((selectedFile.size / 1024) / 1024);
+		const selectedFileSize = (selectedFile.size / 1024) / 1024;
 
 		if (selectedFileSize > Constants.ATTACHMENT_FILESIZE_MAX_MB) {
-			alert(`Selected file size can not exceed ${Constants.ATTACHMENT_FILESIZE_MAX_MB}MB`);
+			this.toastService.warning(`Selected file size can not exceed ${Constants.ATTACHMENT_FILESIZE_MAX_MB}MB`);
 
 			this.resetAttachedFile();
 			return;
@@ -177,12 +170,12 @@ export class CreateSecretMessageComponent {
 		this.attachedFile = selectedFile;
 	}
 
-	private resetAttachedFile() {
+	private resetAttachedFile(): void {
 		this.attachedFileFormControl.setValue(null);
 		this.attachedFile = null;
 	}
 
-	private navigateToNewSecretMessagePage(secretMsgObj: SecretMessage, secretMsgId: string, secretMsgKey: string) {
+	private navigateToNewSecretMessagePage(secretMsgObj: SecretMessage, secretMsgId: string, secretMsgKey: string): void {
 		// Keep the plaintext and key out of history.state. The new-message
 		// component clears this in-memory state when it is destroyed.
 		this.newSecretMessageStateService.set({

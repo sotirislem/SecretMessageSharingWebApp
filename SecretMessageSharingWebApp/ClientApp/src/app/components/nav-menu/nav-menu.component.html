@@ -8,30 +8,30 @@
 
 		<button class="navbar-toggler" type="button"
 				aria-label="Toggle navigation"
-				[attr.aria-expanded]="isExpanded"
-				[ngClass]="{ collapsed: !isExpanded }"
+				[attr.aria-expanded]="isExpanded()"
+				[class.collapsed]="!isExpanded()"
 				(click)="toggle()">
 			<span class="icon-bar"></span>
 			<span class="icon-bar"></span>
 			<span class="icon-bar"></span>
 		</button>
 
-		<div class="navbar-collapse collapse d-lg-inline-flex justify-content-end" [ngClass]="{ 'show': isExpanded }">
+		<div class="navbar-collapse collapse d-lg-inline-flex justify-content-end" [class.show]="isExpanded()">
 			<ul class="navbar-nav flex-grow">
 
-				<li class="nav-item" [routerLinkActive]="['link-active']">
+				<li class="nav-item" routerLinkActive="link-active">
 					<a class="nav-link text-dark" [routerLink]="[Routes.Root + Routes.CreateSecretMessage]">
 						Create a Message
 					</a>
 				</li>
 
-				<li class="nav-item" [routerLinkActive]="['link-active']">
+				<li class="nav-item" routerLinkActive="link-active">
 					<a class="nav-link text-dark" [routerLink]="[Routes.Root + Routes.RecentlyStoredMessages]">
 						Recently stored Messages
 					</a>
 				</li>
 
-				<li class="nav-item" [routerLinkActive]="['link-active']">
+				<li class="nav-item" routerLinkActive="link-active">
 					<a class="nav-link text-dark" [routerLink]="[Routes.Root + Routes.AppInfo]">
 						App Info
 					</a>
