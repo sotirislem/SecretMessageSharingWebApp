@@ -1,156 +1,295 @@
-<h1 class="h5">App Info</h1>
-<p class="my-3">
-	Each message is encrypted/decrypted locally, on browser, by using the AES-256 algorithm in GCM mode.
-	<br />
-	Message can also include a file attachment of any type as long as its size does not exceed ~1.2MB.
-	<br />
-	Remote server is only used to store the encrypted message, so it can be later retrieved by a third person.
-	<br />
-	Sender has the ability to receive a delivery notification on his browser once his message is read by a recipient.
-	<br />
-	The encryption key which is used to encrypt/decrypt a message is locally created on user's browser and never gets exposed to server.
-	<br />
-	Every generated message is removed from server upon its retrieval. Also, unread messages are automatically destroyed 1 hour after their creation timestamp.
-	<br />
-	For even more security, an OTP mechanism can seal the message further, allowing successful recovery only after the recipient provides a valid OTP that will be delivered to their email address.
-	<br />
-	All of the above makes message creation, transmission and retrieval extremely secure, where data breach practically becomes impossible.
-	<br />
-</p>
+<section class="surface-card info-hero">
+	<span class="section-eyebrow">About this app</span>
+	<h1>Share a secret without handing over the key.</h1>
+	<p class="lead">
+		SecretMessageSharingWebApp turns a message into a single-use link that is encrypted in your
+		browser. The server stores ciphertext, never the plaintext and never the key &mdash; so a
+		database leak alone is not enough to read anything.
+	</p>
 
-<div ngbAccordion [closeOthers]="true">
-	<div ngbAccordionItem>
-		<h2 ngbAccordionHeader>
-			<button ngbAccordionButton>Encryption library</button>
-		</h2>
-		<div ngbAccordionCollapse>
-			<div ngbAccordionBody>
-				<ng-template>
-					Web Crypto API (SubtleCrypto)<br />
-					<a target="_blank" rel="noopener noreferrer" href="https://developer.mozilla.org/en-US/docs/Web/API/Web_Crypto_API">MDN documentation</a>
-					/
-					<a target="_blank" rel="noopener noreferrer" href="https://w3c.github.io/webcrypto/">W3C specification</a>
-				</ng-template>
+	<div class="info-stats">
+		<div class="info-stat">
+			<strong>AES-256</strong>
+			<span>GCM authenticated encryption</span>
+		</div>
+		<div class="info-stat">
+			<strong>1&times;</strong>
+			<span>retrieval per link</span>
+		</div>
+		<div class="info-stat">
+			<strong>60 min</strong>
+			<span>unread message lifetime</span>
+		</div>
+		<div class="info-stat">
+			<strong>0</strong>
+			<span>plaintext sent to the server</span>
+		</div>
+	</div>
+</section>
+
+<section class="info-section">
+	<h2 class="info-section-title">How it works</h2>
+	<p class="info-section-lead">Encryption, storage, and deletion are three separate steps.</p>
+
+	<div class="info-grid info-grid--2">
+		<article class="info-card">
+			<h3>1. Encrypt locally</h3>
+			<p>
+				Your browser generates a random 256-bit key with the Web Crypto API, derives a fresh
+				96-bit IV, and encrypts the message with AES-256-GCM. The authentication tag makes
+				tampering detectable.
+			</p>
+		</article>
+
+		<article class="info-card">
+			<h3>2. Store only ciphertext</h3>
+			<p>
+				The encrypted payload, the IV, and a SHA-256 hash of the key are sent to the server.
+				The key itself stays in the URL fragment, which browsers do not include in HTTP requests.
+			</p>
+		</article>
+
+		<article class="info-card">
+			<h3>3. Share one link</h3>
+			<p>
+				The recipient opens the link, confirms the retrieval, and decrypts the message in their
+				own browser. The key hash lets the server reject the wrong key without ever seeing it.
+			</p>
+		</article>
+
+		<article class="info-card">
+			<h3>4. Delete on read</h3>
+			<p>
+				The ciphertext is removed as soon as it is retrieved. Unread messages are deleted
+				automatically after one hour, so abandoned links do not linger.
+			</p>
+		</article>
+	</div>
+</section>
+
+<section class="info-section">
+	<h2 class="info-section-title">What the server can and cannot see</h2>
+	<p class="info-section-lead">A precise picture is more useful than a marketing claim.</p>
+
+	<div class="info-grid info-grid--2">
+		<article class="info-card">
+			<h3>Stored on the server</h3>
+			<ul>
+				<li>Message ID, creation time, and the IV plus ciphertext</li>
+				<li>A SHA-256 hash of the encryption key, used only to verify retrieval</li>
+				<li>Creator IP address and browser user-agent (logs are deleted after 24 hours)</li>
+				<li>Recipient email address when OTP protection is enabled</li>
+				<li>Delivery metadata (time, IP, browser) once the message is read</li>
+			</ul>
+		</article>
+
+		<article class="info-card">
+			<h3>Never stored on the server</h3>
+			<ul>
+				<li>Your plaintext message or attachment contents</li>
+				<li>The encryption key itself</li>
+				<li>The full message URL with its fragment</li>
+				<li>Any account, profile, or contact list &mdash; there are no accounts</li>
+			</ul>
+		</article>
+	</div>
+</section>
+
+<section class="info-section">
+	<h2 class="info-section-title">Common questions</h2>
+	<p class="info-section-lead">The details that matter before you paste a real secret.</p>
+
+	<div ngbAccordion [closeOthers]="true">
+		<div ngbAccordionItem>
+			<h2 ngbAccordionHeader>
+				<button ngbAccordionButton>How is the message encrypted?</button>
+			</h2>
+			<div ngbAccordionCollapse>
+				<div ngbAccordionBody>
+					<ng-template>
+						AES-256 in GCM mode with a 128-bit authentication tag and a unique 96-bit random IV
+						per message. All cryptography runs through the browser's native
+						<a target="_blank" rel="noopener noreferrer" href="https://developer.mozilla.org/en-US/docs/Web/API/Web_Crypto_API">Web Crypto API</a>.
+						No hand-written cipher implementation and no legacy library are used.
+					</ng-template>
+				</div>
+			</div>
+		</div>
+
+		<div ngbAccordionItem>
+			<h2 ngbAccordionHeader>
+				<button ngbAccordionButton>Where does the encryption key live?</button>
+			</h2>
+			<div ngbAccordionCollapse>
+				<div ngbAccordionBody>
+					<ng-template>
+						The key is generated in your browser and placed after the <code>#</code> in the
+						message URL. URL fragments are not sent to the server, so the key never appears in
+						HTTP requests or server logs. The server receives only its SHA-256 hash so it can
+						verify the right key is being used.
+						<br /><br />
+						This also means the full link is a secret: anyone who has it can open the message.
+						Send it over a channel you trust.
+					</ng-template>
+				</div>
+			</div>
+		</div>
+
+		<div ngbAccordionItem>
+			<h2 ngbAccordionHeader>
+				<button ngbAccordionButton>What exactly is stored on the server?</button>
+			</h2>
+			<div ngbAccordionCollapse>
+				<div ngbAccordionBody>
+					<ng-template>
+						The message ID, creation timestamp, the IV and ciphertext, the key hash, and the
+						creator's IP and user-agent for diagnostics. If OTP is enabled, the recipient's
+						email address is also stored so the one-time code can be sent. After retrieval,
+						delivery metadata such as the recipient's IP and browser is recorded so the sender
+						can be notified.
+						<br /><br />
+						Message content is only ever stored as ciphertext. There are no user accounts and no
+						contact lists.
+					</ng-template>
+				</div>
+			</div>
+		</div>
+
+		<div ngbAccordionItem>
+			<h2 ngbAccordionHeader>
+				<button ngbAccordionButton>How long is a message kept?</button>
+			</h2>
+			<div ngbAccordionCollapse>
+				<div ngbAccordionBody>
+					<ng-template>
+						<ul class="m-0">
+							<li>Messages can be retrieved once, then they are deleted immediately.</li>
+							<li>Unread messages are destroyed automatically one hour after creation.</li>
+							<li>OTP codes expire after 3 minutes and allow at most 3 validation attempts.</li>
+							<li>Diagnostic logs are deleted after 24 hours.</li>
+						</ul>
+					</ng-template>
+				</div>
+			</div>
+		</div>
+
+		<div ngbAccordionItem>
+			<h2 ngbAccordionHeader>
+				<button ngbAccordionButton>Can I attach a file?</button>
+			</h2>
+			<div ngbAccordionCollapse>
+				<div ngbAccordionBody>
+					<ng-template>
+						Yes. Any file type is accepted up to 1&nbsp;MB. The file is Base64-encoded
+						and encrypted together with the message text, so it receives the same protection
+						and the same one-hour lifetime.
+					</ng-template>
+				</div>
+			</div>
+		</div>
+
+		<div ngbAccordionItem>
+			<h2 ngbAccordionHeader>
+				<button ngbAccordionButton>How does OTP protection work?</button>
+			</h2>
+			<div ngbAccordionCollapse>
+				<div ngbAccordionBody>
+					<ng-template>
+						When the sender enables OTP, the recipient must request a one-time code by email
+						before the message can be retrieved. The code is valid for 3 minutes and limited to
+						3 attempts. OTP adds a second factor on top of the link &mdash; it does not replace
+						the encryption key.
+					</ng-template>
+				</div>
+			</div>
+		</div>
+
+		<div ngbAccordionItem>
+			<h2 ngbAccordionHeader>
+				<button ngbAccordionButton>Does the server collect client data?</button>
+			</h2>
+			<div ngbAccordionCollapse>
+				<div ngbAccordionBody>
+					<ng-template>
+						Yes, for operational purposes only: IP address and browser user-agent are logged
+						for diagnostics and abuse prevention, and deleted after 24 hours. No analytics
+						profiles, advertising identifiers, or cross-site tracking are used.
+					</ng-template>
+				</div>
+			</div>
+		</div>
+
+		<div ngbAccordionItem>
+			<h2 ngbAccordionHeader>
+				<button ngbAccordionButton>Is this app 100% secure?</button>
+			</h2>
+			<div ngbAccordionCollapse>
+				<div ngbAccordionBody>
+					<ng-template>
+						No software can honestly promise that. This app reduces the blast radius of a
+						server breach because the server never has the key or the plaintext. It cannot
+						protect you if your device is compromised, if you share the link with the wrong
+						person, or if the recipient's device or email account is insecure.
+						<br /><br />
+						Treat the full link as the secret, use a trusted channel to deliver it, and avoid
+						pasting highly sensitive material into any browser you do not control.
+					</ng-template>
+				</div>
+			</div>
+		</div>
+
+		<div ngbAccordionItem>
+			<h2 ngbAccordionHeader>
+				<button ngbAccordionButton>What is it useful for?</button>
+			</h2>
+			<div ngbAccordionCollapse>
+				<div ngbAccordionBody>
+					<ng-template>
+						Sharing passwords, API keys, connection strings, recovery codes, or short
+						confidential notes with family, friends, or colleagues without leaving them in
+						chat history or email forever. Because the link is single-use and expires, it is a
+						better fit for one-off secrets than for long-term document storage.
+					</ng-template>
+				</div>
+			</div>
+		</div>
+
+		<div ngbAccordionItem>
+			<h2 ngbAccordionHeader>
+				<button ngbAccordionButton>What is it built with?</button>
+			</h2>
+			<div ngbAccordionCollapse>
+				<div ngbAccordionBody>
+					<ng-template>
+						Angular 22 on the client, .NET 10 with FastEndpoints and Entity Framework Core on
+						the server, Azure Cosmos DB for storage, SignalR for delivery notifications, and
+						SendGrid for OTP email. It is hosted on Azure App Service.
+					</ng-template>
+				</div>
 			</div>
 		</div>
 	</div>
+</section>
 
-	<div ngbAccordionItem>
-		<h2 ngbAccordionHeader>
-			<button ngbAccordionButton>Encryption algorithm</button>
-		</h2>
-		<div ngbAccordionCollapse>
-			<div ngbAccordionBody>
-				<ng-template>
-					AES-256 in GCM mode with a 128-bit authentication tag and a unique 96-bit random IV per message
-				</ng-template>
-			</div>
-		</div>
+<section class="info-section">
+	<h2 class="info-section-title">Technology</h2>
+	<p class="info-section-lead">The moving parts behind the single-use link.</p>
+
+	<div class="tech-chips">
+		<span class="tech-chip">Angular 22</span>
+		<span class="tech-chip">.NET 10</span>
+		<span class="tech-chip">FastEndpoints</span>
+		<span class="tech-chip">Entity Framework Core</span>
+		<span class="tech-chip">Azure Cosmos DB</span>
+		<span class="tech-chip">SignalR</span>
+		<span class="tech-chip">SendGrid</span>
+		<span class="tech-chip">Web Crypto API</span>
+		<span class="tech-chip">AES-256-GCM</span>
 	</div>
 
-	<div ngbAccordionItem>
-		<h2 ngbAccordionHeader>
-			<button ngbAccordionButton>Encryption key</button>
-		</h2>
-		<div ngbAccordionCollapse>
-			<div ngbAccordionBody>
-				<ng-template>
-					<ul class="m-0">
-						<li>Auto-generated at run-time (on browser) by using the native Web Crypto API's cryptographically secure random number generator</li>
-						<li>Generated key length: 256 bits converted to base64/url-safe format</li>
-					</ul>
-				</ng-template>
-			</div>
-		</div>
+	<div class="info-note">
+		<strong>A note on guarantees.</strong>
+		Encryption is only one layer of security. The link is the secret, the recipient's device
+		matters, and no web app can eliminate every risk. Use this tool with that in mind.
 	</div>
-
-	<div ngbAccordionItem>
-		<h2 ngbAccordionHeader>
-			<button ngbAccordionButton>What data does server store?</button>
-		</h2>
-		<div ngbAccordionCollapse>
-			<div ngbAccordionBody>
-				<ng-template>
-					The server stores only the minimum information required to decrypt the message on the recipient's browser.
-					<br />
-					Stored object: {{'{'}} IV, CT {{'}'}} where IV = 'Initialization Vector', CT = 'Cipher Text'.
-					<br />
-					The encryption key is never sent to the server; it is only included in the message URL fragment, which browsers do not transmit over the network.
-				</ng-template>
-			</div>
-		</div>
-	</div>
-
-	<div ngbAccordionItem>
-		<h2 ngbAccordionHeader>
-			<button ngbAccordionButton>For how long does the server keep stored messages?</button>
-		</h2>
-		<div ngbAccordionCollapse>
-			<div ngbAccordionBody>
-				<ng-template>
-					<ul class="m-0">
-						<li>Messages are accessible for 1 time only</li>
-						<li>Messages are being removed from database after retrieval</li>
-						<li>Unread messages are automatically destroyed 1 hour after their creation time</li>
-					</ul>
-				</ng-template>
-			</div>
-		</div>
-	</div>
-
-	<div ngbAccordionItem>
-		<h2 ngbAccordionHeader>
-			<button ngbAccordionButton>Does server collect any client data?</button>
-		</h2>
-		<div ngbAccordionCollapse>
-			<div ngbAccordionBody>
-				<ng-template>
-					Υes, this is done purely for logging purposes.
-					The data concerns information such as client's: IP address, browser's user-agent identity.
-					Those logs are only kept for 24 hours and are automatically deleted after this period.
-				</ng-template>
-			</div>
-		</div>
-	</div>
-
-	<div ngbAccordionItem>
-		<h2 ngbAccordionHeader>
-			<button ngbAccordionButton>What is its usefulness?</button>
-		</h2>
-		<div ngbAccordionCollapse>
-			<div ngbAccordionBody>
-				<ng-template>
-					The perfect use of this app is to securely share passwords and keys with family, friends, colleagues, etc.
-				</ng-template>
-			</div>
-		</div>
-	</div>
-
-	<div ngbAccordionItem>
-		<h2 ngbAccordionHeader>
-			<button ngbAccordionButton>Development stack</button>
-		</h2>
-		<div ngbAccordionCollapse>
-			<div ngbAccordionBody>
-				<ng-template>
-					Angular 22, .NET 10, Entity Framework Core, SignalR.
-				</ng-template>
-			</div>
-		</div>
-	</div>
-
-	<div ngbAccordionItem>
-		<h2 ngbAccordionHeader>
-			<button ngbAccordionButton>Hosting information</button>
-		</h2>
-		<div ngbAccordionCollapse>
-			<div ngbAccordionBody>
-				<ng-template>
-					This web application is hosted on Azure by using Azure App Service, whereas, uses Azure Cosmos DB for data storage.
-					<br />
-					OTP codes are delivered by using the SendGrid email delivery platform.
-				</ng-template>
-			</div>
-		</div>
-	</div>
-</div>
+</section>

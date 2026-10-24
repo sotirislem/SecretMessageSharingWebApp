@@ -6,6 +6,7 @@ import { RecentlyStoredSecretMessage, RecentlyStoredSecretMessagesResponse } fro
 import { SecretMessageDeliveryNotification } from '../../models/api/secret-message-delivery-notification.model';
 import { ApiClientService } from '../../services/api-client.service';
 import { ModalService } from '../../services/modal.service';
+import { ToastService } from '../../services/toast.service';
 import { MessageDeliveryDetailsModalComponent } from '../modals/message-delivery-details-modal/message-delivery-details-modal.component';
 import { DateTimeFullPipe } from '../../pipes/date-time-full.pipe';
 
@@ -18,6 +19,7 @@ import { DateTimeFullPipe } from '../../pipes/date-time-full.pipe';
 export class RecentlyStoredMessagesComponent {
 	private readonly apiClient = inject(ApiClientService);
 	private readonly modalService = inject(ModalService);
+	private readonly toastService = inject(ToastService);
 
 	private readonly messagesResource = httpResource<RecentlyStoredSecretMessagesResponse>(
 		() => this.apiClient.getRecentlyStoredSecretMessagesUrl());
@@ -29,6 +31,21 @@ export class RecentlyStoredMessagesComponent {
 	readonly loadError = this.messagesResource.error;
 	readonly recentlyStoredSecretMessages = computed(() =>
 		this.messagesResource.value()?.recentlyStoredSecretMessages ?? []);
+	readonly deliveredCount = computed(() =>
+		this.recentlyStoredSecretMessages().filter(msg => msg.deliveryDetails).length);
+	readonly pendingCount = computed(() =>
+		this.recentlyStoredSecretMessages().length - this.deliveredCount());
+
+	async copyMessageId(id: string): Promise<void> {
+		try {
+			await navigator.clipboard.writeText(id);
+			this.toastService.success('Message ID copied to clipboard.', 'Copied');
+		} catch {
+			this.toastService.error(
+				'Could not copy the message ID. Select and copy it manually.',
+				'Copy failed');
+		}
+	}
 
 	showDeliveryDetails(msg: RecentlyStoredSecretMessage): void {
 		const messageDeliveryDetails = <SecretMessageDeliveryNotification>{

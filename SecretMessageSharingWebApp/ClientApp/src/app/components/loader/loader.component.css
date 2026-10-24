@@ -1,11 +1,10 @@
 .loader-wrapper {
-	background-image: linear-gradient(#ffffffcc, #ffffffff);
 	position: fixed;
-	width: 100%;
-	top: 0px;
-	left: 0px;
-	height: 100vh;
+	inset: 0;
 	z-index: 9998;
+	background: rgba(245, 246, 251, .72);
+	backdrop-filter: blur(3px);
+	-webkit-backdrop-filter: blur(3px);
 }
 
 .spinner-wrapper {
@@ -14,10 +13,17 @@
 	left: 50%;
 	transform: translate(-50%, -50%);
 	z-index: 9999;
+	padding: 1.4rem 1.8rem;
+	border: 1px solid var(--sms-border);
+	border-radius: var(--sms-radius);
+	background: #fff;
+	box-shadow: var(--sms-shadow-lg);
 }
 
 .spinner-text {
-	font-size: 17px;
-	font-weight: 500;
+	margin-top: .65rem;
+	color: var(--sms-text-muted);
+	font-size: .85rem;
+	font-weight: 600;
 	cursor: default;
 }

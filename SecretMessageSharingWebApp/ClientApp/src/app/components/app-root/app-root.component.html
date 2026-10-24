@@ -1,23 +1,31 @@
 <app-loader></app-loader>
 <app-toast-container></app-toast-container>
 
-<div class="d-flex flex-column h-100">
-    <header>
+<div class="app-shell">
+    <header class="app-header">
         <app-nav-menu></app-nav-menu>
     </header>
 
-    <main class="flex-shrink-0 mb-5">
-        <div class="container">
+    <main class="app-main">
+        <div class="container app-container">
             <router-outlet></router-outlet>
         </div>
     </main>
 
-    <footer class="footer mt-auto py-3 bg-light bg-gradient">
-        <div class="container text-center text-muted">
-            Created by <a target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer" href="https://www.linkedin.com/in/sotiris-lemousias/">Sotiris Lemousias</a>
-            <span class="m-hide"> / </span>
-            <span class="m-show"><br /></span>
-            Source code available &#64; <a target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer" href="https://github.com/sotirislem/SecretMessageSharingWebApp">GitHub</a>
+    <footer class="app-footer">
+        <div class="container app-container">
+            <div class="app-footer-inner">
+                <p>
+                    Built by
+                    <a target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer"
+                       href="https://www.linkedin.com/in/sotiris-lemousias/">Sotiris Lemousias</a>
+                </p>
+                <p>
+                    Source code on
+                    <a target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer"
+                       href="https://github.com/sotirislem/SecretMessageSharingWebApp">GitHub</a>
+                </p>
+            </div>
         </div>
     </footer>
 </div>

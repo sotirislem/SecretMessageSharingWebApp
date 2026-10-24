@@ -1,0 +1,23 @@
+/* App Info styling is provided by the global design system (styles.css). */
+
+.info-card code {
+	padding: .1rem .35rem;
+	border-radius: 6px;
+	background: var(--sms-surface-muted);
+	color: var(--sms-text);
+	font-size: .85em;
+}
+
+.info-card ul {
+	padding-left: 1.15rem;
+	margin-bottom: 0;
+}
+
+.info-card li + li {
+	margin-top: .35rem;
+}
+
+/* Give the FAQ block some breathing room below its heading. */
+.info-section .accordion {
+	margin-top: 1.5rem;
+}

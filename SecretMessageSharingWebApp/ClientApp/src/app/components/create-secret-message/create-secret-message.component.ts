@@ -127,6 +127,16 @@ export class CreateSecretMessageComponent {
 
 			const encryptionResult = await this.cryptoService.encryptMessage(secretMsgObj);
 
+			// The encrypted payload is what gets stored, so check its size after encryption.
+			// This covers the message text, attachment, filename, credentials, and Unicode/JSON escaping.
+			if (encryptionResult.secretMessageData.ct.length > Constants.MAX_ENCRYPTED_PAYLOAD_BASE64_LENGTH) {
+				this.toastService.warning(
+					'The encrypted message is too large to store. Reduce the message text or attach a smaller file.',
+					'Message too large'
+				);
+				return;
+			}
+
 			const request = <StoreNewSecretMessageRequest>{
 				secretMessageData: encryptionResult.secretMessageData,
 				otp: <OtpSettings>{

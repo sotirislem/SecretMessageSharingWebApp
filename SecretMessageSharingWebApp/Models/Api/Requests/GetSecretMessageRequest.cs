@@ -8,5 +8,5 @@ public sealed record GetSecretMessageRequest
 	// IsRequired = true prevents FastEndpoints from also binding this property from
 	// query/route/form values, keeping the retrieval API header-only.
 	[FromHeader("X-Key-Hash", IsRequired = true)]
-	public string EncryptionKeySha256 { get; set; } = string.Empty;
+	public string EncryptionKeySha256 { get; init; } = string.Empty;
 }

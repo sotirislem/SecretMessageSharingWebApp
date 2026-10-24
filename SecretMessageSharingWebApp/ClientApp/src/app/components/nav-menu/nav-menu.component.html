@@ -1,43 +1,47 @@
-<nav class="navbar navbar-expand-lg navbar-toggleable-lg navbar-light bg-white border-bottom mb-3">
-	<div class="container">
+<nav class="app-nav" aria-label="Main navigation">
+	<div class="container app-container">
+		<div class="app-nav-inner">
 
-		<a class="navbar-brand word-wrap" [routerLink]="[Routes.Root]" (click)="collapse()">
-			<img src="/assets/favicon.png" width="48" height="48">
-			SecretMessageSharingWebApp
-		</a>
+			<a class="app-brand" [routerLink]="[Routes.Root]" (click)="collapse()">
+				<span class="app-brand-mark">
+					<img src="/assets/favicon.png" width="27" height="27" alt="" />
+				</span>
+				<span class="app-brand-text">
+					<span class="app-brand-name">SecretMessageSharingWebApp</span>
+					<span class="app-brand-sub">Zero-knowledge sharing</span>
+				</span>
+			</a>
 
-		<button class="navbar-toggler" type="button"
-				aria-label="Toggle navigation"
-				[attr.aria-expanded]="isExpanded()"
-				[class.collapsed]="!isExpanded()"
-				(click)="toggle()">
-			<span class="icon-bar"></span>
-			<span class="icon-bar"></span>
-			<span class="icon-bar"></span>
-		</button>
+			<button class="app-nav-toggle" type="button"
+					aria-label="Toggle navigation"
+					[attr.aria-expanded]="isExpanded()"
+					[class.is-open]="isExpanded()"
+					(click)="toggle()">
+				<span class="app-nav-toggle-bar"></span>
+				<span class="app-nav-toggle-bar"></span>
+				<span class="app-nav-toggle-bar"></span>
+			</button>
 
-		<div class="navbar-collapse collapse d-lg-inline-flex justify-content-end" [class.show]="isExpanded()">
-			<ul class="navbar-nav flex-grow">
+			<div class="app-nav-links" [class.is-open]="isExpanded()">
+				<a class="app-nav-link" routerLinkActive="is-active"
+				   [routerLink]="[Routes.Root + Routes.CreateSecretMessage]"
+				   (click)="collapse()">
+					Create a Message
+				</a>
 
-				<li class="nav-item" routerLinkActive="link-active">
-					<a class="nav-link text-dark" [routerLink]="[Routes.Root + Routes.CreateSecretMessage]">
-						Create a Message
-					</a>
-				</li>
+				<a class="app-nav-link" routerLinkActive="is-active"
+				   [routerLink]="[Routes.Root + Routes.RecentlyStoredMessages]"
+				   (click)="collapse()">
+					Recently stored Messages
+				</a>
 
-				<li class="nav-item" routerLinkActive="link-active">
-					<a class="nav-link text-dark" [routerLink]="[Routes.Root + Routes.RecentlyStoredMessages]">
-						Recently stored Messages
-					</a>
-				</li>
+				<a class="app-nav-link" routerLinkActive="is-active"
+				   [routerLink]="[Routes.Root + Routes.AppInfo]"
+				   (click)="collapse()">
+					App Info
+				</a>
+			</div>
 
-				<li class="nav-item" routerLinkActive="link-active">
-					<a class="nav-link text-dark" [routerLink]="[Routes.Root + Routes.AppInfo]">
-						App Info
-					</a>
-				</li>
-
-			</ul>
 		</div>
 	</div>
 </nav>

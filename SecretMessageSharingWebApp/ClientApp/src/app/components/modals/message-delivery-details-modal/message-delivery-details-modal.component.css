@@ -4,13 +4,44 @@
 	outline: none !important;
 }
 
-.modal-body table th {
+/* Definition grid: bordered rows, a tinted label column, and a clear outer edge. */
+.detail-table {
+	overflow: hidden;
+	border: 1px solid var(--sms-border);
+	border-radius: var(--sms-radius-sm);
+	background: var(--sms-surface);
+}
+
+.detail-table .table {
+	--bs-table-bg: transparent;
+	margin: 0;
+}
+
+.detail-table th,
+.detail-table td {
+	padding: .8rem .95rem;
+	background: transparent;
+	border-bottom: 1px solid var(--sms-border);
+	vertical-align: middle;
+}
+
+.detail-table th {
 	width: 50%;
-	border-right: 1px solid #ddd;
-	font-size: 15px;
+	border-right: 1px solid var(--sms-border);
+	background: var(--sms-surface-muted);
+	color: var(--sms-text-muted);
+	font-size: .82rem;
 	font-weight: 600;
 }
 
-.modal-body table td {
+.detail-table td {
+	color: var(--sms-text);
+	font-size: .9rem;
 	text-align: right;
+}
+
+/* The container border supplies the outer bottom edge, so the last row needs no extra line. */
+.detail-table tbody tr:last-child th,
+.detail-table tbody tr:last-child td {
+	border-bottom: 0;
 }

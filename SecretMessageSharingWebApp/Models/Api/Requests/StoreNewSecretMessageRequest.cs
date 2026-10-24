@@ -10,10 +10,10 @@ public sealed record StoreNewSecretMessageRequest
 	public string ClientId { get; init; }
 
 	[JsonPropertyName("secretMessageData")]
-	public SecretMessageData SecretMessageData { get; init; }
+	public SecretMessageData? SecretMessageData { get; init; }
 
 	[JsonPropertyName("otp")]
-	public OtpSettings Otp { get; init; }
+	public OtpSettings? Otp { get; init; }
 
 	[JsonPropertyName("encryptionKeySha256")]
 	public string EncryptionKeySha256 { get; init; }

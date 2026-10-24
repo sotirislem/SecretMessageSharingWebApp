@@ -17,10 +17,13 @@ public static class Constants
 
 	public const int JwtTokenExpirationMinutes = 1;
 
-	// The UI limits attachments to 1.2 MB, which becomes roughly 1.6 MB after Base64 encoding.
-	// 4 MiB leaves room for the message text while still bounding memory/DB usage per request.
-	public const int MaxSecretMessageCipherTextBytes = 4 * 1024 * 1024;
-	public const int MaxRequestBodyBytes = 8 * 1024 * 1024;
+	// The UI limits attachments to 1 MiB, which becomes roughly 1.9 MB after encryption and Base64 encoding.
+	// This cap keeps the stored Cosmos DB document under the 2 MB item limit:
+	// 1,500,000 decoded ciphertext bytes -> 2,000,000 Base64 characters -> ~2.0 MB document.
+	public const int MaxSecretMessageCipherTextBytes = 1_500_000;
+	// Kestrel-level guard for the HTTP request body. The largest valid body is ~2 MB
+	// (2,000,000 Base64 chars plus JSON metadata), so 3 MiB leaves headroom.
+	public const int MaxRequestBodyBytes = 3 * 1024 * 1024;
 
 	public static class SessionKeys
 	{

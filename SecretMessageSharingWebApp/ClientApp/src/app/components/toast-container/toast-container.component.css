@@ -1,6 +1,8 @@
+/* Toast styling lives in the global design system (styles.css). */
+
 .toast-stack {
 	position: fixed;
-	top: 10px;
+	top: 84px;
 	left: 50%;
 	transform: translateX(-50%);
 	z-index: 1080;
@@ -15,14 +17,15 @@
 	position: relative;
 	overflow: hidden;
 	margin: 0;
-	padding-right: 3rem;
+	padding: .85rem 2.9rem .85rem 1rem;
 	white-space: pre-line;
+	box-shadow: var(--sms-shadow);
 	pointer-events: auto;
 }
 
 .toast-title {
-	font-weight: 600;
-	margin-bottom: .25rem;
+	margin-bottom: .2rem;
+	font-weight: 650;
 }
 
 .toast-message {
@@ -32,8 +35,8 @@
 
 .toast-close {
 	position: absolute;
-	top: .75rem;
-	right: .75rem;
+	top: .8rem;
+	right: .8rem;
 }
 
 .toast-progress {
@@ -43,7 +46,7 @@
 	width: 100%;
 	height: 3px;
 	background: currentColor;
-	opacity: .35;
+	opacity: .3;
 	transform-origin: left;
 	animation-name: toast-progress;
 	animation-timing-function: linear;
@@ -54,7 +57,14 @@
 	from {
 		transform: scaleX(1);
 	}
+
 	to {
 		transform: scaleX(0);
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.toast-progress {
+		animation: none;
 	}
 }

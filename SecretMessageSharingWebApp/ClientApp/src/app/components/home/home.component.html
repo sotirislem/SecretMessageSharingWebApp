@@ -1,9 +1,75 @@
-<div class="welcome-hero text-center mb-3">
-    <h1 class="mb-3">Share Secrets, <span class="text-gradient">Securely.</span></h1>
-    <p class="lead text-muted mx-auto" style="max-width: 600px;">
-        Zero-knowledge encryption for your most sensitive information.
-        Your data never leaves your browser unencrypted.
-    </p>
+<div class="hero">
+	<div class="hero-copy">
+		<span class="hero-badge">
+			<svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+				<path d="M8 1a3.5 3.5 0 0 0-3.5 3.5V7H4a1 1 0 0 0-1 1v5a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V8a1 1 0 0 0-1-1h-.5V4.5A3.5 3.5 0 0 0 8 1Zm2 6H6V4.5a2 2 0 1 1 4 0V7Z" />
+			</svg>
+			End-to-end encrypted in your browser
+		</span>
+
+		<h1 class="hero-title">
+			Share secrets,<br />
+			<span class="text-gradient">securely!</span>
+		</h1>
+
+		<p class="hero-lead">
+			Write a message, attach a file, and get a single-use link.
+			Everything is encrypted with AES-256-GCM before it leaves your device,
+			and the key stays in the link fragment the server never receives.
+		</p>
+
+		<ul class="trust-list">
+			<li>
+				<span class="trust-check" aria-hidden="true">&#10003;</span>
+				<span><strong>Zero-knowledge storage</strong> &mdash; the server only ever holds ciphertext.</span>
+			</li>
+			<li>
+				<span class="trust-check" aria-hidden="true">&#10003;</span>
+				<span><strong>Single retrieval</strong> &mdash; the message is deleted as soon as it is read.</span>
+			</li>
+			<li>
+				<span class="trust-check" aria-hidden="true">&#10003;</span>
+				<span><strong>Automatic expiry</strong> &mdash; unread messages disappear after one hour.</span>
+			</li>
+		</ul>
+
+		<p class="hero-note">
+			Optional extras: file attachments up to 1&nbsp;MB, credential fields, and email OTP protection.
+		</p>
+	</div>
 </div>
 
-<create-secret-message></create-secret-message>
+<section class="steps" aria-label="How it works">
+	<article class="step">
+		<span class="step-number">1</span>
+		<h2>Create and encrypt</h2>
+		<p>Your browser generates a random 256-bit key and encrypts the payload locally.</p>
+	</article>
+	<article class="step">
+		<span class="step-number">2</span>
+		<h2>Share the link</h2>
+		<p>Send the generated URL or QR code. The decryption key travels only in the URL fragment.</p>
+	</article>
+	<article class="step">
+		<span class="step-number">3</span>
+		<h2>Read once</h2>
+		<p>The recipient decrypts in their browser, and the server deletes the ciphertext immediately.</p>
+	</article>
+</section>
+
+<section class="home-cta" aria-labelledby="home-cta-title">
+	<span class="home-cta-eyebrow">Ready when you are</span>
+	<h2 id="home-cta-title">Create your secret message</h2>
+	<p class="home-cta-lead">No account, no install &mdash; just a link that works once.</p>
+
+	<span class="cta-button-wrap">
+		<a class="cta-button" [routerLink]="[Routes.Root + Routes.CreateSecretMessage]">
+			<span class="cta-button-label">Create a Message</span>
+			<svg class="cta-button-arrow" viewBox="0 0 20 20" fill="none" stroke="currentColor"
+				 stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+				<path d="M4 10h12" />
+				<path d="M11 5l5 5-5 5" />
+			</svg>
+		</a>
+	</span>
+</section>
