@@ -69,6 +69,21 @@ public class SecretMessagesServiceTests
 	}
 
 	[Fact]
+	public async Task Exists_ShouldReturnFalseAndNoOtpSettings_WhenMessageDoesNotExist()
+	{
+		// Arrange
+		var nonExistentId = _fixture.Create<string>();
+		_secretMessagesRepository.GetById(nonExistentId).Returns((SecretMessageEntity?)null);
+
+		// Act
+		var result = await _sut.Exists(nonExistentId);
+
+		// Assert
+		result.exists.Should().BeFalse();
+		result.otpSettings.Should().BeNull();
+	}
+
+	[Fact]
 	public async Task Get_ShouldReturnMessageAndLogInformation_WhenMessageExists()
 	{
 		// Arrange

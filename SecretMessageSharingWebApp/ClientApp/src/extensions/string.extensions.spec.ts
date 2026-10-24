@@ -20,6 +20,12 @@ describe('String.prototype.linkify', () => {
 		expect(result).toContain('<a href="mailto:test@example.com" referrerpolicy="no-referrer">test@example.com</a>');
 	});
 
+	it('should linkify www addresses without a scheme', () => {
+		const result = 'Visit www.example.com now'.linkify();
+
+		expect(result).toContain('<a href="https://www.example.com" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer">www.example.com</a>');
+	});
+
 	it('should keep escaped HTML around linkified content', () => {
 		const result = '<b>https://example.com</b>'.linkify();
 

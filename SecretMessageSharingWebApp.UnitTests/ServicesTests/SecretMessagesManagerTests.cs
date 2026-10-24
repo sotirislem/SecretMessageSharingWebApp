@@ -495,4 +495,159 @@ public class SecretMessagesManagerTests
 		result.Should().BeEquivalentTo(ApiResult.NotFound());
 		await _notificationHubService.DidNotReceive().SendNotification(Arg.Any<string>(), Arg.Any<SecretMessageDeliveryNotification>());
 	}
+
+	[Fact]
+	public async Task SendOtp_ShouldReturnSuccessNoContent_WhenCachedOtpIsStillValid()
+	{
+		// Arrange
+		var messageId = _fixture.Create<string>();
+		var otpSettings = new OtpSettings
+		{
+			Required = true,
+			RecipientsEmail = _fixture.Create<string>()
+		};
+		var cachedOtp = _fixture.Create<OneTimePassword>();
+
+		_secretMessagesService.Exists(messageId)
+			.Returns((true, otpSettings));
+
+		_memoryCacheService.GetValue<OneTimePassword>(messageId, Constants.MemoryKeys.SecretMessageOtp, remove: false)
+			.Returns((true, cachedOtp));
+
+		_otpService.IsExpired(cachedOtp)
+			.Returns(false);
+
+		// Act
+		var result = await _sut.SendOtp(messageId);
+
+		// Assert
+		result.Should().BeEquivalentTo(ApiResult.SuccessNoContent());
+		_otpService.DidNotReceive().Generate();
+		await _sendGridEmailService.DidNotReceive()
+			.SendOtp(Arg.Any<OneTimePassword>(), Arg.Any<string>(), Arg.Any<string>());
+		_memoryCacheService.DidNotReceive()
+			.SetValue(Arg.Any<string>(), Arg.Any<OneTimePassword>(), Arg.Any<string>());
+	}
+
+	[Fact]
+	public async Task SendOtp_ShouldGenerateAndSendNewOtp_WhenCachedOtpHasExpired()
+	{
+		// Arrange
+		var messageId = _fixture.Create<string>();
+		var otpSettings = new OtpSettings
+		{
+			Required = true,
+			RecipientsEmail = _fixture.Create<string>()
+		};
+		var expiredOtp = _fixture.Create<OneTimePassword>();
+		var newOtp = _fixture.Create<OneTimePassword>();
+
+		_secretMessagesService.Exists(messageId)
+			.Returns((true, otpSettings));
+
+		_memoryCacheService.GetValue<OneTimePassword>(messageId, Constants.MemoryKeys.SecretMessageOtp, remove: false)
+			.Returns((true, expiredOtp));
+
+		_otpService.IsExpired(expiredOtp)
+			.Returns(true);
+
+		_otpService.Generate()
+			.Returns(newOtp);
+
+		_sendGridEmailService.SendOtp(newOtp, messageId, otpSettings.RecipientsEmail)
+			.Returns(true);
+
+		// Act
+		var result = await _sut.SendOtp(messageId);
+
+		// Assert
+		result.Should().BeEquivalentTo(ApiResult.SuccessNoContent());
+		_memoryCacheService.Received().SetValue(messageId, newOtp, Constants.MemoryKeys.SecretMessageOtp);
+	}
+
+	[Fact]
+	public async Task ValidateOtp_ShouldAllowRetry_WhenOtpIsInvalidButRetriesRemain()
+	{
+		// Arrange
+		var messageId = _fixture.Create<string>();
+		var otpCode = _fixture.Create<string>();
+		var otp = _fixture.Create<OneTimePassword>();
+		var otpSettings = new OtpSettings
+		{
+			Required = true,
+			RecipientsEmail = _fixture.Create<string>()
+		};
+
+		_secretMessagesService.Exists(messageId)
+			.Returns((true, otpSettings));
+
+		_memoryCacheService.GetValue<OneTimePassword>(messageId, Constants.MemoryKeys.SecretMessageOtp, remove: false)
+			.Returns((true, otp));
+
+		_otpService.Validate(otpCode, otp)
+			.Returns((false, true, false));
+
+		// Act
+		var result = await _sut.ValidateOtp(messageId, otpCode);
+
+		// Assert
+		result.Should().BeEquivalentTo(ApiResult<ValidateSecretMessageOtpResponse>.SuccessWithData(new ValidateSecretMessageOtpResponse
+		{
+			IsValid = false,
+			CanRetry = true,
+			HasExpired = false,
+			AuthToken = null
+		}));
+		_memoryCacheService.DidNotReceive().RemoveValue(messageId, Constants.MemoryKeys.SecretMessageOtp);
+		_jwtService.DidNotReceive().GenerateToken(Arg.Any<string>());
+	}
+
+	[Fact]
+	public async Task GetMessage_ShouldReturnSuccessWithData_WhenOtpIsRequiredAndJwtTokenIsValid()
+	{
+		// Arrange
+		var encryptionKeySha256 = _fixture.Create<string>();
+		var secretMessage = _fixture.Create<SecretMessage>() with
+		{
+			EncryptionKeySha256 = KeyHashVerifier.Create(encryptionKeySha256),
+			Otp = new OtpSettings
+			{
+				Required = true,
+				RecipientsEmail = _fixture.Create<string>()
+			}
+		};
+		var messageId = secretMessage.Id;
+		var jwtToken = _fixture.Create<string>();
+		var httpContextClientInfo = _fixture.Create<HttpContextClientInfo>();
+
+		var getLog = _fixture.Create<GetLog>();
+		var secretMessageDeliveryNotification = getLog.ToSecretMessageDeliveryNotification();
+
+		_secretMessagesService.Get(messageId)
+			.Returns(secretMessage);
+
+		_jwtService.ValidateToken(jwtToken, messageId)
+			.Returns(true);
+
+		_getLogsService.CreateNewLog(Arg.Any<GetLog>())
+			.Returns(getLog);
+
+		_secretMessagesService.Delete(messageId)
+			.Returns(true);
+
+		_notificationHubService.SendNotification(secretMessage.CreatorClientId, secretMessageDeliveryNotification)
+			.Returns(true);
+
+		// Act
+		var result = await _sut.GetMessage(messageId, encryptionKeySha256, jwtToken, httpContextClientInfo);
+
+		// Assert
+		result.Should().BeEquivalentTo(ApiResult<GetSecretMessageResponse>.SuccessWithData(new GetSecretMessageResponse
+		{
+			Data = secretMessage.Data,
+			DeliveryNotificationSent = true
+		}));
+		_jwtService.Received(1).ValidateToken(jwtToken, messageId);
+		await _secretMessagesService.Received(1).Delete(messageId);
+	}
 }

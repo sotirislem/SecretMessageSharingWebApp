@@ -3,7 +3,6 @@ using SecretMessageSharingWebApp.ConfigurationSettings;
 using SecretMessageSharingWebApp.Models.Domain;
 using SecretMessageSharingWebApp.Providers;
 using SecretMessageSharingWebApp.Services.Interfaces;
-using SendGrid;
 using SendGrid.Helpers.Mail;
 
 namespace SecretMessageSharingWebApp.Services;
@@ -11,7 +10,8 @@ namespace SecretMessageSharingWebApp.Services;
 public sealed class SendGridEmailService(
 	ILogger<SendGridEmailService> logger,
 	ICancellationTokenProvider cancellationTokenProvider,
-	SendGridConfigurationSettings sendGridConfigurationSettings) : ISendGridEmailService
+	SendGridConfigurationSettings sendGridConfigurationSettings,
+	ISendGridClientFactory sendGridClientFactory) : ISendGridEmailService
 {
 	public async Task<bool> SendOtp(OneTimePassword otp, string messageId, string recipientsEmail)
 	{
@@ -21,7 +21,7 @@ public sealed class SendGridEmailService(
 			return true;
 		}
 
-		var client = new SendGridClient(sendGridConfigurationSettings.ApiKey);
+		var client = sendGridClientFactory.Create(sendGridConfigurationSettings.ApiKey);
 		var from = new EmailAddress(sendGridConfigurationSettings.AuthSender, Constants.AppName);
 		var to = new EmailAddress(recipientsEmail);
 

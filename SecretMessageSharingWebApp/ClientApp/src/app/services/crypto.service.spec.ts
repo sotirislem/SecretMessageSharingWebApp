@@ -97,10 +97,116 @@ describe('CryptoService', () => {
 		expect(decryptionResult.status).toBe(DecryptionStatus.Error);
 	});
 
+	it('should reject cipher text shorter than the authentication tag', async () => {
+		const encryptionResult = await service.encryptMessage(message);
+
+		const decryptionResult = await service.decryptMessage(
+			{
+				...encryptionResult.secretMessageData,
+				ct: btoa(String.fromCharCode(...new Uint8Array(8)))
+			},
+			encryptionResult.encryptionKeyAsBase64Url);
+
+		expect(decryptionResult.status).toBe(DecryptionStatus.Error);
+	});
+
+	it('should reject a decrypted payload that is not a secret message', async () => {
+		const raw = await encryptRawPayload(JSON.stringify({ unexpected: 'payload' }));
+
+		const decryptionResult = await service.decryptMessage(raw.data, raw.key);
+
+		expect(decryptionResult.status).toBe(DecryptionStatus.Error);
+		expect(decryptionResult.errorMsg).toContain('could not be decrypted');
+	});
+
+	it('should throw when the Web Crypto API is not available', async () => {
+		const originalCrypto = globalThis.crypto;
+		Object.defineProperty(globalThis, 'crypto', { configurable: true, value: undefined });
+
+		try {
+			await expectAsync(service.getSha256('abc'))
+				.toBeRejectedWithError(/Web Crypto API is not available/);
+		} finally {
+			Object.defineProperty(globalThis, 'crypto', { configurable: true, value: originalCrypto });
+		}
+	});
+
+	it('should reject decrypted payloads that are null or primitive', async () => {
+		for (const payload of [JSON.stringify(null), JSON.stringify('text')]) {
+			const raw = await encryptRawPayload(payload);
+
+			const decryptionResult = await service.decryptMessage(raw.data, raw.key);
+
+			expect(decryptionResult.status).toBe(DecryptionStatus.Error);
+		}
+	});
+
+	it('should reject a payload with a non-string file name', async () => {
+		const raw = await encryptRawPayload(JSON.stringify({
+			plainText: 'text',
+			containsFile: true,
+			fileName: 123,
+			base64BlobFile: null,
+			containsUsernameAndPassword: false,
+			username: '',
+			password: ''
+		}));
+
+		const decryptionResult = await service.decryptMessage(raw.data, raw.key);
+
+		expect(decryptionResult.status).toBe(DecryptionStatus.Error);
+	});
+
+	it('should reject a payload with a non-string file blob', async () => {
+		const raw = await encryptRawPayload(JSON.stringify({
+			plainText: 'text',
+			containsFile: true,
+			fileName: null,
+			base64BlobFile: 123,
+			containsUsernameAndPassword: false,
+			username: '',
+			password: ''
+		}));
+
+		const decryptionResult = await service.decryptMessage(raw.data, raw.key);
+
+		expect(decryptionResult.status).toBe(DecryptionStatus.Error);
+	});
+
 	function tamperBase64(value: string): string {
 		const bytes = atob(value).split('').map(character => character.charCodeAt(0));
 		bytes[0] ^= 0xFF;
 
 		return btoa(String.fromCharCode(...bytes));
+	}
+
+	async function encryptRawPayload(payload: string): Promise<{
+		data: { iv: string; ct: string };
+		key: string;
+	}> {
+		const keyBytes = globalThis.crypto.getRandomValues(new Uint8Array(32));
+		const iv = globalThis.crypto.getRandomValues(new Uint8Array(12));
+		const aesKey = await globalThis.crypto.subtle.importKey(
+			'raw',
+			keyBytes,
+			{ name: 'AES-GCM' },
+			false,
+			['encrypt']);
+
+		const cipherText = new Uint8Array(await globalThis.crypto.subtle.encrypt(
+			{ name: 'AES-GCM', iv, tagLength: 128 },
+			aesKey,
+			new TextEncoder().encode(payload)));
+
+		return {
+			data: {
+				iv: btoa(String.fromCharCode(...iv)),
+				ct: btoa(String.fromCharCode(...cipherText))
+			},
+			key: btoa(String.fromCharCode(...keyBytes))
+				.replace(/\+/g, '-')
+				.replace(/\//g, '_')
+				.replace(/=+$/, '')
+		};
 	}
 });

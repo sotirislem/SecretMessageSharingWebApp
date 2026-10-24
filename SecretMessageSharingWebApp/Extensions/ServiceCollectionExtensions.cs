@@ -31,6 +31,7 @@ public static class ServiceCollectionExtensions
 		services.AddSingleton<IJwtService, JwtService>();
 
 		services.AddScoped<ISendGridEmailService, SendGridEmailService>();
+		services.AddSingleton<ISendGridClientFactory, SendGridClientFactory>();
 
 		services.AddScoped<ISecretMessagesRepository, SecretMessagesRepository>();
 		services.AddScoped<ISecretMessagesService, SecretMessagesService>();

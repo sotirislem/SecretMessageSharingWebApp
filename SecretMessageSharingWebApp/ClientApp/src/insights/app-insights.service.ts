@@ -30,21 +30,23 @@ export class AppInsightsService {
 
 		// Page-view telemetry includes the URL, which contains the message id.
 		// Strip the fragment and identifying query parameters before upload.
-		this.appInsights.addTelemetryInitializer((envelope: ITelemetryItem) => {
-			const baseData = envelope.data?.['baseData'] as Record<string, unknown> | undefined;
-			if (!baseData) return;
-
-			if (typeof baseData['uri'] === 'string') {
-				baseData['uri'] = this.sanitizeUrl(baseData['uri']);
-			}
-
-			if (typeof baseData['name'] === 'string' && /^https?:\/\//i.test(baseData['name'])) {
-				baseData['name'] = this.sanitizeUrl(baseData['name']);
-			}
-		});
+		this.appInsights.addTelemetryInitializer(this.sanitizeTelemetryEnvelope);
 
 		this.appInsights.loadAppInsights();
 	}
+
+	private readonly sanitizeTelemetryEnvelope = (envelope: ITelemetryItem): void => {
+		const baseData = envelope.data?.['baseData'] as Record<string, unknown> | undefined;
+		if (!baseData) return;
+
+		if (typeof baseData['uri'] === 'string') {
+			baseData['uri'] = this.sanitizeUrl(baseData['uri']);
+		}
+
+		if (typeof baseData['name'] === 'string' && /^https?:\/\//i.test(baseData['name'])) {
+			baseData['name'] = this.sanitizeUrl(baseData['name']);
+		}
+	};
 
 	private sanitizeUrl(url: string): string {
 		try {
