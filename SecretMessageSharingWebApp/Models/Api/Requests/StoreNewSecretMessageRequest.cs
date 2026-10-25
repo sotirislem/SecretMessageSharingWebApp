@@ -9,6 +9,11 @@ public sealed record StoreNewSecretMessageRequest
 	[FromHeader("Client-Id")]
 	public string ClientId { get; init; }
 
+	// Identifies the browser tab that creates the message. It survives a refresh through
+	// sessionStorage, which lets a self-read notification be delivered to that tab only.
+	[FromHeader("Tab-Id")]
+	public string? TabId { get; init; }
+
 	[JsonPropertyName("secretMessageData")]
 	public SecretMessageData? SecretMessageData { get; init; }
 

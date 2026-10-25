@@ -2,17 +2,20 @@ import { HttpHeaders, HttpRequest, HttpResponse } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
 
-import { CLIENT_ID } from '../tokens';
+import { CLIENT_ID, TAB_ID } from '../tokens';
 import { httpHeadersInterceptor } from './http-headers-interceptor.service';
 
 describe('httpHeadersInterceptor', () => {
 	beforeEach(() => {
 		TestBed.configureTestingModule({
-			providers: [{ provide: CLIENT_ID, useValue: 'client-1' }]
+			providers: [
+				{ provide: CLIENT_ID, useValue: 'client-1' },
+				{ provide: TAB_ID, useValue: 'tab-1' }
+			]
 		});
 	});
 
-	it('should add the client id header to the request', () => {
+	it('should add the client id and tab id headers to the request', () => {
 		const request = new HttpRequest('GET', '/api/secret-messages');
 		const next = jasmine.createSpy('next').and.returnValue(of(new HttpResponse({ status: 200 })));
 
@@ -21,6 +24,7 @@ describe('httpHeadersInterceptor', () => {
 		expect(next).toHaveBeenCalledTimes(1);
 		const forwardedRequest = next.calls.mostRecent().args[0] as HttpRequest<unknown>;
 		expect(forwardedRequest.headers.get('Client-Id')).toBe('client-1');
+		expect(forwardedRequest.headers.get('Tab-Id')).toBe('tab-1');
 	});
 
 	it('should not mutate the original request', () => {
@@ -30,6 +34,7 @@ describe('httpHeadersInterceptor', () => {
 		TestBed.runInInjectionContext(() => httpHeadersInterceptor(request, next)).subscribe();
 
 		expect(request.headers.has('Client-Id')).toBeFalse();
+		expect(request.headers.has('Tab-Id')).toBeFalse();
 	});
 
 	it('should preserve existing headers', () => {
@@ -42,6 +47,7 @@ describe('httpHeadersInterceptor', () => {
 
 		const forwardedRequest = next.calls.mostRecent().args[0] as HttpRequest<unknown>;
 		expect(forwardedRequest.headers.get('Client-Id')).toBe('client-1');
+		expect(forwardedRequest.headers.get('Tab-Id')).toBe('tab-1');
 		expect(forwardedRequest.headers.get('X-Key-Hash')).toBe('hash');
 	});
 });

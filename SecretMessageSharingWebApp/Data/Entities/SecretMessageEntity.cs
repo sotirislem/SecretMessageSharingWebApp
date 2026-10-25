@@ -10,6 +10,8 @@ public sealed record SecretMessageEntity : IDbEntity
 
 	public string CreatorClientId { get; init; }
 
+	public string? CreatorTabId { get; init; }
+
 	public string? CreatorIP { get; init; }
 
 	public string? CreatorClientInfo { get; init; }

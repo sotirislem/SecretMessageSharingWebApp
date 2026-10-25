@@ -23,6 +23,7 @@ public static class ApiContractToDomainDtoMapper
 		},
 		EncryptionKeySha256 = KeyHashVerifier.Create(request.EncryptionKeySha256),
 		CreatorClientId = request.ClientId,
+		CreatorTabId = request.TabId,
 		CreatorIP = httpContextClientInfo.ClientIP,
 		CreatorClientInfo = httpContextClientInfo.ClientInfo
 	};

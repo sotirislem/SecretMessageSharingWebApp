@@ -16,8 +16,7 @@ describe('MessageDeliveryDetailsModalComponent', () => {
 		messageCreatedOn: new Date(2026, 9, 25, 10, 30, 0),
 		messageDeliveredOn: new Date(2026, 9, 25, 10, 35, 0),
 		recipientIP: '192.168.1.10',
-		recipientClientInfo: 'Chrome on Windows',
-		isSelfNotification: false
+		recipientClientInfo: 'Chrome on Windows'
 	};
 
 	function createFixture(isNotification: boolean) {
@@ -48,21 +47,21 @@ describe('MessageDeliveryDetailsModalComponent', () => {
 		const fixture = createFixture(false);
 		const element: HTMLElement = fixture.nativeElement;
 
-		expect(element.querySelector('.modal-title')?.textContent).toContain('Message delivery details');
+		expect(element.querySelector('.modal-title')?.textContent).toContain('Message details');
 		expect(element.textContent).toContain('message-id');
 		expect(element.textContent).toContain('25/10/2026 10:30:00');
 		expect(element.textContent).toContain('25/10/2026 10:35:00');
 		expect(element.textContent).toContain('192.168.1.10');
 		expect(element.textContent).toContain('Chrome on Windows');
-		expect(element.textContent).not.toContain('Your message has been delivered');
+		expect(element.textContent).not.toContain('Your message has been opened');
 	});
 
 	it('should render the notification explanation for incoming notifications', () => {
 		const fixture = createFixture(true);
 
 		expect(fixture.nativeElement.querySelector('.modal-title')?.textContent)
-			.toContain('Message delivery notification');
-		expect(fixture.nativeElement.textContent).toContain('Your message has been delivered');
+			.toContain('Message notification');
+		expect(fixture.nativeElement.textContent).toContain('Your message has been opened');
 	});
 
 	it('should dismiss the modal when the close button is clicked', () => {

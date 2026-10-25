@@ -19,7 +19,10 @@ public class ApiContractToDomainDtoMapperTests
 	public void ToSecretMessage_ShouldMapAllFieldsCorrectly()
 	{
 		// Arrange
-		var request = _fixture.Create<StoreNewSecretMessageRequest>();
+		var tabId = Guid.NewGuid().ToString();
+		var request = _fixture.Build<StoreNewSecretMessageRequest>()
+			.With(x => x.TabId, tabId)
+			.Create();
 		var httpContextClientInfo = _fixture.Create<HttpContextClientInfo>();
 
 		// Act
@@ -35,6 +38,7 @@ public class ApiContractToDomainDtoMapperTests
 		result.Otp.RecipientsEmail.Should().Be(request.Otp.RecipientsEmail.Trim());
 		result.EncryptionKeySha256.Should().Be(KeyHashVerifier.Create(request.EncryptionKeySha256));
 		result.CreatorClientId.Should().Be(request.ClientId);
+		result.CreatorTabId.Should().Be(tabId);
 		result.CreatorIP.Should().Be(httpContextClientInfo.ClientIP);
 		result.CreatorClientInfo.Should().Be(httpContextClientInfo.ClientInfo);
 	}

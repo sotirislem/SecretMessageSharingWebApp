@@ -230,6 +230,13 @@ verifier. Angular tests cover the route guard, crypto service, and string extens
 
 - The Cosmos DB container is created on startup with `EnsureCreatedAsync`.
 - Message cleanup runs in a background service; unread messages expire after one hour.
+- Delivery notifications are process-local (in-memory connection map and pending queue), which
+  assumes a single application instance. A queued notification is kept for 15 minutes, the same
+  lifetime as the browser session history, and is replayed when the sender's browser reconnects
+  with the same client id.
+- Every browser tab also has its own id, kept in `sessionStorage` so it survives a refresh. When
+  the creator opens their own message, the notification is sent only to the tab that created it;
+  the other tabs of the same browser are left alone.
 - The recipient email address for OTP is stored server-side so the code can be delivered.
 - Attachments are limited to 1 MB before Base64 encoding; the server caps the encrypted
   payload at 1.5 MB (decoded ciphertext) and the request body at 3 MiB. Cosmos DB enforces a

@@ -64,7 +64,9 @@ describe('NewSecretMessageComponent', () => {
 				{ provide: Clipboard, useValue: clipboard },
 				{
 					provide: SecretMessageDeliveryNotificationHubService,
-					useValue: { deliveredMessageIds: deliveredMessageIds.asReadonly() }
+					useValue: {
+						deliveredMessageIds: deliveredMessageIds.asReadonly()
+					}
 				}
 			]
 		}).compileComponents();
@@ -103,13 +105,13 @@ describe('NewSecretMessageComponent', () => {
 		expect(element.textContent).toContain('Waiting for recipient');
 	});
 
-	it('should switch to the delivered state when the hub reports this message', async () => {
+	it('should switch to the opened state when the hub reports this message', async () => {
 		deliveredMessageIds.set(['message-id']);
 		fixture.detectChanges();
 		await fixture.whenStable();
 
 		expect(component.secretMsgDelivered()).toBeTrue();
-		expect(fixture.nativeElement.textContent).toContain('Delivered');
+		expect(fixture.nativeElement.textContent).toContain('Opened');
 		expect(fixture.nativeElement.textContent).not.toContain('Waiting for recipient');
 		expect(fixture.nativeElement.querySelector('.qr-card')).toBeNull();
 	});

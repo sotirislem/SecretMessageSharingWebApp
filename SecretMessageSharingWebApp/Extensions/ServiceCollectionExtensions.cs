@@ -74,6 +74,20 @@ public static class ServiceCollectionExtensions
 				{
 					return RateLimitPartition.GetNoLimiter(Constants.RateLimit.NoLimit);
 				}
+
+				// Hub handshakes and reconnects are isolated per client IP. They must not consume
+				// the shared bucket (a client that goes offline and back can reconnect often),
+				// and the API must not be able to rate limit the hub out of service.
+				if (httpContext.Request.Path.StartsWithSegments("/signalr"))
+				{
+					return RateLimitPartition.GetFixedWindowLimiter(
+						$"signalr:{httpContext.GetClientIP()}",
+						_ => new FixedWindowRateLimiterOptions
+						{
+							PermitLimit = Constants.RateLimit.SignalRPermitLimitPerMinute,
+							Window = TimeSpan.FromMinutes(1)
+						});
+				}
 			
 				return RateLimitPartition.GetFixedWindowLimiter(Constants.RateLimit.GlobalLimit, _ =>
 					new FixedWindowRateLimiterOptions

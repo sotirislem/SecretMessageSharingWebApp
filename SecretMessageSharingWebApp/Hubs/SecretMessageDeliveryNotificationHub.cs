@@ -17,52 +17,65 @@ public sealed class SecretMessageDeliveryNotificationHub(
 {
 	public const string Url = "signalr/secret-message-delivery-notification-hub";
 
-	public override Task OnConnectedAsync()
+	public override async Task OnConnectedAsync()
 	{
-		var clientId = GetClientId();
-		if (IsClientIdValidGuid(clientId) is false)
+		var clientId = GetQueryValue("client_id");
+		if (Guid.TryParse(clientId, out var parsedClientId) is false)
 		{
-			logger.LogError("SecretMessageDeliveryNotificationHub => New connection aborted, ID: {connectionId}, ClientId: {clientId}", Context.ConnectionId, clientId);
+			logger.LogWarning("SecretMessageDeliveryNotificationHub => New connection aborted, ID: {connectionId}, ClientId: {clientId}", Context.ConnectionId, clientId);
 
 			Context.Abort();
-			return Task.CompletedTask;
+			return;
 		}
 
-		secretMessageDeliveryNotificationHubService.AddConnection(clientId!, Context.ConnectionId);
-		secretMessageDeliveryNotificationHubService.SendAnyPendingNotificationFromMemoryCacheQueue(clientId!);
+		clientId = parsedClientId.ToString("D");
 
-		logger.LogInformation("SecretMessageDeliveryNotificationHub => New connection established, ID: {connectionId}, ClientId: {clientId}", Context.ConnectionId, clientId);
+		if (Guid.TryParse(GetQueryValue("tab_id"), out var parsedTabId) is false)
+		{
+			logger.LogWarning("SecretMessageDeliveryNotificationHub => New connection aborted, ID: {connectionId}, TabId: {tabId}", Context.ConnectionId, GetQueryValue("tab_id"));
 
-		return base.OnConnectedAsync();
+			Context.Abort();
+			return;
+		}
+
+		var tabId = parsedTabId.ToString("D");
+
+		secretMessageDeliveryNotificationHubService.AddConnection(clientId, tabId, Context.ConnectionId);
+
+		logger.LogInformation("SecretMessageDeliveryNotificationHub => New connection established, ID: {connectionId}, ClientId: {clientId}, TabId: {tabId}", Context.ConnectionId, clientId, tabId);
+
+		try
+		{
+			// Awaited and guarded: pending notifications have to be replayed before the connect
+			// call completes, and a replay failure must not break the connection itself.
+			await secretMessageDeliveryNotificationHubService.SendAnyPendingNotificationFromMemoryCacheQueue(clientId, tabId, Context.ConnectionId);
+		}
+		catch (Exception exception)
+		{
+			logger.LogError(exception, "SecretMessageDeliveryNotificationHub => Failed to replay pending notifications, ID: {connectionId}, ClientId: {clientId}", Context.ConnectionId, clientId);
+		}
+
+		await base.OnConnectedAsync();
 	}
 
-	public override Task OnDisconnectedAsync(Exception? exception)
+	public override async Task OnDisconnectedAsync(Exception? exception)
 	{
-		var clientId = GetClientId();
-		if (IsClientIdValidGuid(clientId) is true)
-		{
-			secretMessageDeliveryNotificationHubService.RemoveConnection(clientId!);
-			logger.LogInformation("SecretMessageDeliveryNotificationHub => Connection terminated, ID: {connectionId}, ClientId: {clientId}", Context.ConnectionId, clientId);
-		}
+		// The connection id identifies which connection went away. Using only the client id
+		// could unregister a newer connection that is still alive.
+		secretMessageDeliveryNotificationHubService.RemoveConnection(Context.ConnectionId);
+
+		logger.LogInformation("SecretMessageDeliveryNotificationHub => Connection terminated, ID: {connectionId}, ClientId: {clientId}", Context.ConnectionId, GetQueryValue("client_id"));
 
 		if (exception is not null)
 		{
 			logger.LogError(exception, "SecretMessageDeliveryNotificationHub => Exception: {exceptionMessage}", exception.GetAllErrorMessages());
 		}
 
-		return base.OnDisconnectedAsync(exception);
+		await base.OnDisconnectedAsync(exception);
 	}
 
-	private string? GetClientId()
+	private string? GetQueryValue(string key)
 	{
-		return Context.GetHttpContext()?.Request.Query
-			.Where(x => x.Key == "client_id")
-			.Select(x => x.Value.ToString())
-			.FirstOrDefault();
-	}
-
-	private bool IsClientIdValidGuid(string? clientId)
-	{
-		return Guid.TryParse(clientId, out _);
+		return Context.GetHttpContext()?.Request.Query[key].FirstOrDefault();
 	}
 }

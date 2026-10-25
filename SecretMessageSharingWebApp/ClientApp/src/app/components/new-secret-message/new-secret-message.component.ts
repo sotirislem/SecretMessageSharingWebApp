@@ -1,4 +1,4 @@
-import { afterNextRender, ChangeDetectionStrategy, Component, DestroyRef, effect, ElementRef, inject, signal, viewChild } from '@angular/core';
+import { afterNextRender, ChangeDetectionStrategy, Component, computed, DestroyRef, effect, ElementRef, inject, signal, viewChild } from '@angular/core';
 import { Clipboard } from '@angular/cdk/clipboard';
 import { NgbTooltip } from '@ng-bootstrap/ng-bootstrap';
 import * as QRCode from 'qrcode';
@@ -46,6 +46,8 @@ export class NewSecretMessageComponent {
 	readonly secretMsgDelivered = signal(false);
 	readonly secretMsgContentCleared = signal(false);
 
+	readonly statusLabel = computed(() => this.secretMsgDelivered() ? 'Opened' : 'Waiting for recipient');
+
 	private readonly tooltip = viewChild<NgbTooltip>('ngbTooltipElement');
 	private readonly qrCodeCanvas = viewChild<ElementRef<HTMLCanvasElement>>('qrCodeCanvas');
 
@@ -55,7 +57,9 @@ export class NewSecretMessageComponent {
 	constructor() {
 		// React to delivery notifications for this message without an explicit subscription.
 		effect(() => {
-			if (this.hubService.deliveredMessageIds().includes(this.secretMsgId())) {
+			const messageId = this.secretMsgId();
+
+			if (this.hubService.deliveredMessageIds().includes(messageId)) {
 				this.tooltip()?.close();
 				this.secretMsgDelivered.set(true);
 			}

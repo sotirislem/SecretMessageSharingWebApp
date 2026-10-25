@@ -3,6 +3,7 @@ import { InjectionToken } from '@angular/core';
 export const BASE_URL = new InjectionToken<string>('BASE_URL');
 export const API_URL = new InjectionToken<string>('API_URL');
 export const CLIENT_ID = new InjectionToken<string>('CLIENT_ID');
+export const TAB_ID = new InjectionToken<string>('TAB_ID');
 
 /**
  * Data handed to a component that is opened through `ModalService`.

@@ -16,6 +16,10 @@ public sealed record SecretMessage
 
 	public string CreatorClientId { get; init; }
 
+	// The browser tab that created the message. Used to deliver a self-read notification to
+	// that tab only, because all tabs of a browser share the same client id.
+	public string? CreatorTabId { get; init; }
+
 	public string? CreatorIP { get; init; }
 
 	public string? CreatorClientInfo { get; init; }

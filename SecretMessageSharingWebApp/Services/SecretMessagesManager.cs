@@ -146,8 +146,14 @@ public class SecretMessagesManager(
 			return ApiResult.NotFound();
 		}
 
+		// All tabs of the same browser share the client id, so a notification about the
+		// creator's own retrieval would otherwise pop up in every tab, including the one that is
+		// already showing the message. Target the tab that created the message instead.
+		var isSelfRead = string.Equals(secretMessage.CreatorClientId, httpContextClientInfo.ClientId, StringComparison.OrdinalIgnoreCase);
+		var targetTabId = isSelfRead ? secretMessage.CreatorTabId : null;
+
 		var secretMessageDeliveryNotification = getLog.ToSecretMessageDeliveryNotification();
-		var deliveryNotificationSent = await notificationHubService.SendNotification(secretMessage.CreatorClientId, secretMessageDeliveryNotification);
+		var deliveryNotificationSent = await notificationHubService.SendNotification(secretMessage.CreatorClientId, targetTabId, secretMessageDeliveryNotification);
 
 		return ApiResult<GetSecretMessageResponse>.SuccessWithData(new()
 		{

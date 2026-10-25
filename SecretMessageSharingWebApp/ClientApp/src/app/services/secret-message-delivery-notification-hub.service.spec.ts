@@ -4,7 +4,7 @@ import { NgbModalOptions } from '@ng-bootstrap/ng-bootstrap';
 
 import { MessageDeliveryDetailsModalComponent } from '../components/modals/message-delivery-details-modal/message-delivery-details-modal.component';
 import { SecretMessageDeliveryNotification } from '../models/api/secret-message-delivery-notification.model';
-import { API_URL, CLIENT_ID } from '../tokens';
+import { API_URL, CLIENT_ID, TAB_ID } from '../tokens';
 import { ModalService } from './modal.service';
 import { SecretMessageDeliveryNotificationHubService } from './secret-message-delivery-notification-hub.service';
 import { ToastService } from './toast.service';
@@ -28,6 +28,7 @@ class FakeWorker {
 describe('SecretMessageDeliveryNotificationHubService', () => {
 	const apiUrl = 'https://api.example.com';
 	const clientId = 'client-1';
+	const tabId = 'tab-1';
 
 	let originalWorker: typeof Worker;
 	let modalService: jasmine.SpyObj<ModalService>;
@@ -47,6 +48,7 @@ describe('SecretMessageDeliveryNotificationHubService', () => {
 		injector = createEnvironmentInjector([
 			{ provide: API_URL, useValue: apiUrl },
 			{ provide: CLIENT_ID, useValue: clientId },
+			{ provide: TAB_ID, useValue: tabId },
 			{ provide: ModalService, useValue: modalService },
 			{ provide: ToastService, useValue: toastService }
 		], TestBed.inject(EnvironmentInjector));
@@ -72,8 +74,7 @@ describe('SecretMessageDeliveryNotificationHubService', () => {
 			messageCreatedOn: new Date(),
 			messageDeliveredOn: new Date(),
 			recipientIP: '127.0.0.1',
-			recipientClientInfo: 'browser',
-			isSelfNotification: false
+			recipientClientInfo: 'browser'
 		};
 	}
 
@@ -84,7 +85,8 @@ describe('SecretMessageDeliveryNotificationHubService', () => {
 		expect(worker.postMessage).toHaveBeenCalledWith({
 			action: 'INIT_START',
 			apiUrl,
-			clientId
+			clientId,
+			tabId
 		});
 	});
 
@@ -148,11 +150,34 @@ describe('SecretMessageDeliveryNotificationHubService', () => {
 		document.dispatchEvent(new Event('visibilitychange'));
 		expect(worker.postMessage).not.toHaveBeenCalled();
 
-		worker.emit({ action: 'CONNECTION_ID', connectionId: 'connection-1' });
+		worker.emit({ action: 'CONNECTION_STATE', state: 'connected' });
 
 		visibilityStateSpy.and.returnValue('visible');
 		document.dispatchEvent(new Event('visibilitychange'));
 		expect(worker.postMessage).not.toHaveBeenCalled();
+	});
+
+	it('should ask the worker to reconnect while the connection is reconnecting', () => {
+		const { worker } = createService();
+		worker.emit({ action: 'CONNECTION_STATE', state: 'reconnecting' });
+		worker.postMessage.calls.reset();
+
+		spyOnProperty(Document.prototype, 'visibilityState', 'get').and.returnValue('visible');
+		document.dispatchEvent(new Event('visibilitychange'));
+
+		expect(worker.postMessage).toHaveBeenCalledWith({ action: 'START' });
+	});
+
+	it('should ask the worker to reconnect after the connection was closed', () => {
+		const { worker } = createService();
+		worker.emit({ action: 'CONNECTION_STATE', state: 'connected' });
+		worker.emit({ action: 'CONNECTION_STATE', state: 'disconnected' });
+		worker.postMessage.calls.reset();
+
+		spyOnProperty(Document.prototype, 'visibilityState', 'get').and.returnValue('visible');
+		document.dispatchEvent(new Event('visibilitychange'));
+
+		expect(worker.postMessage).toHaveBeenCalledWith({ action: 'START' });
 	});
 
 	it('should terminate the worker and stop listening when destroyed', () => {

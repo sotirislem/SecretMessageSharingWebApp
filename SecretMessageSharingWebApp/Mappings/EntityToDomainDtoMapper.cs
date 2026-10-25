@@ -16,6 +16,7 @@ public static class EntityToDomainDtoMapper
 		Otp = entity.Otp.ToDomain(),
 		EncryptionKeySha256 = entity.EncryptionKeySha256,
 		CreatorClientId = entity.CreatorClientId,
+		CreatorTabId = entity.CreatorTabId,
 		CreatorIP = entity.CreatorIP,
 		CreatorClientInfo = entity.CreatorClientInfo,
 	};

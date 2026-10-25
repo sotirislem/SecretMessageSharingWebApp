@@ -402,7 +402,7 @@ public class SecretMessagesManagerTests
 		_jwtService.ValidateToken(jwtToken, messageId)
 			.Returns(true);
 
-		_notificationHubService.SendNotification(secretMessage.CreatorClientId, secretMessageDeliveryNotification)
+		_notificationHubService.SendNotification(secretMessage.CreatorClientId, null, secretMessageDeliveryNotification)
 			.Returns(true);
 
 		// Act
@@ -415,6 +415,92 @@ public class SecretMessagesManagerTests
 			DeliveryNotificationSent = true
 		}));
 		await _secretMessagesService.Received(1).Delete(messageId);
+	}
+
+	[Fact]
+	public async Task GetMessage_ShouldTargetTheCreatorTab_WhenTheCreatorOpensTheMessage()
+	{
+		// Arrange
+		var encryptionKeySha256 = _fixture.Create<string>();
+		var clientId = Guid.NewGuid().ToString();
+		var creatorTabId = Guid.NewGuid().ToString();
+		var secretMessage = _fixture.Create<SecretMessage>() with
+		{
+			EncryptionKeySha256 = KeyHashVerifier.Create(encryptionKeySha256),
+			CreatorClientId = clientId,
+			CreatorTabId = creatorTabId,
+			Otp = new OtpSettings
+			{
+				Required = false,
+				RecipientsEmail = ""
+			}
+		};
+		var messageId = secretMessage.Id;
+		var httpContextClientInfo = _fixture.Create<HttpContextClientInfo>() with
+		{
+			ClientId = clientId
+		};
+
+		var getLog = _fixture.Create<GetLog>();
+		var secretMessageDeliveryNotification = getLog.ToSecretMessageDeliveryNotification();
+
+		_secretMessagesService.Get(messageId)
+			.Returns(secretMessage);
+
+		_secretMessagesService.Delete(messageId)
+			.Returns(true);
+
+		_getLogsService.CreateNewLog(Arg.Any<GetLog>())
+			.Returns(getLog);
+
+		_notificationHubService.SendNotification(clientId, creatorTabId, secretMessageDeliveryNotification)
+			.Returns(true);
+
+		// Act
+		var result = await _sut.GetMessage(messageId, encryptionKeySha256, null, httpContextClientInfo);
+
+		// Assert
+		result.Should().BeOfType<SuccessResult<GetSecretMessageResponse>>();
+		await _notificationHubService.Received(1).SendNotification(clientId, creatorTabId, secretMessageDeliveryNotification);
+	}
+
+	[Fact]
+	public async Task GetMessage_ShouldNotifyEveryTab_WhenSomebodyElseOpensTheMessage()
+	{
+		// Arrange
+		var encryptionKeySha256 = _fixture.Create<string>();
+		var secretMessage = _fixture.Create<SecretMessage>() with
+		{
+			EncryptionKeySha256 = KeyHashVerifier.Create(encryptionKeySha256),
+			Otp = new OtpSettings
+			{
+				Required = false,
+				RecipientsEmail = ""
+			}
+		};
+		var messageId = secretMessage.Id;
+		var httpContextClientInfo = _fixture.Create<HttpContextClientInfo>();
+
+		var getLog = _fixture.Create<GetLog>();
+		var secretMessageDeliveryNotification = getLog.ToSecretMessageDeliveryNotification();
+
+		_secretMessagesService.Get(messageId)
+			.Returns(secretMessage);
+
+		_secretMessagesService.Delete(messageId)
+			.Returns(true);
+
+		_getLogsService.CreateNewLog(Arg.Any<GetLog>())
+			.Returns(getLog);
+
+		_notificationHubService.SendNotification(secretMessage.CreatorClientId, null, secretMessageDeliveryNotification)
+			.Returns(true);
+
+		// Act
+		await _sut.GetMessage(messageId, encryptionKeySha256, null, httpContextClientInfo);
+
+		// Assert
+		await _notificationHubService.Received(1).SendNotification(secretMessage.CreatorClientId, null, secretMessageDeliveryNotification);
 	}
 
 	[Fact]
@@ -493,7 +579,7 @@ public class SecretMessagesManagerTests
 
 		// Assert
 		result.Should().BeEquivalentTo(ApiResult.NotFound());
-		await _notificationHubService.DidNotReceive().SendNotification(Arg.Any<string>(), Arg.Any<SecretMessageDeliveryNotification>());
+		await _notificationHubService.DidNotReceive().SendNotification(Arg.Any<string>(), Arg.Any<string?>(), Arg.Any<SecretMessageDeliveryNotification>());
 	}
 
 	[Fact]
@@ -635,7 +721,7 @@ public class SecretMessagesManagerTests
 		_secretMessagesService.Delete(messageId)
 			.Returns(true);
 
-		_notificationHubService.SendNotification(secretMessage.CreatorClientId, secretMessageDeliveryNotification)
+		_notificationHubService.SendNotification(secretMessage.CreatorClientId, null, secretMessageDeliveryNotification)
 			.Returns(true);
 
 		// Act

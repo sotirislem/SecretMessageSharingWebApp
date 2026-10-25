@@ -1,6 +1,6 @@
 <div class="modal-header">
 	<h5 id="modal-basic-title" class="modal-title">
-		Message delivery {{data.isNotification ? 'notification' : 'details'}}
+		Message {{data.isNotification ? 'notification' : 'details'}}
 	</h5>
 	<button type="button" aria-label="Close" class="btn-close" (click)="dismiss()"></button>
 </div>
@@ -12,7 +12,7 @@
 	<hr />
 
 	@if (data.isNotification) {
-		<p>Your message has been delivered to a recipient, please find more details below:</p>
+		<p>Your message has been opened, please find more details below:</p>
 	}
 
 	<div class="detail-table">
@@ -23,15 +23,15 @@
 					<td>{{data.messageDeliveryDetails.messageCreatedOn | dateTimeFull}}</td>
 				</tr>
 				<tr>
-					<th scope="row">Message delivered on</th>
+					<th scope="row">Message opened on</th>
 					<td>{{data.messageDeliveryDetails.messageDeliveredOn | dateTimeFull}}</td>
 				</tr>
 				<tr>
-					<th scope="row">Recipient's IP</th>
+					<th scope="row">Opened from IP</th>
 					<td>{{data.messageDeliveryDetails.recipientIP}}</td>
 				</tr>
 				<tr>
-					<th scope="row">Recipient's Device</th>
+					<th scope="row">Opened from device</th>
 					<td>{{data.messageDeliveryDetails.recipientClientInfo}}</td>
 				</tr>
 			</tbody>

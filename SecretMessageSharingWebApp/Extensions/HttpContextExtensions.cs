@@ -36,7 +36,8 @@ public static class HttpContextExtensions
 		{
 			RequestDateTime = httpContext.GetRequestDateTime(),
 			ClientIP = httpContext.GetClientIP(),
-			ClientInfo = httpContext.GetClientInfo()
+			ClientInfo = httpContext.GetClientInfo(),
+			ClientId = httpContext.GetRequestHeaderValue("Client-Id")
 		};
 	}
 

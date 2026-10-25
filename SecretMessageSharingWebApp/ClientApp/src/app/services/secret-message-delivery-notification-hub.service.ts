@@ -5,7 +5,7 @@ import { ModalService } from './modal.service';
 import { ToastService } from './toast.service';
 import { MessageDeliveryDetailsModalComponent } from '../components/modals/message-delivery-details-modal/message-delivery-details-modal.component';
 import { SecretMessageDeliveryNotification } from '../models/api/secret-message-delivery-notification.model';
-import { API_URL, CLIENT_ID } from '../tokens';
+import { API_URL, CLIENT_ID, TAB_ID } from '../tokens';
 
 @Injectable({
 	providedIn: 'root'
@@ -13,13 +13,14 @@ import { API_URL, CLIENT_ID } from '../tokens';
 export class SecretMessageDeliveryNotificationHubService {
 	private readonly apiUrl = inject(API_URL);
 	private readonly clientId = inject(CLIENT_ID);
+	private readonly tabId = inject(TAB_ID);
 	private readonly modalService = inject(ModalService);
 	private readonly toastService = inject(ToastService);
 	private readonly destroyRef = inject(DestroyRef);
 
 	private readonly hubWorker = new Worker(new URL('./secret-message-delivery-notification-hub.worker', import.meta.url));
 
-	private readonly _hubConnectionId = signal<string | null>(null);
+	private readonly _isConnected = signal(false);
 	private readonly _deliveredMessageIds = signal<readonly string[]>([]);
 
 	readonly deliveredMessageIds = this._deliveredMessageIds.asReadonly();
@@ -27,8 +28,8 @@ export class SecretMessageDeliveryNotificationHubService {
 	constructor() {
 		this.hubWorker.onmessage = ({ data }) => {
 			switch (data.action) {
-				case 'CONNECTION_ID':
-					this._hubConnectionId.set(data.connectionId);
+				case 'CONNECTION_STATE':
+					this._isConnected.set(data.state === 'connected');
 					break;
 				case 'NOTIFICATION':
 					this.handleIncomingNotification(data.secretMessageDeliveryNotification);
@@ -41,7 +42,7 @@ export class SecretMessageDeliveryNotificationHubService {
 			}
 		};
 
-		this.hubWorker.postMessage({ action: 'INIT_START', apiUrl: this.apiUrl, clientId: this.clientId });
+		this.hubWorker.postMessage({ action: 'INIT_START', apiUrl: this.apiUrl, clientId: this.clientId, tabId: this.tabId });
 		document.addEventListener('visibilitychange', this.handleVisibilityChange);
 
 		this.destroyRef.onDestroy(() => {
@@ -51,7 +52,7 @@ export class SecretMessageDeliveryNotificationHubService {
 	}
 
 	private readonly handleVisibilityChange = () => {
-		if (document.visibilityState === 'visible' && !this._hubConnectionId()) {
+		if (document.visibilityState === 'visible' && !this._isConnected()) {
 			this.hubWorker.postMessage({ action: 'START' });
 		}
 	};

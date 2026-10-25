@@ -34,6 +34,7 @@ public class EntityToDomainDtoMapperTests
 		result.Data.Should().BeEquivalentTo(JsonSerializer.Deserialize<SecretMessageData>(entity.JsonData));
 		result.EncryptionKeySha256.Should().Be(entity.EncryptionKeySha256);
 		result.CreatorClientId.Should().Be(entity.CreatorClientId);
+		result.CreatorTabId.Should().Be(entity.CreatorTabId);
 		result.CreatorIP.Should().Be(entity.CreatorIP);
 		result.CreatorClientInfo.Should().Be(entity.CreatorClientInfo);
 
@@ -59,6 +60,7 @@ public class EntityToDomainDtoMapperTests
 		result.Data.Should().BeEquivalentTo(JsonSerializer.Deserialize<SecretMessageData>(entity.JsonData));
 		result.EncryptionKeySha256.Should().Be(entity.EncryptionKeySha256);
 		result.CreatorClientId.Should().Be(entity.CreatorClientId);
+		result.CreatorTabId.Should().Be(entity.CreatorTabId);
 		result.CreatorIP.Should().Be(entity.CreatorIP);
 		result.CreatorClientInfo.Should().Be(entity.CreatorClientInfo);
 

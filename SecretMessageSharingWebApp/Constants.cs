@@ -43,5 +43,9 @@ public static class Constants
 
 		public const int GlobalPermitLimitPerMinute = 1000;
 		public const int EndpointHitLimitPerMinute = 30;
+
+		// SignalR handshakes and reconnects get their own per-IP bucket so a reconnect storm
+		// cannot exhaust the shared application-wide limit.
+		public const int SignalRPermitLimitPerMinute = 120;
 	}
 }

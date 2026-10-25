@@ -11,6 +11,7 @@ public static class DomainToEntityDtoMapper
 		CreatedDateTime = secretMessage.CreatedDateTime,
 		JsonData = JsonSerializer.Serialize(secretMessage.Data),
 		CreatorClientId = secretMessage.CreatorClientId,
+		CreatorTabId = secretMessage.CreatorTabId,
 		CreatorIP = secretMessage.CreatorIP,
 		CreatorClientInfo = secretMessage.CreatorClientInfo,
 		Otp = secretMessage.Otp.Required
