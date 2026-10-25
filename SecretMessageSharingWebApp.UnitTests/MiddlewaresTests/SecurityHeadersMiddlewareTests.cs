@@ -22,6 +22,8 @@ public class SecurityHeadersMiddlewareTests
 		context.Response.Headers["X-Frame-Options"].ToString().Should().Be("DENY");
 		context.Response.Headers["Referrer-Policy"].ToString().Should().Be("no-referrer");
 		context.Response.Headers["X-Robots-Tag"].ToString().Should().Contain("noindex");
+		context.Response.Headers["Permissions-Policy"].ToString().Should().Contain("geolocation=(self)");
+		context.Response.Headers["Accept-CH"].ToString().Should().Contain("Sec-CH-UA-Model");
 	}
 
 	[Fact]

@@ -17,7 +17,8 @@ public class SecretMessagesManager(
 	ISendGridEmailService sendGridEmailService,
 	IMemoryCacheService memoryCacheService,
 	IJwtService jwtService,
-	ISecretMessageDeliveryNotificationHubService notificationHubService) : ISecretMessagesManager
+	ISecretMessageDeliveryNotificationHubService notificationHubService,
+	IRecipientLocationService recipientLocationService) : ISecretMessagesManager
 {
 	public async Task<ApiResult> DeleteRecentMessage(string id)
 	{
@@ -100,7 +101,12 @@ public class SecretMessagesManager(
 		});
 	}
 
-	public async Task<ApiResult> GetMessage(string messageId, string encryptionKeySha256, string? jwtToken, HttpContextClientInfo httpContextClientInfo)
+	public async Task<ApiResult> GetMessage(
+		string messageId,
+		string encryptionKeySha256,
+		string? jwtToken,
+		HttpContextClientInfo httpContextClientInfo,
+		CancellationToken cancellationToken = default)
 	{
 		var secretMessage = await secretMessagesService.Get(messageId);
 
@@ -126,6 +132,24 @@ public class SecretMessagesManager(
 			}
 		}
 
+		// All tabs of the same browser share the client id, so a notification about the
+		// creator's own retrieval would otherwise pop up in every tab, including the one that is
+		// already showing the message. Target the tab that created the message instead.
+		var isSelfRead = string.Equals(secretMessage.CreatorClientId, httpContextClientInfo.ClientId, StringComparison.OrdinalIgnoreCase);
+
+		// Coordinates are present only when the browser granted the location request. The lookup
+		// resolves a city and never persists the coordinates themselves. A provider failure must
+		// not block retrieval.
+		var recipientLocation = await recipientLocationService.ResolveAsync(
+			httpContextClientInfo.ClientIP,
+			httpContextClientInfo.ClientLatitude,
+			httpContextClientInfo.ClientLongitude,
+			cancellationToken);
+
+		// If the recipient disconnected while the lookup was running, do not consume
+		// the one-time message: they never received it.
+		cancellationToken.ThrowIfCancellationRequested();
+
 		// Only a proven retrieval is logged. Logging earlier would let failed key/OTP
 		// attempts create rows (write amplification) and would make the message look
 		// retrieved in the creator's history.
@@ -135,6 +159,16 @@ public class SecretMessagesManager(
 			RequestDateTime = httpContextClientInfo.RequestDateTime,
 			RequestCreatorIP = httpContextClientInfo.ClientIP,
 			RequestClientInfo = httpContextClientInfo.ClientInfo,
+			RecipientCity = recipientLocation?.City,
+			RecipientRegion = recipientLocation?.Region,
+			RecipientCountry = recipientLocation?.Country,
+			RecipientCountryCode = recipientLocation?.CountryCode,
+			RecipientLocationSource = recipientLocation?.Source,
+			RecipientIsp = recipientLocation?.Isp,
+			RecipientTimezone = httpContextClientInfo.ClientTimeZone,
+			RecipientUtcOffsetMinutes = httpContextClientInfo.ClientUtcOffsetMinutes,
+			RecipientLanguage = httpContextClientInfo.ClientLanguage,
+			OtpVerified = secretMessage.Otp.Required,
 			SecretMessageCreatedDateTime = secretMessage.CreatedDateTime,
 			SecretMessageCreatorIP = secretMessage.CreatorIP,
 			SecretMessageCreatorClientInfo = secretMessage.CreatorClientInfo
@@ -146,10 +180,6 @@ public class SecretMessagesManager(
 			return ApiResult.NotFound();
 		}
 
-		// All tabs of the same browser share the client id, so a notification about the
-		// creator's own retrieval would otherwise pop up in every tab, including the one that is
-		// already showing the message. Target the tab that created the message instead.
-		var isSelfRead = string.Equals(secretMessage.CreatorClientId, httpContextClientInfo.ClientId, StringComparison.OrdinalIgnoreCase);
 		var targetTabId = isSelfRead ? secretMessage.CreatorTabId : null;
 
 		var secretMessageDeliveryNotification = getLog.ToSecretMessageDeliveryNotification();

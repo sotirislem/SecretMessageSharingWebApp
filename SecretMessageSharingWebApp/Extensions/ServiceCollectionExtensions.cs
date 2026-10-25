@@ -1,6 +1,7 @@
 ﻿using System.Threading.RateLimiting;
 using Microsoft.Extensions.Options;
 using SecretMessageSharingWebApp.BackgroundServices;
+using SecretMessageSharingWebApp.ConfigurationSettings;
 using SecretMessageSharingWebApp.Middlewares;
 using SecretMessageSharingWebApp.Providers;
 using SecretMessageSharingWebApp.Repositories;
@@ -37,6 +38,17 @@ public static class ServiceCollectionExtensions
 		services.AddScoped<ISecretMessagesService, SecretMessagesService>();
 		services.AddScoped<IRecentlyStoredMessagesService, RecentlyStoredMessagesService>();
 		services.AddScoped<ISecretMessagesManager, SecretMessagesManager>();
+
+		services.AddHttpClient<IRecipientLocationService, RecipientLocationService>((serviceProvider, httpClient) =>
+		{
+			var settings = serviceProvider.GetRequiredService<RecipientLocationConfigurationSettings>();
+
+			// Leave headroom above the per-lookup timeout so the service's own
+			// linked token is what cancels the lookup first.
+			httpClient.Timeout = TimeSpan.FromSeconds(settings.TimeoutSeconds + 1);
+
+			httpClient.DefaultRequestHeaders.UserAgent.ParseAdd($"{Constants.AppName}/1.0");
+		});
 
 		services.AddScoped<IGetLogsRepository, GetLogsRepository>();
 		services.AddScoped<IGetLogsService, GetLogsService>();

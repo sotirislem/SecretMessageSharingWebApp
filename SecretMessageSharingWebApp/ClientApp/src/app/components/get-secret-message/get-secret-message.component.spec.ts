@@ -7,12 +7,14 @@ import '../../../extensions/string.extensions';
 
 import { Constants } from '../../../constants';
 import { GetSecretMessageResponse } from '../../models/api/get-secret-message-response.model';
+import { ClientLocation } from '../../models/client-location.model';
 import { DecryptionResult, DecryptionStatus } from '../../models/decryption-result.model';
 import { SecretMessage } from '../../models/secret-message.model';
 import { ApiClientService } from '../../services/api-client.service';
 import { CryptoService } from '../../services/crypto.service';
 import { FileService } from '../../services/file.service';
 import { ModalService } from '../../services/modal.service';
+import { RecipientLocationService } from '../../services/recipient-location.service';
 import { ToastService } from '../../services/toast.service';
 import { OtpInputModalComponent } from '../modals/otp-input-modal/otp-input-modal.component';
 import { GetSecretMessageComponent } from './get-secret-message.component';
@@ -65,10 +67,17 @@ describe('GetSecretMessageComponent', () => {
 		}
 	};
 
+	const clientLocation: ClientLocation = {
+		timezone: 'Europe/Bucharest',
+		utcOffsetMinutes: 180,
+		language: 'en-US'
+	};
+
 	let apiClient: jasmine.SpyObj<ApiClientService>;
 	let cryptoService: jasmine.SpyObj<CryptoService>;
 	let fileService: jasmine.SpyObj<FileService>;
 	let modalService: jasmine.SpyObj<ModalService>;
+	let recipientLocationService: jasmine.SpyObj<RecipientLocationService>;
 	let toastService: jasmine.SpyObj<ToastService>;
 	let clipboard: jasmine.SpyObj<Clipboard>;
 	let originalWorker: typeof Worker;
@@ -105,6 +114,11 @@ describe('GetSecretMessageComponent', () => {
 		modalService.openConfirmationModal.and.returnValue(Promise.resolve(true));
 		modalService.openModal.and.returnValue(Promise.resolve('auth-token'));
 
+		recipientLocationService = jasmine.createSpyObj<RecipientLocationService>(
+			'RecipientLocationService',
+			['collect']);
+		recipientLocationService.collect.and.returnValue(Promise.resolve(clientLocation));
+
 		toastService = jasmine.createSpyObj<ToastService>(
 			'ToastService',
 			['success', 'error', 'warning', 'info', 'dismiss', 'clear']);
@@ -118,6 +132,7 @@ describe('GetSecretMessageComponent', () => {
 				{ provide: CryptoService, useValue: cryptoService },
 				{ provide: FileService, useValue: fileService },
 				{ provide: ModalService, useValue: modalService },
+				{ provide: RecipientLocationService, useValue: recipientLocationService },
 				{ provide: ToastService, useValue: toastService },
 				{ provide: Clipboard, useValue: clipboard }
 			]
@@ -213,6 +228,27 @@ describe('GetSecretMessageComponent', () => {
 		expect(apiClient.getSecretMessage).not.toHaveBeenCalled();
 	});
 
+	it('should wait for the location decision before retrieving the message', async () => {
+		const location = deferred<ClientLocation>();
+		recipientLocationService.collect.and.callFake((onPermissionPrompt?: () => void) => {
+			onPermissionPrompt?.();
+
+			return location.promise;
+		});
+
+		await createUntilPending();
+		fixture.detectChanges();
+
+		expect(component.componentState()).toBe(component.ComponentState.WaitingForLocationPermission);
+		expect(fixture.nativeElement.textContent).toContain('Waiting for your location decision');
+		expect(apiClient.getSecretMessage).not.toHaveBeenCalled();
+
+		location.resolve(clientLocation);
+		await flushMicrotasks();
+
+		expect(apiClient.getSecretMessage).toHaveBeenCalledWith(messageId, keyHash, undefined, clientLocation);
+	});
+
 	it('should abort when the confirmation modal is dismissed', async () => {
 		modalService.openConfirmationModal.and.returnValue(Promise.reject('dismissed'));
 
@@ -235,7 +271,7 @@ describe('GetSecretMessageComponent', () => {
 			OtpInputModalComponent,
 			{ messageId },
 			jasmine.objectContaining({ centered: true, backdrop: 'static' }));
-		expect(apiClient.getSecretMessage).toHaveBeenCalledWith(messageId, keyHash, 'auth-token');
+		expect(apiClient.getSecretMessage).toHaveBeenCalledWith(messageId, keyHash, 'auth-token', clientLocation);
 		expect(component.componentState()).toBe(component.ComponentState.ReadyWithMessage);
 	});
 
@@ -257,7 +293,7 @@ describe('GetSecretMessageComponent', () => {
 		await create();
 
 		expect(cryptoService.getSha256).toHaveBeenCalledWith(encryptionKey);
-		expect(apiClient.getSecretMessage).toHaveBeenCalledWith(messageId, keyHash, undefined);
+		expect(apiClient.getSecretMessage).toHaveBeenCalledWith(messageId, keyHash, undefined, clientLocation);
 		expect(cryptoService.decryptMessage).toHaveBeenCalledWith(
 			{ iv: 'iv', ct: 'ciphertext' },
 			encryptionKey);
@@ -601,7 +637,7 @@ describe('GetSecretMessageComponent', () => {
 		await create();
 
 		expect(modalService.openModal).not.toHaveBeenCalled();
-		expect(apiClient.getSecretMessage).toHaveBeenCalledWith(messageId, keyHash, undefined);
+		expect(apiClient.getSecretMessage).toHaveBeenCalledWith(messageId, keyHash, undefined, clientLocation);
 	});
 
 	it('should keep a missing decryption result when the auto-clear timer fires', async () => {

@@ -7,7 +7,7 @@
 
 <div class="modal-body">
 	<p class="text-center m-0">
-		Message Id: <span class="font-weight-500">{{data.messageDeliveryDetails.messageId}}</span>
+		Message Id: <span class="font-weight-500">{{details.messageId}}</span>
 	</p>
 	<hr />
 
@@ -20,20 +20,59 @@
 			<tbody>
 				<tr>
 					<th scope="row">Message created on</th>
-					<td>{{data.messageDeliveryDetails.messageCreatedOn | dateTimeFull}}</td>
+					<td>{{details.messageCreatedOn | dateTimeFull}}</td>
 				</tr>
 				<tr>
 					<th scope="row">Message opened on</th>
-					<td>{{data.messageDeliveryDetails.messageDeliveredOn | dateTimeFull}}</td>
+					<td>{{details.messageDeliveredOn | dateTimeFull}}</td>
+				</tr>
+				@if (timeToOpenText) {
+					<tr>
+						<th scope="row">Time to open</th>
+						<td>{{timeToOpenText}}</td>
+					</tr>
+				}
+				<tr>
+					<th scope="row">Opened from</th>
+					<td>
+						{{locationDisplayText}}
+						@if (locationSourceText) {
+							<div class="detail-hint">{{locationSourceText}}</div>
+						}
+					</td>
 				</tr>
 				<tr>
 					<th scope="row">Opened from IP</th>
-					<td>{{data.messageDeliveryDetails.recipientIP}}</td>
+					<td>{{details.recipientIP}}</td>
 				</tr>
 				<tr>
 					<th scope="row">Opened from device</th>
-					<td>{{data.messageDeliveryDetails.recipientClientInfo}}</td>
+					<td>{{details.recipientClientInfo}}</td>
 				</tr>
+				@if (ispText) {
+					<tr>
+						<th scope="row">Network provider</th>
+						<td>{{ispText}}</td>
+					</tr>
+				}
+				@if (timezoneText) {
+					<tr>
+						<th scope="row">Recipient time zone</th>
+						<td>{{timezoneText}}</td>
+					</tr>
+				}
+				@if (languageText) {
+					<tr>
+						<th scope="row">Browser language</th>
+						<td>{{languageText}}</td>
+					</tr>
+				}
+				@if (details.otpVerified) {
+					<tr>
+						<th scope="row">OTP verified</th>
+						<td><span class="badge-soft badge-soft--success">Yes</span></td>
+					</tr>
+				}
 			</tbody>
 		</table>
 	</div>

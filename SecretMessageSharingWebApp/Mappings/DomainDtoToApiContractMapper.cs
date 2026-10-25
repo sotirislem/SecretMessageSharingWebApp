@@ -12,6 +12,16 @@ public static class DomainDtoToApiContractMapper
 		MessageCreatedOn = getLog.SecretMessageCreatedDateTime!.Value,
 		MessageDeliveredOn = getLog.RequestDateTime,
 		RecipientIP = getLog.RequestCreatorIP.MaskIpAddress(),
-		RecipientClientInfo = getLog.RequestClientInfo
+		RecipientClientInfo = getLog.RequestClientInfo,
+		RecipientCity = getLog.RecipientCity,
+		RecipientRegion = getLog.RecipientRegion,
+		RecipientCountry = getLog.RecipientCountry,
+		RecipientCountryCode = getLog.RecipientCountryCode,
+		RecipientLocationSource = getLog.RecipientLocationSource,
+		RecipientIsp = getLog.RecipientIsp,
+		RecipientTimezone = getLog.RecipientTimezone,
+		RecipientUtcOffsetMinutes = getLog.RecipientUtcOffsetMinutes,
+		RecipientLanguage = getLog.RecipientLanguage,
+		OtpVerified = getLog.OtpVerified
 	};
 }

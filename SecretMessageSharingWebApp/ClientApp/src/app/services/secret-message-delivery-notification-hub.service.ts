@@ -1,4 +1,4 @@
-import { DestroyRef, inject, Injectable, signal } from '@angular/core';
+import { computed, DestroyRef, inject, Injectable, signal } from '@angular/core';
 import { NgbModalOptions } from '@ng-bootstrap/ng-bootstrap';
 
 import { ModalService } from './modal.service';
@@ -21,9 +21,11 @@ export class SecretMessageDeliveryNotificationHubService {
 	private readonly hubWorker = new Worker(new URL('./secret-message-delivery-notification-hub.worker', import.meta.url));
 
 	private readonly _isConnected = signal(false);
-	private readonly _deliveredMessageIds = signal<readonly string[]>([]);
+	private readonly _deliveryNotifications = signal<readonly SecretMessageDeliveryNotification[]>([]);
 
-	readonly deliveredMessageIds = this._deliveredMessageIds.asReadonly();
+	readonly deliveryNotifications = this._deliveryNotifications.asReadonly();
+	readonly deliveredMessageIds = computed(() =>
+		this._deliveryNotifications().map(notification => notification.messageId));
 
 	constructor() {
 		this.hubWorker.onmessage = ({ data }) => {
@@ -58,7 +60,7 @@ export class SecretMessageDeliveryNotificationHubService {
 	};
 
 	private handleIncomingNotification(secretMessageDeliveryNotification: SecretMessageDeliveryNotification): void {
-		this._deliveredMessageIds.update(ids => [...ids, secretMessageDeliveryNotification.messageId]);
+		this._deliveryNotifications.update(notifications => [...notifications, secretMessageDeliveryNotification]);
 
 		this.modalService.openModal(
 			MessageDeliveryDetailsModalComponent,

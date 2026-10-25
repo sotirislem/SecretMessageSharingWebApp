@@ -45,3 +45,10 @@
 .detail-table tbody tr:last-child td {
 	border-bottom: 0;
 }
+
+.detail-hint {
+	margin-top: .15rem;
+	color: var(--sms-text-subtle);
+	font-size: .78rem;
+}
+

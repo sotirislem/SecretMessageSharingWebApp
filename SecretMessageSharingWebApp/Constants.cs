@@ -36,6 +36,12 @@ public static class Constants
 		public const string SecretMessageDeliveryNotificationQueue = "SECRET_MESSAGE_DELIVERY_NOTIFICATION_QUEUE";
 	}
 
+	public static class LocationSources
+	{
+		public const string Device = "device";
+		public const string Ip = "ip";
+	}
+
 	public static class RateLimit
 	{
 		public const string NoLimit = "no-limit";

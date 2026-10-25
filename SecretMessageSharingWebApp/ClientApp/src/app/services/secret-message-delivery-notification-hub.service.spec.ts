@@ -94,6 +94,7 @@ describe('SecretMessageDeliveryNotificationHubService', () => {
 		const { service } = createService();
 
 		expect(service.deliveredMessageIds()).toEqual([]);
+		expect(service.deliveryNotifications()).toEqual([]);
 	});
 
 	it('should record a delivered message and open the delivery details modal', () => {
@@ -103,6 +104,7 @@ describe('SecretMessageDeliveryNotificationHubService', () => {
 		worker.emit({ action: 'NOTIFICATION', secretMessageDeliveryNotification: details });
 
 		expect(service.deliveredMessageIds()).toEqual(['message-id']);
+		expect(service.deliveryNotifications()).toEqual([details]);
 		expect(modalService.openModal).toHaveBeenCalledWith(
 			MessageDeliveryDetailsModalComponent,
 			{ isNotification: true, messageDeliveryDetails: details },

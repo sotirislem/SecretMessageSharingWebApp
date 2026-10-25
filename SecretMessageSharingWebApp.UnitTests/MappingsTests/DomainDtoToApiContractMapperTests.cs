@@ -31,6 +31,16 @@ public class DomainDtoToApiContractMapperTests
 		result.MessageDeliveredOn.Should().Be(getLog.RequestDateTime);
 		result.RecipientIP.Should().Be(getLog.RequestCreatorIP.MaskIpAddress());
 		result.RecipientClientInfo.Should().Be(getLog.RequestClientInfo);
+		result.RecipientCity.Should().Be(getLog.RecipientCity);
+		result.RecipientRegion.Should().Be(getLog.RecipientRegion);
+		result.RecipientCountry.Should().Be(getLog.RecipientCountry);
+		result.RecipientCountryCode.Should().Be(getLog.RecipientCountryCode);
+		result.RecipientLocationSource.Should().Be(getLog.RecipientLocationSource);
+		result.RecipientIsp.Should().Be(getLog.RecipientIsp);
+		result.RecipientTimezone.Should().Be(getLog.RecipientTimezone);
+		result.RecipientUtcOffsetMinutes.Should().Be(getLog.RecipientUtcOffsetMinutes);
+		result.RecipientLanguage.Should().Be(getLog.RecipientLanguage);
+		result.OtpVerified.Should().Be(getLog.OtpVerified);
 	}
 
 	[Fact]
@@ -49,7 +59,7 @@ public class DomainDtoToApiContractMapperTests
 	}
 
 	[Fact]
-	public void ToSecretMessageDeliveryNotification_ShouldNotMaskNonIPv4Address()
+	public void ToSecretMessageDeliveryNotification_ShouldMaskIpv6AddressToItsNetworkPrefix()
 	{
 		// Arrange
 		var getLog = _fixture.Build<GetLog>()
@@ -60,7 +70,7 @@ public class DomainDtoToApiContractMapperTests
 		var result = getLog.ToSecretMessageDeliveryNotification();
 
 		// Assert
-		result.RecipientIP.Should().Be(getLog.RequestCreatorIP);
+		result.RecipientIP.Should().Be("fe80::/64");
 	}
 
 	[Fact]

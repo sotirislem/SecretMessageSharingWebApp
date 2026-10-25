@@ -8,6 +8,7 @@ import { GetSecretMessageResponse } from '../models/api/get-secret-message-respo
 import { RecentlyStoredSecretMessagesResponse } from '../models/api/recently-stored-secret-messages-response.model';
 import { VerifySecretMessageResponse } from '../models/api/verify-secret-message-response.model';
 import { ValidateSecretMessageOtpResponse } from '../models/api/validate-secret-message-otp-response.model';
+import { ClientLocation } from '../models/client-location.model';
 import { API_URL } from '../tokens';
 
 @Injectable({
@@ -35,13 +36,19 @@ export class ApiClientService {
 			<ValidateSecretMessageOtpRequest>{ otpCode });
 	}
 
-	getSecretMessage(id: string, keyHash: string, authToken?: string): Observable<GetSecretMessageResponse> {
+	getSecretMessage(
+		id: string,
+		keyHash: string,
+		authToken?: string,
+		location?: ClientLocation): Observable<GetSecretMessageResponse> {
 		// Keep the key-hash verifier out of the URL so it cannot leak through
 		// browser history, server access logs, proxies, or analytics.
 		let headers = new HttpHeaders().set('X-Key-Hash', keyHash);
 		if (authToken) {
 			headers = headers.append('Authorization', 'Bearer ' + authToken);
 		}
+
+		headers = this.appendLocationHeaders(headers, location);
 
 		return this.httpClient.get<GetSecretMessageResponse>(this.getApiUrl(id), { headers });
 	}
@@ -60,5 +67,39 @@ export class ApiClientService {
 
 	private getApiUrl(apiPath: string = ''): string {
 		return apiPath ? `${this.baseApiUrl}/${apiPath}` : this.baseApiUrl;
+	}
+
+	/**
+	 * Coordinates are only sent as headers: keeping them out of the URL means they
+	 * cannot end up in browser history, server access logs, or proxy logs.
+	 */
+	private appendLocationHeaders(headers: HttpHeaders, location?: ClientLocation): HttpHeaders {
+		if (!location) {
+			return headers;
+		}
+
+		if (location.timezone) {
+			headers = headers.set('X-Client-Timezone', location.timezone);
+		}
+
+		if (location.utcOffsetMinutes !== undefined) {
+			headers = headers.set('X-Client-Utc-Offset-Minutes', location.utcOffsetMinutes.toString());
+		}
+
+		if (location.language) {
+			headers = headers.set('X-Client-Language', location.language);
+		}
+
+		if (location.deviceModel) {
+			headers = headers.set('X-Client-Device-Model', location.deviceModel);
+		}
+
+		if (location.latitude !== undefined && location.longitude !== undefined) {
+			headers = headers
+				.set('X-Client-Latitude', location.latitude.toFixed(3))
+				.set('X-Client-Longitude', location.longitude.toFixed(3));
+		}
+
+		return headers;
 	}
 }

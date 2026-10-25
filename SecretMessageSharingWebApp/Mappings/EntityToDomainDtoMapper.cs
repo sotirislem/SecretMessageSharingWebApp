@@ -33,6 +33,16 @@ public static class EntityToDomainDtoMapper
 		RequestDateTime = getLogDto.RequestDateTime,
 		RequestCreatorIP = getLogDto.RequestCreatorIP,
 		RequestClientInfo = getLogDto.RequestClientInfo,
+		RecipientCity = getLogDto.RecipientCity,
+		RecipientRegion = getLogDto.RecipientRegion,
+		RecipientCountry = getLogDto.RecipientCountry,
+		RecipientCountryCode = getLogDto.RecipientCountryCode,
+		RecipientLocationSource = getLogDto.RecipientLocationSource,
+		RecipientIsp = getLogDto.RecipientIsp,
+		RecipientTimezone = getLogDto.RecipientTimezone,
+		RecipientUtcOffsetMinutes = getLogDto.RecipientUtcOffsetMinutes,
+		RecipientLanguage = getLogDto.RecipientLanguage,
+		OtpVerified = getLogDto.OtpVerified,
 		SecretMessageId = getLogDto.SecretMessageId,
 		SecretMessageCreatedDateTime = getLogDto.SecretMessageCreatedDateTime,
 		SecretMessageCreatorIP = getLogDto.SecretMessageCreatorIP,
@@ -53,7 +63,17 @@ public static class EntityToDomainDtoMapper
 		{
 			DeliveredAt = entity.RequestDateTime,
 			RecipientIP = entity.RequestCreatorIP.MaskIpAddress(),
-			RecipientClientInfo = entity.RequestClientInfo
+			RecipientClientInfo = entity.RequestClientInfo,
+			RecipientCity = entity.RecipientCity,
+			RecipientRegion = entity.RecipientRegion,
+			RecipientCountry = entity.RecipientCountry,
+			RecipientCountryCode = entity.RecipientCountryCode,
+			RecipientLocationSource = entity.RecipientLocationSource,
+			RecipientIsp = entity.RecipientIsp,
+			RecipientTimezone = entity.RecipientTimezone,
+			RecipientUtcOffsetMinutes = entity.RecipientUtcOffsetMinutes,
+			RecipientLanguage = entity.RecipientLanguage,
+			OtpVerified = entity.OtpVerified
 		}
 	};
 }

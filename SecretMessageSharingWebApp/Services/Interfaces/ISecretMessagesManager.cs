@@ -10,5 +10,10 @@ public interface ISecretMessagesManager
 
 	Task<ApiResult> ValidateOtp(string messageId, string otpCode);
 
-	Task<ApiResult> GetMessage(string messageId, string encryptionKeySha256, string? jwtToken, HttpContextClientInfo httpContextClientInfo);
+	Task<ApiResult> GetMessage(
+		string messageId,
+		string encryptionKeySha256,
+		string? jwtToken,
+		HttpContextClientInfo httpContextClientInfo,
+		CancellationToken cancellationToken = default);
 }

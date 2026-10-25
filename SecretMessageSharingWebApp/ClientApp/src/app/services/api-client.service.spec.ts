@@ -108,6 +108,44 @@ describe('ApiClientService', () => {
 		httpRequest.flush({ data: { iv: 'iv', ct: 'ct' }, deliveryNotificationSent: false });
 	});
 
+	it('should send location and request context as headers', () => {
+		service.getSecretMessage('message-id', 'key-hash', undefined, {
+			latitude: 44.4268,
+			longitude: 26.1025,
+			timezone: 'Europe/Bucharest',
+			utcOffsetMinutes: 180,
+			language: 'ro-RO',
+			deviceModel: 'Pixel 7'
+		}).subscribe();
+
+		const httpRequest = httpTesting.expectOne(`${baseApiUrl}/message-id`);
+		expect(httpRequest.request.headers.get('X-Client-Latitude')).toBe('44.427');
+		expect(httpRequest.request.headers.get('X-Client-Longitude')).toBe('26.102');
+		expect(httpRequest.request.headers.get('X-Client-Timezone')).toBe('Europe/Bucharest');
+		expect(httpRequest.request.headers.get('X-Client-Utc-Offset-Minutes')).toBe('180');
+		expect(httpRequest.request.headers.get('X-Client-Language')).toBe('ro-RO');
+		expect(httpRequest.request.headers.get('X-Client-Device-Model')).toBe('Pixel 7');
+		expect(httpRequest.request.url).not.toContain('44.427');
+		expect(httpRequest.request.url).not.toContain('26.103');
+
+		httpRequest.flush({ data: { iv: 'iv', ct: 'ct' }, deliveryNotificationSent: false });
+	});
+
+	it('should not send coordinate headers when no device location is available', () => {
+		service.getSecretMessage('message-id', 'key-hash', undefined, {
+			timezone: 'Europe/Bucharest',
+			utcOffsetMinutes: 180,
+			language: 'ro-RO'
+		}).subscribe();
+
+		const httpRequest = httpTesting.expectOne(`${baseApiUrl}/message-id`);
+		expect(httpRequest.request.headers.has('X-Client-Latitude')).toBeFalse();
+		expect(httpRequest.request.headers.has('X-Client-Longitude')).toBeFalse();
+		expect(httpRequest.request.headers.get('X-Client-Timezone')).toBe('Europe/Bucharest');
+
+		httpRequest.flush({ data: { iv: 'iv', ct: 'ct' }, deliveryNotificationSent: false });
+	});
+
 	it('should load the recently stored messages', () => {
 		let result: unknown;
 

@@ -19,9 +19,26 @@ describe('MessageDeliveryDetailsModalComponent', () => {
 		recipientClientInfo: 'Chrome on Windows'
 	};
 
-	function createFixture(isNotification: boolean) {
+	const enrichedDetails = <SecretMessageDeliveryNotification>{
+		...details,
+		recipientCity: 'Bucharest',
+		recipientRegion: 'Bucuresti',
+		recipientCountry: 'Romania',
+		recipientCountryCode: 'RO',
+		recipientLocationSource: 'device',
+		recipientIsp: 'DIGI Romania',
+		recipientTimezone: 'Europe/Bucharest',
+		recipientUtcOffsetMinutes: 180,
+		recipientLanguage: 'ro-RO',
+		otpVerified: true
+	};
+
+	function createFixture(
+		isNotification: boolean,
+		messageDeliveryDetails: SecretMessageDeliveryNotification = details
+	) {
 		const data: MessageDeliveryDetailsModalData = {
-			messageDeliveryDetails: details,
+			messageDeliveryDetails,
 			isNotification
 		};
 
@@ -62,6 +79,43 @@ describe('MessageDeliveryDetailsModalComponent', () => {
 		expect(fixture.nativeElement.querySelector('.modal-title')?.textContent)
 			.toContain('Message notification');
 		expect(fixture.nativeElement.textContent).toContain('Your message has been opened');
+	});
+
+	it('should render location, network and request context when available', () => {
+		const fixture = createFixture(false, enrichedDetails);
+		const text = fixture.nativeElement.textContent as string;
+
+		expect(text).toContain('5 minutes');
+		expect(text).toContain('Bucharest, Bucuresti, Romania');
+		expect(text).toContain('Precise (device location)');
+		expect(text).toContain('DIGI Romania');
+		expect(text).toContain('Europe/Bucharest (UTC+3:00)');
+		expect(text).toContain('(ro-RO)');
+		expect(text).toContain('OTP verified');
+		expect(text).not.toContain('Opened by sender');
+		expect(text).not.toContain('Same network as sender');
+	});
+
+	it('should still show the location row for records without location data', () => {
+		const fixture = createFixture(false);
+		const text = fixture.nativeElement.textContent as string;
+
+		expect(text).toContain('Opened from');
+		expect(text).toContain('Not available');
+	});
+
+	it('should omit optional rows for records that predate the extra details', () => {
+		const fixture = createFixture(false);
+		const labels = Array.from(fixture.nativeElement.querySelectorAll('th') as NodeListOf<HTMLElement>)
+			.map(header => header.textContent?.trim());
+
+		expect(labels).toContain('Opened from');
+		expect(labels).not.toContain('Network provider');
+		expect(labels).not.toContain('Recipient time zone');
+		expect(labels).not.toContain('Browser language');
+		expect(labels).not.toContain('OTP verified');
+		expect(labels).not.toContain('Opened by sender');
+		expect(labels).not.toContain('Same network as sender');
 	});
 
 	it('should dismiss the modal when the close button is clicked', () => {

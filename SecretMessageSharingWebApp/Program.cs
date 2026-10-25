@@ -21,6 +21,7 @@ builder.WebHost.ConfigureKestrel(options =>
 builder.Services.BindConfigurationSettings<CosmosDbConfigurationSettings>(builder.Configuration.GetSection("CosmosDb"));
 builder.Services.BindConfigurationSettings<SendGridConfigurationSettings>(builder.Configuration.GetSection("SendGrid"));
 builder.Services.BindConfigurationSettings<JwtConfigurationSettings>(builder.Configuration.GetSection("Jwt"));
+builder.Services.BindConfigurationSettings<RecipientLocationConfigurationSettings>(builder.Configuration.GetSection("RecipientLocation"));
 
 builder.Services.AddDbContext<SecretMessagesDbContext>((serviceProvider, options) =>
 	//options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));

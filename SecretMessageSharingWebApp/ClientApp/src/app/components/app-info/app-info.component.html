@@ -79,7 +79,7 @@
 				<li>A SHA-256 hash of the encryption key, used only to verify retrieval</li>
 				<li>Creator IP address and browser user-agent (logs are deleted after 24 hours)</li>
 				<li>Recipient email address when OTP protection is enabled</li>
-				<li>Delivery metadata (time, IP, browser) once the message is read</li>
+				<li>Delivery metadata (time, city, IP, browser, device model when the browser exposes it, and request language) once the message is read</li>
 			</ul>
 		</article>
 
@@ -89,6 +89,7 @@
 				<li>Your plaintext message or attachment contents</li>
 				<li>The encryption key itself</li>
 				<li>The full message URL with its fragment</li>
+				<li>Exact device coordinates &mdash; only the resolved city is kept</li>
 				<li>Any account, profile, or contact list &mdash; there are no accounts</li>
 			</ul>
 		</article>
@@ -145,8 +146,12 @@
 						The message ID, creation timestamp, the IV and ciphertext, the key hash, and the
 						creator's IP and user-agent for diagnostics. If OTP is enabled, the recipient's
 						email address is also stored so the one-time code can be sent. After retrieval,
-						delivery metadata such as the recipient's IP and browser is recorded so the sender
-						can be notified.
+						delivery metadata such as the recipient's IP, browser, device model (when the
+						browser exposes it), city, time zone, and language is recorded so the sender can
+						be notified.
+						<br /><br />
+						The city comes from device location when the browser grants location access;
+						otherwise it is estimated from the IP address. Exact coordinates are never stored.
 						<br /><br />
 						Message content is only ever stored as ciphertext. There are no user accounts and no
 						contact lists.
@@ -211,9 +216,12 @@
 			<div ngbAccordionCollapse>
 				<div ngbAccordionBody>
 					<ng-template>
-						Yes, for operational purposes only: IP address and browser user-agent are logged
-						for diagnostics and abuse prevention, and deleted after 24 hours. No analytics
-						profiles, advertising identifiers, or cross-site tracking are used.
+						Yes, for operational purposes only: IP address, browser user-agent, time zone, and
+						language are logged for diagnostics and abuse prevention, and deleted after 24 hours.
+						The city shown in delivery details is resolved from the recipient's device location
+						when the browser grants location access; otherwise it is estimated from the IP
+						address. Exact coordinates are never stored. No analytics profiles, advertising
+						identifiers, or cross-site tracking are used.
 					</ng-template>
 				</div>
 			</div>

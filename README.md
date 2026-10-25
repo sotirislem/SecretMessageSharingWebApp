@@ -34,6 +34,10 @@ link sent to the wrong person.
   3 validation attempts.
 - **Delivery notifications** &mdash; the sender's browser receives a SignalR notification when the
   recipient opens the message.
+- **Delivery location** &mdash; delivery details show where the message was opened: the city,
+  region and country (with a flag), the network provider, the recipient's time zone and browser
+  language, and how long the message stayed unread. The city comes from device location when the
+  recipient grants browser permission, and is otherwise estimated from the IP address.
 - **Session history** &mdash; a browser-session list of messages you created, with delivery details
   and the option to delete an unread message early.
 
@@ -51,13 +55,19 @@ link sent to the wrong person.
 | Brute force | Rate limiting, short OTP lifetime, limited OTP attempts |
 | Caching | API and SignalR responses are marked `no-store` |
 | Referrer leakage | `Referrer-Policy: no-referrer`; the fragment is never sent in requests |
+| Location disclosure | Coordinates are rounded in the browser, sent as request headers (never in the URL), and never stored &mdash; only the resolved city, region, country and network provider are kept |
+| Geolocation consent | Location is requested only after the recipient confirms retrieval; the browser prompt decides, and the IP estimate is the fallback when it is denied |
 
 **What the server can see:** message ID, timestamps, IV + ciphertext, key hash, creator IP and
 user-agent (logs kept 24 hours), the recipient email when OTP is enabled, and delivery metadata
-after the message is read.
+after the message is read. Delivery metadata covers the time and duration until the message was
+opened, the recipient's masked IP, browser and device type, time zone, browser language, whether
+OTP protection was used, and the city, region, country and network provider resolved for the
+recipient.
 
-**What the server cannot see:** the plaintext, the attachment contents, the encryption key, or the
-full URL including its fragment.
+**What the server cannot see:** the plaintext, the attachment contents, the encryption key, the
+recipient's exact device coordinates (they are rounded, used only for a city lookup, and never
+stored), or the full URL including its fragment.
 
 No web application can promise absolute security. This design removes the server as a source of
 plaintext, but it cannot protect you from a compromised browser, a malicious extension, an
@@ -79,6 +89,7 @@ secret.
 ┌────────────────────────────── .NET 10 ──────────────────────────────┐
 │  FastEndpoints API                                                  │
 │  ├─ SecretMessagesManager  ──  validation, key-hash check, deletion │
+│  ├─ Recipient location     ──  device geocoding, IP fallback        │
 │  ├─ OTP service            ──  SendGrid email delivery              │
 │  ├─ SignalR hub            ──  creator notifications                │
 │  ├─ Background service     ──  expiry + log cleanup                 │
@@ -88,13 +99,22 @@ secret.
                     Azure Cosmos DB (encrypted payloads)
 ```
 
+Apart from SendGrid email delivery, `RecipientLocationService` makes the only outbound calls:
+reverse geocoding of the recipient's rounded coordinates (BigDataCloud) and IP geolocation as the
+fallback and ISP source (ipwho.is). Both are optional, and either endpoint can be swapped for
+another provider.
+
 ### Request flow
 
 1. The browser generates a 256-bit key and a 96-bit IV, encrypts the message payload, and sends
    the ciphertext plus the SHA-256 key hash to `POST /api/secret-messages`.
 2. The recipient opens `/get-secret-message?id=…<key in fragment>`. The SPA verifies the message
-   exists, asks for confirmation, and sends the key hash in the `X-Key-Hash` header.
-3. The server compares hashes, returns the ciphertext, and deletes the stored message.
+   exists and asks for confirmation. On confirmation it sends the key hash plus the browser's time
+   zone, language, and device model when available (and, if the browser grants location access,
+   rounded coordinates) as request headers. Retrieval waits for the recipient to allow or block the
+   location prompt.
+3. The server compares hashes, resolves a city-level location, returns the ciphertext, records the
+   delivery details, and deletes the stored message.
 4. The browser decrypts locally. If the sender's page is still open, SignalR reports delivery.
 
 ## Tech stack
@@ -114,11 +134,11 @@ SecretMessageSharingWebApp/
 ├─ SecretMessageSharingWebApp/              # .NET 10 web application
 │  ├─ ClientApp/                            # Angular 22 SPA
 │  │  ├─ src/app/components/                # pages, modals, loader, toasts
-│  │  ├─ src/app/services/                  # crypto, API, modal, toast, SignalR
+│  │  ├─ src/app/services/                  # crypto, API, modal, toast, SignalR, location
 │  │  ├─ src/styles.css                     # design system
 │  │  └─ angular.json
 │  ├─ Endpoints/                            # FastEndpoints routes
-│  ├─ Services/                             # message, OTP, JWT, delivery logic
+│  ├─ Services/                             # message, OTP, JWT, delivery and location logic
 │  ├─ Data/                                 # EF Core context and entities
 │  ├─ Middlewares/                          # security headers, timing
 │  └─ Program.cs
@@ -136,6 +156,11 @@ SecretMessageSharingWebApp/
 | `DELETE` | `/api/secret-messages/{id}` | Delete an unread message early |
 | `GET` | `/api/secret-messages/otp/{id}` | Request an OTP for a protected message |
 | `POST` | `/api/secret-messages/otp/{id}` | Validate an OTP and receive a short-lived token |
+
+`GET /api/secret-messages/{id}` also accepts optional request-context headers, all of which are
+ignored when absent: `X-Client-Latitude` and `X-Client-Longitude` (rounded to 3 decimals by the
+browser), `X-Client-Timezone` (IANA id), `X-Client-Utc-Offset-Minutes`, `X-Client-Language`, and
+`X-Client-Device-Model` (Android device model when the browser exposes it; desktop browsers do not).
 
 Swagger UI is available in development at `/swagger/index.html`.
 
@@ -166,6 +191,12 @@ Local settings live in `SecretMessageSharingWebApp/appsettings.Development.json`
   },
   "Jwt": {
     "SigningKey": "<base64-key>"
+  },
+  "RecipientLocation": {
+    "Enabled": true,
+    "TimeoutSeconds": 2.5,
+    "IpCacheMinutes": 1440,
+    "ResolveLocalRequestsThroughPublicIp": true
   }
 }
 ```
@@ -173,6 +204,14 @@ Local settings live in `SecretMessageSharingWebApp/appsettings.Development.json`
 - The Cosmos DB emulator's well-known key works as-is for local development.
 - SendGrid is only needed for OTP email. With a debugger attached the OTP is printed to the
   server console instead, so you can test the flow without an account.
+- `RecipientLocation` controls the delivery-city lookup. Its defaults live in `appsettings.json`;
+  the block above shows those defaults plus the development-only
+  `ResolveLocalRequestsThroughPublicIp` override. Requests from your own machine report
+  `localhost`, so that switch asks the IP provider to resolve your egress address instead. Set
+  `Enabled` to `false` to skip the lookup entirely.
+- The lookup is capped at 2.5 seconds so it never delays a retrieval noticeably, and IP results
+  are cached for 24 hours. `ReverseGeocodeEndpoint` and `IpGeolocationEndpoint` can be pointed at
+  another provider.
 - For production, never commit secrets. Use Azure App Service application settings, user secrets,
   or Key Vault. `Jwt:SigningKey` must be a strong base64 value.
 
@@ -208,14 +247,18 @@ npx ng build --configuration production
 npx ng test --watch=false --browsers=ChromeHeadless
 ```
 
-The .NET test project covers validators, mappings, services, security headers, and the key-hash
-verifier. Angular tests cover the route guard, crypto service, and string extensions.
+The .NET test project covers validators, mappings, services (including recipient location
+resolution and request-header parsing), security headers, and the key-hash verifier. Angular tests
+cover the route guard, crypto service, recipient location collection, and string extensions.
 
 ## Deployment
 
 1. Create an Azure App Service (Linux, .NET 10) and an Azure Cosmos DB account.
 2. Configure app settings: `CosmosDb__Endpoint`, `CosmosDb__ApiKey`, `CosmosDb__DbName`,
-   `SendGrid__ApiKey`, `SendGrid__AuthSender`, `Jwt__SigningKey`.
+   `SendGrid__ApiKey`, `SendGrid__AuthSender`, `Jwt__SigningKey`. `RecipientLocation` is optional
+   and enabled by default; override `RecipientLocation__Enabled`,
+   `RecipientLocation__TimeoutSeconds`, `RecipientLocation__IpCacheMinutes`, or either endpoint
+   only if you need to. Keep `ResolveLocalRequestsThroughPublicIp` at `false` in production.
 3. Publish the app:
 
    ```bash
@@ -230,6 +273,17 @@ verifier. Angular tests cover the route guard, crypto service, and string extens
 
 - The Cosmos DB container is created on startup with `EnsureCreatedAsync`.
 - Message cleanup runs in a background service; unread messages expire after one hour.
+- Delivery location is resolved after a successful retrieval by two external services: rounded
+  device coordinates are reverse geocoded (BigDataCloud), and the recipient IP is geolocated as the
+  fallback and as the ISP source (ipwho.is). Only the resulting city, region, country, network
+  provider and the source (`device` or `ip`) are stored; coordinates are never logged or persisted.
+- The browser asks for location permission only when the recipient confirms retrieval. If the
+  prompt is denied, ignored, unsupported, or times out, only the time zone and language are sent
+  and the city falls back to the IP estimate. An ignored prompt is abandoned after 30 seconds so
+  the retrieval cannot stall.
+- The lookup is best-effort: a provider error or timeout leaves the location fields empty and never
+  blocks the retrieval. If the recipient disconnects while it runs, the one-time message is not
+  consumed. Delivery details recorded before location tracking show "Not available".
 - Delivery notifications are process-local (in-memory connection map and pending queue), which
   assumes a single application instance. A queued notification is kept for 15 minutes, the same
   lifetime as the browser session history, and is replayed when the sender's browser reconnects
@@ -243,4 +297,5 @@ verifier. Angular tests cover the route guard, crypto service, and string extens
   2 MB item limit, which is the practical ceiling: a 1 MB attachment produces a document of
   roughly 1.9 MB. The browser also checks the encrypted payload size before sending and reports
   a friendly error when the message text and attachment together are too large.
-- No accounts, no analytics profiles, no third-party trackers.
+- No accounts, no analytics profiles, and no third-party trackers in the browser. The only
+  outbound third-party calls are the optional server-side location lookups described above.

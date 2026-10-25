@@ -23,7 +23,17 @@ describe('RecentlyStoredMessagesComponent', () => {
 		deliveryDetails: {
 			deliveredAt: new Date(2026, 9, 25, 9, 5, 0),
 			recipientIP: '192.168.1.10',
-			recipientClientInfo: 'Chrome on Windows'
+			recipientClientInfo: 'Chrome on Windows',
+			recipientCity: 'Bucharest',
+			recipientRegion: 'Bucuresti',
+			recipientCountry: 'Romania',
+			recipientCountryCode: 'RO',
+			recipientLocationSource: 'device',
+			recipientIsp: 'DIGI Romania',
+			recipientTimezone: 'Europe/Bucharest',
+			recipientUtcOffsetMinutes: 180,
+			recipientLanguage: 'ro-RO',
+			otpVerified: true
 		}
 	};
 	const pendingMessage: RecentlyStoredSecretMessage = {
@@ -167,7 +177,17 @@ describe('RecentlyStoredMessagesComponent', () => {
 					messageCreatedOn: createdAt,
 					messageDeliveredOn: deliveredMessage.deliveryDetails!.deliveredAt,
 					recipientIP: '192.168.1.10',
-					recipientClientInfo: 'Chrome on Windows'
+					recipientClientInfo: 'Chrome on Windows',
+					recipientCity: 'Bucharest',
+					recipientRegion: 'Bucuresti',
+					recipientCountry: 'Romania',
+					recipientCountryCode: 'RO',
+					recipientLocationSource: 'device',
+					recipientIsp: 'DIGI Romania',
+					recipientTimezone: 'Europe/Bucharest',
+					recipientUtcOffsetMinutes: 180,
+					recipientLanguage: 'ro-RO',
+					otpVerified: true
 				}
 			});
 	});

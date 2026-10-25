@@ -8,6 +8,9 @@ import { NewSecretMessageStateService } from '../../services/new-secret-message-
 import { SecretMessageDeliveryNotificationHubService } from '../../services/secret-message-delivery-notification-hub.service';
 import { ToastService } from '../../services/toast.service';
 import { UrlHelperService } from '../../services/url-helper.service';
+import { ModalService } from '../../services/modal.service';
+import { SecretMessageDeliveryNotification } from '../../models/api/secret-message-delivery-notification.model';
+import { MessageDeliveryDetailsModalComponent } from '../modals/message-delivery-details-modal/message-delivery-details-modal.component';
 import { NewSecretMessageComponent } from './new-secret-message.component';
 
 class FakeWorker {
@@ -33,7 +36,9 @@ describe('NewSecretMessageComponent', () => {
 	let clipboard: jasmine.SpyObj<Clipboard>;
 	let creationService: jasmine.SpyObj<SecretMessageCreationService>;
 	let toastService: jasmine.SpyObj<ToastService>;
+	let modalService: jasmine.SpyObj<ModalService>;
 	let deliveredMessageIds: ReturnType<typeof signal<readonly string[]>>;
+	let deliveryNotifications: ReturnType<typeof signal<readonly SecretMessageDeliveryNotification[]>>;
 	let originalWorker: typeof Worker;
 	let fixture: ReturnType<typeof TestBed.createComponent<NewSecretMessageComponent>>;
 	let component: NewSecretMessageComponent;
@@ -61,6 +66,10 @@ describe('NewSecretMessageComponent', () => {
 
 		clipboard = jasmine.createSpyObj<Clipboard>('Clipboard', ['copy']);
 		deliveredMessageIds = signal<readonly string[]>([]);
+		deliveryNotifications = signal<readonly SecretMessageDeliveryNotification[]>([]);
+
+		modalService = jasmine.createSpyObj<ModalService>('ModalService', ['openModal', 'openConfirmationModal']);
+		modalService.openModal.and.returnValue(new Promise(() => { }));
 
 		creationService = jasmine.createSpyObj<SecretMessageCreationService>('SecretMessageCreationService', ['create']);
 		creationService.create.and.returnValue(Promise.resolve({
@@ -84,10 +93,12 @@ describe('NewSecretMessageComponent', () => {
 				{ provide: Clipboard, useValue: clipboard },
 				{ provide: SecretMessageCreationService, useValue: creationService },
 				{ provide: ToastService, useValue: toastService },
+				{ provide: ModalService, useValue: modalService },
 				{
 					provide: SecretMessageDeliveryNotificationHubService,
 					useValue: {
-						deliveredMessageIds: deliveredMessageIds.asReadonly()
+						deliveredMessageIds: deliveredMessageIds.asReadonly(),
+						deliveryNotifications: deliveryNotifications.asReadonly()
 					}
 				}
 			]
@@ -144,6 +155,49 @@ describe('NewSecretMessageComponent', () => {
 		await fixture.whenStable();
 
 		expect(component.secretMsgDelivered()).toBeFalse();
+	});
+
+	it('should show the opened button in the ribbon and reopen the delivery details', async () => {
+		const notification: SecretMessageDeliveryNotification = {
+			messageId: 'message-id',
+			messageCreatedOn: new Date('2026-01-01T10:00:00Z'),
+			messageDeliveredOn: new Date('2026-01-01T10:05:00Z'),
+			recipientIP: '127.0.0.1',
+			recipientClientInfo: 'browser'
+		};
+
+		deliveredMessageIds.set(['message-id']);
+		deliveryNotifications.set([notification]);
+		fixture.detectChanges();
+		await fixture.whenStable();
+
+		const detailsButton = fixture.nativeElement
+			.querySelector('.delivery-details-button') as HTMLButtonElement | null;
+
+		expect(fixture.nativeElement.textContent).toContain('Message Status: Opened');
+		expect(detailsButton).not.toBeNull();
+		expect(detailsButton!.textContent).toContain('Delivery details');
+
+		detailsButton!.click();
+
+		expect(modalService.openModal).toHaveBeenCalledWith(
+			MessageDeliveryDetailsModalComponent,
+			{ isNotification: false, messageDeliveryDetails: notification });
+	});
+
+	it('should not open delivery details when no notification is known', async () => {
+		deliveredMessageIds.set(['message-id']);
+		fixture.detectChanges();
+		await fixture.whenStable();
+
+		component.showDeliveryDetails();
+
+		expect(modalService.openModal).not.toHaveBeenCalled();
+	});
+
+	it('should not show the delivery details button while the message is pending', () => {
+		expect(fixture.nativeElement.querySelector('.delivery-details-button')).toBeNull();
+		expect(fixture.nativeElement.textContent).toContain('Message Status: Undelivered');
 	});
 
 	it('should create another message with the same content and show the new share details', async () => {

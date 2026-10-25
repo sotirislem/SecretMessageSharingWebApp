@@ -26,10 +26,14 @@ public sealed class SecurityHeadersMiddleware(RequestDelegate next)
 		headers["X-Content-Type-Options"] = "nosniff";
 		headers["X-Frame-Options"] = "DENY";
 		headers["Referrer-Policy"] = "no-referrer";
-		headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=(), payment=(), usb=()";
+		// Geolocation is only requested after the recipient explicitly consents.
+		headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=(self), payment=(), usb=()";
 		headers["Cross-Origin-Opener-Policy"] = "same-origin";
 		headers["Cross-Origin-Resource-Policy"] = "same-origin";
 		headers["X-Robots-Tag"] = "noindex, nofollow, noarchive";
+		// Chromium only sends the Android device model with the Sec-CH-UA-Model
+		// client hint after the origin opts in through Accept-CH.
+		headers["Accept-CH"] = "Sec-CH-UA-Model";
 
 		// Swagger UI relies on inline scripts/styles; it is only enabled in development.
 		if (context.Request.Path.StartsWithSegments("/swagger") is false)

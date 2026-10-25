@@ -41,7 +41,7 @@ public sealed class GetSecretMessageEndpoint(
 		var jwtToken = HttpContext.ExtractJwtTokenFromRequestHeaders();
 		var httpContextClientInfo = HttpContext.GetHttpContextClientInfo();
 
-		var apiResult = await secretMessagesManager.GetMessage(messageId, req.EncryptionKeySha256, jwtToken, httpContextClientInfo);
+		var apiResult = await secretMessagesManager.GetMessage(messageId, req.EncryptionKeySha256, jwtToken, httpContextClientInfo, ct);
 
 		await Send.ResultAsync(apiResult.HttpResult);
 	}

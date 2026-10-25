@@ -12,6 +12,7 @@ import { ApiClientService } from '../../services/api-client.service';
 import { CryptoService } from '../../services/crypto.service';
 import { FileService } from '../../services/file.service';
 import { ModalService } from '../../services/modal.service';
+import { RecipientLocationService } from '../../services/recipient-location.service';
 import { ToastService } from '../../services/toast.service';
 import { OtpInputModalComponent, OtpInputModalData } from '../modals/otp-input-modal/otp-input-modal.component';
 
@@ -19,6 +20,7 @@ import { Constants } from '../../../constants';
 
 enum ComponentState {
 	LoadingMessage,
+	WaitingForLocationPermission,
 	ReadyNoMessage,
 	ReadyWithMessage,
 	MissingEncryptionKey,
@@ -50,6 +52,7 @@ export class GetSecretMessageComponent {
 	private readonly fileService = inject(FileService);
 	private readonly clipboard = inject(Clipboard);
 	private readonly modalService = inject(ModalService);
+	private readonly recipientLocationService = inject(RecipientLocationService);
 	private readonly destroyRef = inject(DestroyRef);
 
 	private readonly confirmationModalBody = viewChild.required<TemplateRef<unknown>>('getSecretMessageConfirmationModalBody');
@@ -211,8 +214,18 @@ export class GetSecretMessageComponent {
 			// Do not consume the one-time message after the component is gone.
 			if (this.destroyRef.destroyed) return;
 
+			// Retrieval waits for the recipient to answer the browser's location
+			// prompt. Show why the page is paused if a prompt is expected, so the
+			// spinner does not look stuck.
+			const location = await this.recipientLocationService.collect(
+				() => this.componentState.set(ComponentState.WaitingForLocationPermission));
+
+			if (this.destroyRef.destroyed) return;
+
+			this.componentState.set(ComponentState.LoadingMessage);
+
 			const response: GetSecretMessageResponse = await firstValueFrom(
-				this.apiClientService.getSecretMessage(this.messageId(), encryptionKeySha256, authToken));
+				this.apiClientService.getSecretMessage(this.messageId(), encryptionKeySha256, authToken, location));
 
 			// The server deletes the message before returning it, so the key
 			// in the fragment is no longer useful and should not stay in history.

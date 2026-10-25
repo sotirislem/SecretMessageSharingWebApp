@@ -134,5 +134,15 @@ public class EntityToDomainDtoMapperTests
 		result.DeliveryDetails!.DeliveredAt.Should().Be(entity.RequestDateTime);
 		result.DeliveryDetails.RecipientIP.Should().Be(entity.RequestCreatorIP.MaskIpAddress());
 		result.DeliveryDetails.RecipientClientInfo.Should().Be(entity.RequestClientInfo);
+		result.DeliveryDetails.RecipientCity.Should().Be(entity.RecipientCity);
+		result.DeliveryDetails.RecipientRegion.Should().Be(entity.RecipientRegion);
+		result.DeliveryDetails.RecipientCountry.Should().Be(entity.RecipientCountry);
+		result.DeliveryDetails.RecipientCountryCode.Should().Be(entity.RecipientCountryCode);
+		result.DeliveryDetails.RecipientLocationSource.Should().Be(entity.RecipientLocationSource);
+		result.DeliveryDetails.RecipientIsp.Should().Be(entity.RecipientIsp);
+		result.DeliveryDetails.RecipientTimezone.Should().Be(entity.RecipientTimezone);
+		result.DeliveryDetails.RecipientUtcOffsetMinutes.Should().Be(entity.RecipientUtcOffsetMinutes);
+		result.DeliveryDetails.RecipientLanguage.Should().Be(entity.RecipientLanguage);
+		result.DeliveryDetails.OtpVerified.Should().Be(entity.OtpVerified);
 	}
 }

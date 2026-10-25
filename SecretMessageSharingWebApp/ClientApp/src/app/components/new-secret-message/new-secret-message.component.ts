@@ -8,6 +8,8 @@ import { CreatedSecretMessage, SecretMessageCreationService } from '../../servic
 import { ToastService } from '../../services/toast.service';
 import { UrlHelperService } from '../../services/url-helper.service';
 import { SecretMessageDeliveryNotificationHubService } from '../../services/secret-message-delivery-notification-hub.service';
+import { ModalService } from '../../services/modal.service';
+import { MessageDeliveryDetailsModalComponent } from '../modals/message-delivery-details-modal/message-delivery-details-modal.component';
 
 import { Constants, Routes } from '../../../constants';
 import { SecretMessage } from '../../models/secret-message.model';
@@ -34,6 +36,7 @@ export class NewSecretMessageComponent {
 	private readonly newSecretMessageStateService = inject(NewSecretMessageStateService);
 	private readonly secretMessageCreationService = inject(SecretMessageCreationService);
 	private readonly hubService = inject(SecretMessageDeliveryNotificationHubService);
+	private readonly modalService = inject(ModalService);
 	private readonly toastService = inject(ToastService);
 	private readonly injector = inject(Injector);
 	private readonly destroyRef = inject(DestroyRef);
@@ -53,6 +56,12 @@ export class NewSecretMessageComponent {
 	readonly isCreatingAnotherSecretMessage = signal(false);
 
 	readonly statusLabel = computed(() => this.secretMsgDelivered() ? 'Opened' : 'Waiting for recipient');
+
+	/** The delivery record of the message currently shown, used by the ribbon button. */
+	private readonly deliveryNotification = computed(() =>
+		this.hubService.deliveryNotifications()
+			.filter(notification => notification.messageId === this.secretMsgId())
+			.at(-1));
 
 	private readonly tooltip = viewChild<NgbTooltip>('ngbTooltipElement');
 	private readonly qrCodeCanvas = viewChild<ElementRef<HTMLCanvasElement>>('qrCodeCanvas');
@@ -110,6 +119,22 @@ export class NewSecretMessageComponent {
 		}
 
 		this.tooltipClearTimer = setTimeout(() => this.tooltip()?.close(), 5_000);
+	}
+
+	/**
+	 * Reopens the delivery details that were shown when the recipient opened the
+	 * message, so the sender can inspect them again after dismissing the popup.
+	 */
+	showDeliveryDetails(): void {
+		const deliveryNotification = this.deliveryNotification();
+		if (!deliveryNotification) return;
+
+		void this.modalService.openModal(
+			MessageDeliveryDetailsModalComponent,
+			{ isNotification: false, messageDeliveryDetails: deliveryNotification }
+		).catch(() => {
+			// The details can be dismissed with Escape or a backdrop click.
+		});
 	}
 
 	/**

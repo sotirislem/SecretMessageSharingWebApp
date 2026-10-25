@@ -10,6 +10,7 @@ using SecretMessageSharingWebApp.Services.Interfaces;
 using SecretMessageSharingWebApp.Mappings;
 using SecretMessageSharingWebApp.Security;
 using OtpSettings = SecretMessageSharingWebApp.Models.Common.OtpSettings;
+using RecipientLocation = SecretMessageSharingWebApp.Models.Common.RecipientLocation;
 
 namespace SecretMessageSharingWebApp.UnitTests.ServicesTests;
 
@@ -25,6 +26,7 @@ public class SecretMessagesManagerTests
 	private readonly IMemoryCacheService _memoryCacheService;
 	private readonly IJwtService _jwtService;
 	private readonly ISecretMessageDeliveryNotificationHubService _notificationHubService;
+	private readonly IRecipientLocationService _recipientLocationService;
 	
 	private readonly SecretMessagesManager _sut;
 
@@ -40,6 +42,7 @@ public class SecretMessagesManagerTests
 		_memoryCacheService = Substitute.For<IMemoryCacheService>();
 		_jwtService = Substitute.For<IJwtService>();
 		_notificationHubService = Substitute.For<ISecretMessageDeliveryNotificationHubService>();
+		_recipientLocationService = Substitute.For<IRecipientLocationService>();
 
 		_sut = new SecretMessagesManager(
 			_logger,
@@ -50,7 +53,8 @@ public class SecretMessagesManagerTests
 			_sendGridEmailService,
 			_memoryCacheService,
 			_jwtService,
-			_notificationHubService
+			_notificationHubService,
+			_recipientLocationService
 		);
 	}
 
@@ -580,6 +584,134 @@ public class SecretMessagesManagerTests
 		// Assert
 		result.Should().BeEquivalentTo(ApiResult.NotFound());
 		await _notificationHubService.DidNotReceive().SendNotification(Arg.Any<string>(), Arg.Any<string?>(), Arg.Any<SecretMessageDeliveryNotification>());
+	}
+
+	[Fact]
+	public async Task GetMessage_ShouldPersistRecipientLocationAndRequestContext()
+	{
+		// Arrange
+		var encryptionKeySha256 = _fixture.Create<string>();
+		var secretMessage = _fixture.Create<SecretMessage>() with
+		{
+			EncryptionKeySha256 = KeyHashVerifier.Create(encryptionKeySha256),
+			CreatorIP = "8.8.8.8",
+			Otp = new OtpSettings
+			{
+				Required = false,
+				RecipientsEmail = ""
+			}
+		};
+		var messageId = secretMessage.Id;
+		var httpContextClientInfo = _fixture.Create<HttpContextClientInfo>() with
+		{
+			ClientIP = "8.8.4.4",
+			ClientId = Guid.NewGuid().ToString(),
+			ClientLatitude = 44.4268,
+			ClientLongitude = 26.1025,
+			ClientTimeZone = "Europe/Bucharest",
+			ClientUtcOffsetMinutes = 180,
+			ClientLanguage = "ro-RO"
+		};
+
+		var location = new RecipientLocation
+		{
+			City = "Bucharest",
+			Region = "Bucuresti",
+			Country = "Romania",
+			CountryCode = "RO",
+			Isp = "Example ISP",
+			Source = Constants.LocationSources.Device
+		};
+
+		var getLog = _fixture.Create<GetLog>();
+		GetLog? capturedLog = null;
+
+		_secretMessagesService.Get(messageId)
+			.Returns(secretMessage);
+
+		_secretMessagesService.Delete(messageId)
+			.Returns(true);
+
+		_recipientLocationService
+			.ResolveAsync(Arg.Any<string?>(), Arg.Any<double?>(), Arg.Any<double?>(), Arg.Any<CancellationToken>())
+			.Returns(location);
+
+		_getLogsService.CreateNewLog(Arg.Any<GetLog>())
+			.Returns(callInfo =>
+			{
+				capturedLog = callInfo.Arg<GetLog>();
+				return getLog;
+			});
+
+		// Act
+		var result = await _sut.GetMessage(messageId, encryptionKeySha256, null, httpContextClientInfo);
+
+		// Assert
+		result.Should().BeOfType<SuccessResult<GetSecretMessageResponse>>();
+		capturedLog.Should().NotBeNull();
+		capturedLog!.RecipientCity.Should().Be("Bucharest");
+		capturedLog.RecipientRegion.Should().Be("Bucuresti");
+		capturedLog.RecipientCountry.Should().Be("Romania");
+		capturedLog.RecipientCountryCode.Should().Be("RO");
+		capturedLog.RecipientLocationSource.Should().Be(Constants.LocationSources.Device);
+		capturedLog.RecipientIsp.Should().Be("Example ISP");
+		capturedLog.RecipientTimezone.Should().Be("Europe/Bucharest");
+		capturedLog.RecipientUtcOffsetMinutes.Should().Be(180);
+		capturedLog.RecipientLanguage.Should().Be("ro-RO");
+		capturedLog.OtpVerified.Should().BeFalse();
+
+		await _recipientLocationService.Received(1).ResolveAsync(
+			"8.8.4.4",
+			44.4268,
+			26.1025,
+			Arg.Any<CancellationToken>());
+	}
+
+	[Fact]
+	public async Task GetMessage_ShouldStillSucceed_WhenLocationLookupFails()
+	{
+		// Arrange
+		var encryptionKeySha256 = _fixture.Create<string>();
+		var secretMessage = _fixture.Create<SecretMessage>() with
+		{
+			EncryptionKeySha256 = KeyHashVerifier.Create(encryptionKeySha256),
+			Otp = new OtpSettings
+			{
+				Required = false,
+				RecipientsEmail = ""
+			}
+		};
+		var messageId = secretMessage.Id;
+		var httpContextClientInfo = _fixture.Create<HttpContextClientInfo>();
+
+		var getLog = _fixture.Create<GetLog>();
+		GetLog? capturedLog = null;
+
+		_secretMessagesService.Get(messageId)
+			.Returns(secretMessage);
+
+		_secretMessagesService.Delete(messageId)
+			.Returns(true);
+
+		_recipientLocationService
+			.ResolveAsync(Arg.Any<string?>(), Arg.Any<double?>(), Arg.Any<double?>(), Arg.Any<CancellationToken>())
+			.Returns((RecipientLocation?)null);
+
+		_getLogsService.CreateNewLog(Arg.Any<GetLog>())
+			.Returns(callInfo =>
+			{
+				capturedLog = callInfo.Arg<GetLog>();
+				return getLog;
+			});
+
+		// Act
+		var result = await _sut.GetMessage(messageId, encryptionKeySha256, null, httpContextClientInfo);
+
+		// Assert
+		result.Should().BeOfType<SuccessResult<GetSecretMessageResponse>>();
+		capturedLog.Should().NotBeNull();
+		capturedLog!.RecipientCity.Should().BeNull();
+		capturedLog.RecipientLocationSource.Should().BeNull();
 	}
 
 	[Fact]

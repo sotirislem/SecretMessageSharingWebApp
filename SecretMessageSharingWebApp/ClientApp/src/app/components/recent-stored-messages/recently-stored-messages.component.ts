@@ -48,12 +48,23 @@ export class RecentlyStoredMessagesComponent {
 	}
 
 	showDeliveryDetails(msg: RecentlyStoredSecretMessage): void {
+		const deliveryDetails = msg.deliveryDetails!;
 		const messageDeliveryDetails = <SecretMessageDeliveryNotification>{
 			messageId: msg.id,
 			messageCreatedOn: msg.createdDateTime,
-			messageDeliveredOn: msg.deliveryDetails!.deliveredAt,
-			recipientIP: msg.deliveryDetails!.recipientIP,
-			recipientClientInfo: msg.deliveryDetails!.recipientClientInfo
+			messageDeliveredOn: deliveryDetails.deliveredAt,
+			recipientIP: deliveryDetails.recipientIP,
+			recipientClientInfo: deliveryDetails.recipientClientInfo,
+			recipientCity: deliveryDetails.recipientCity,
+			recipientRegion: deliveryDetails.recipientRegion,
+			recipientCountry: deliveryDetails.recipientCountry,
+			recipientCountryCode: deliveryDetails.recipientCountryCode,
+			recipientLocationSource: deliveryDetails.recipientLocationSource,
+			recipientIsp: deliveryDetails.recipientIsp,
+			recipientTimezone: deliveryDetails.recipientTimezone,
+			recipientUtcOffsetMinutes: deliveryDetails.recipientUtcOffsetMinutes,
+			recipientLanguage: deliveryDetails.recipientLanguage,
+			otpVerified: deliveryDetails.otpVerified
 		};
 
 		void this.modalService.openModal(
