@@ -11,7 +11,6 @@ export interface GenericConfirmationModalData {
 
 @Component({
 	templateUrl: './generic-confirmation-modal.component.html',
-	styleUrl: './generic-confirmation-modal.component.css',
 	changeDetection: ChangeDetectionStrategy.OnPush,
 	imports: [NgTemplateOutlet]
 })

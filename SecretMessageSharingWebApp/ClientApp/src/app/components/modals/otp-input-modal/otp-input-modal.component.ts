@@ -15,7 +15,6 @@ export interface OtpInputModalData {
 
 @Component({
 	templateUrl: './otp-input-modal.component.html',
-	styleUrl: './otp-input-modal.component.css',
 	changeDetection: ChangeDetectionStrategy.OnPush,
 	imports: [ReactiveFormsModule, DigitOnlyDirective]
 })

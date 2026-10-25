@@ -16,7 +16,6 @@
 	--sms-primary-strong: #4338ca;
 	--sms-primary-soft: #eef0ff;
 	--sms-accent: #7c3aed;
-	--sms-accent-soft: #f4ecff;
 	--sms-success: #0f9d76;
 	--sms-success-soft: #e8f8f2;
 	--sms-warning: #b45309;
@@ -80,28 +79,8 @@ a {
 }
 
 /* --------------------------------------------------------------------------
-   Legacy helpers still referenced by templates
+   Helpers
    -------------------------------------------------------------------------- */
-
-@media only screen and (max-width: 768px) {
-	.m-hide {
-		display: none;
-	}
-
-	.m-show {
-		display: initial;
-	}
-}
-
-@media only screen and (min-width: 768px) {
-	.m-hide {
-		display: initial;
-	}
-
-	.m-show {
-		display: none;
-	}
-}
 
 .word-wrap {
 	word-break: break-word;
@@ -128,11 +107,6 @@ a {
 	transition: visibility .2s linear, opacity .2s linear;
 }
 
-.hidden {
-	opacity: 0;
-	visibility: hidden;
-}
-
 span.as-link {
 	color: var(--sms-primary);
 	text-decoration: underline;
@@ -142,10 +116,6 @@ span.as-link {
 
 span.as-link:hover {
 	color: var(--sms-primary-strong);
-}
-
-.mono {
-	font-family: var(--sms-font-mono);
 }
 
 .text-gradient {
@@ -824,11 +794,6 @@ app-root {
 	color: var(--sms-warning);
 }
 
-.empty-state-icon--danger {
-	background: var(--sms-danger-soft);
-	color: var(--sms-danger);
-}
-
 .empty-state-icon--info {
 	background: var(--sms-primary-soft);
 	color: var(--sms-primary);
@@ -857,8 +822,7 @@ app-root {
 	font-weight: 600;
 }
 
-.form-control,
-.form-select {
+.form-control {
 	padding: .7rem .9rem;
 	border-color: var(--sms-border-strong);
 	border-radius: 12px;
@@ -870,8 +834,7 @@ app-root {
 	color: #9aa0b3;
 }
 
-.form-control:focus,
-.form-select:focus {
+.form-control:focus {
 	border-color: rgba(79, 70, 229, .55);
 	box-shadow: var(--sms-ring);
 }
@@ -907,10 +870,6 @@ textarea.form-control {
 .form-switch .form-check-input {
 	width: 2.5em;
 	height: 1.35em;
-}
-
-.form-check-label {
-	cursor: pointer;
 }
 
 .input-group-text {
@@ -1055,21 +1014,6 @@ textarea.form-control {
 	--bs-btn-active-bg: var(--sms-border);
 	--bs-btn-active-border-color: var(--sms-border);
 	--bs-btn-active-color: var(--sms-text);
-}
-
-.btn-danger {
-	--bs-btn-bg: var(--sms-danger);
-	--bs-btn-border-color: var(--sms-danger);
-	--bs-btn-hover-bg: #b91c1c;
-	--bs-btn-hover-border-color: #b91c1c;
-	--bs-btn-active-bg: #b91c1c;
-	--bs-btn-active-border-color: #b91c1c;
-}
-
-.btn-lg {
-	padding: .8rem 1.35rem;
-	border-radius: 13px;
-	font-size: 1rem;
 }
 
 .btn-sm {
@@ -1459,10 +1403,6 @@ textarea.form-control {
 
 .table tbody tr:last-child td {
 	border-bottom: 0;
-}
-
-.table-hover > tbody > tr:hover > * {
-	background-color: rgba(79, 70, 229, .045);
 }
 
 /* --------------------------------------------------------------------------

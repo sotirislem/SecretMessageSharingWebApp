@@ -12,7 +12,6 @@ import { DateTimeFullPipe } from '../../pipes/date-time-full.pipe';
 
 @Component({
 	templateUrl: './recently-stored-messages.component.html',
-	styleUrl: './recently-stored-messages.component.css',
 	changeDetection: ChangeDetectionStrategy.OnPush,
 	imports: [DateTimeFullPipe]
 })

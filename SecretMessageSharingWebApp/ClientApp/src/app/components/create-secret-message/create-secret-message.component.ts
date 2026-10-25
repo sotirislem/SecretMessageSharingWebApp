@@ -14,7 +14,6 @@ import { OtpSettings } from '../../models/api/store-new-secret-message-request.m
 @Component({
 	selector: 'create-secret-message',
 	templateUrl: './create-secret-message.component.html',
-	styleUrl: './create-secret-message.component.css',
 	changeDetection: ChangeDetectionStrategy.OnPush,
 	imports: [ReactiveFormsModule]
 })

@@ -6,7 +6,6 @@ import { Routes } from '../../../constants';
 @Component({
 	selector: 'app-nav-menu',
 	templateUrl: './nav-menu.component.html',
-	styleUrl: './nav-menu.component.css',
 	changeDetection: ChangeDetectionStrategy.OnPush,
 	imports: [RouterLink, RouterLinkActive]
 })

@@ -6,7 +6,6 @@ import { Routes } from '../../../constants';
 @Component({
 	selector: 'app-home',
 	templateUrl: './home.component.html',
-	styleUrl: './home.component.css',
 	changeDetection: ChangeDetectionStrategy.OnPush,
 	imports: [RouterLink]
 })

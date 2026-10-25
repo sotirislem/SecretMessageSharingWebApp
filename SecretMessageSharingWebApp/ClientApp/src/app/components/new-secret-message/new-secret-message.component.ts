@@ -54,6 +54,9 @@ export class NewSecretMessageComponent {
 	readonly secretMsgDelivered = signal(false);
 	readonly secretMsgContentCleared = signal(false);
 	readonly isCreatingAnotherSecretMessage = signal(false);
+	readonly otp = this.state.otp;
+
+	readonly autoDeletedText = '--- Auto deleted ---';
 
 	readonly statusLabel = computed(() => this.secretMsgDelivered() ? 'Opened' : 'Waiting for recipient');
 
@@ -228,7 +231,13 @@ export class NewSecretMessageComponent {
 
 		this.secretMsgContentCleared.set(true);
 
-		const emptySecretMessage = { ...EMPTY_SECRET_MESSAGE };
+		const emptySecretMessage = {
+			...EMPTY_SECRET_MESSAGE,
+			// Keep the layout of the content fields so the boxes remain visible with a
+			// placeholder instead of disappearing when the content is cleared.
+			containsFile: this.secretMsgObj().containsFile,
+			containsUsernameAndPassword: this.secretMsgObj().containsUsernameAndPassword
+		};
 		this.secretMsgObj.set(emptySecretMessage);
 
 		// Keep the stored state free of the plaintext too, but keep the id and key

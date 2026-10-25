@@ -61,7 +61,7 @@ describe('NewSecretMessageComponent', () => {
 			},
 			secretMsgId: 'message-id',
 			secretMsgKey: 'encryption-key',
-			otp: { required: false, recipientsEmail: '' }
+			otp: { required: true, recipientsEmail: 'recipient@example.com' }
 		});
 
 		clipboard = jasmine.createSpyObj<Clipboard>('Clipboard', ['copy']);
@@ -134,7 +134,9 @@ describe('NewSecretMessageComponent', () => {
 		expect(inputValues).toContain('greeting.txt');
 		expect(inputValues).toContain('message-id');
 		expect(inputValues).toContain('encryption-key');
+		expect(inputValues).toContain('recipient@example.com');
 		expect(inputValues).toContain(url);
+		expect(element.textContent).toContain('Recipient Email:');
 		expect(element.textContent).toContain('Waiting for recipient');
 	});
 
@@ -213,7 +215,7 @@ describe('NewSecretMessageComponent', () => {
 				fileName: 'greeting.txt',
 				base64BlobFile: 'data:text/plain;base64,aGVsbG8='
 			}),
-			{ required: false, recipientsEmail: '' });
+			{ required: true, recipientsEmail: 'recipient@example.com' });
 		expect(component.secretMsgId()).toBe('new-message-id');
 		expect(component.secretMsgKey()).toBe('new-encryption-key');
 		expect(component.secretMsgUrl())
@@ -322,15 +324,28 @@ describe('NewSecretMessageComponent', () => {
 
 		expect(component.secretMsgContentCleared()).toBeTrue();
 		expect(component.secretMsgObj().plainText).toBe('');
-		expect(component.secretMsgObj().containsUsernameAndPassword).toBeFalse();
-		expect(component.secretMsgObj().containsFile).toBeFalse();
+		expect(component.secretMsgObj().containsUsernameAndPassword).toBeTrue();
+		expect(component.secretMsgObj().containsFile).toBeTrue();
 		expect(worker.terminate).toHaveBeenCalled();
+
+		const element: HTMLElement = fixture.nativeElement;
+		const inputValues = Array.from(element.querySelectorAll('input'))
+			.map(input => (input as HTMLInputElement).value);
+
+		expect((element.querySelector('#secretTextArea') as HTMLTextAreaElement).value)
+			.toBe('--- Auto deleted ---');
+		expect(inputValues.filter(value => value === '--- Auto deleted ---').length).toBe(3);
+		expect(element.textContent).toContain('Username:');
+		expect(element.textContent).toContain('Password:');
+		expect(element.textContent).toContain('Attached File:');
 
 		const state = stateService.get();
 		expect(state?.secretMsgObj.plainText).toBe('');
+		expect(state?.secretMsgObj.containsUsernameAndPassword).toBeTrue();
+		expect(state?.secretMsgObj.containsFile).toBeTrue();
 		expect(state?.secretMsgId).toBe('message-id');
 		expect(state?.secretMsgKey).toBe('encryption-key');
-		expect(fixture.nativeElement.textContent).toContain('automatically cleared');
+		expect(element.textContent).toContain('automatically cleared');
 	});
 
 	it('should ignore unrelated worker messages', () => {
