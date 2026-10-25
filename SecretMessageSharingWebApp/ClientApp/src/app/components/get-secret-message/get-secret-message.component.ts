@@ -15,6 +15,8 @@ import { ModalService } from '../../services/modal.service';
 import { ToastService } from '../../services/toast.service';
 import { OtpInputModalComponent, OtpInputModalData } from '../modals/otp-input-modal/otp-input-modal.component';
 
+import { Constants } from '../../../constants';
+
 enum ComponentState {
 	LoadingMessage,
 	ReadyNoMessage,
@@ -255,6 +257,10 @@ export class GetSecretMessageComponent {
 			this.autoClearWorker?.terminate();
 			this.autoClearWorker = null;
 		};
+
+		this.autoClearWorker.postMessage({
+			timeOutMs: Constants.GET_SECRET_MESSAGE_AUTOCLEAR_INTERVAL_MINUTES * 60 * 1000
+		});
 	}
 
 	private removeEncryptionKeyFromAddressBar(): void {

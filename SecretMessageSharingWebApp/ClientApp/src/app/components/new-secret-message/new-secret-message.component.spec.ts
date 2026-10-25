@@ -2,8 +2,11 @@ import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { Clipboard } from '@angular/cdk/clipboard';
 
+import { Constants } from '../../../constants';
+import { CreatedSecretMessage, SecretMessageCreationService } from '../../services/secret-message-creation.service';
 import { NewSecretMessageStateService } from '../../services/new-secret-message-state.service';
 import { SecretMessageDeliveryNotificationHubService } from '../../services/secret-message-delivery-notification-hub.service';
+import { ToastService } from '../../services/toast.service';
 import { UrlHelperService } from '../../services/url-helper.service';
 import { NewSecretMessageComponent } from './new-secret-message.component';
 
@@ -28,6 +31,8 @@ describe('NewSecretMessageComponent', () => {
 
 	let stateService: NewSecretMessageStateService;
 	let clipboard: jasmine.SpyObj<Clipboard>;
+	let creationService: jasmine.SpyObj<SecretMessageCreationService>;
+	let toastService: jasmine.SpyObj<ToastService>;
 	let deliveredMessageIds: ReturnType<typeof signal<readonly string[]>>;
 	let originalWorker: typeof Worker;
 	let fixture: ReturnType<typeof TestBed.createComponent<NewSecretMessageComponent>>;
@@ -50,18 +55,35 @@ describe('NewSecretMessageComponent', () => {
 				password: 'pass'
 			},
 			secretMsgId: 'message-id',
-			secretMsgKey: 'encryption-key'
+			secretMsgKey: 'encryption-key',
+			otp: { required: false, recipientsEmail: '' }
 		});
 
 		clipboard = jasmine.createSpyObj<Clipboard>('Clipboard', ['copy']);
 		deliveredMessageIds = signal<readonly string[]>([]);
 
+		creationService = jasmine.createSpyObj<SecretMessageCreationService>('SecretMessageCreationService', ['create']);
+		creationService.create.and.returnValue(Promise.resolve({
+			secretMsgId: 'new-message-id',
+			secretMsgKey: 'new-encryption-key'
+		}));
+
+		toastService = jasmine.createSpyObj<ToastService>(
+			'ToastService',
+			['success', 'error', 'warning', 'info', 'dismiss', 'clear']);
+
+		const urlHelperService = jasmine.createSpyObj<UrlHelperService>('UrlHelperService', ['createLocalUrlWithParams']);
+		urlHelperService.createLocalUrlWithParams.and.callFake((routeName, params, fragment) =>
+			`https://example.com/${routeName}?id=${params['id']}#${fragment}`);
+
 		await TestBed.configureTestingModule({
 			imports: [NewSecretMessageComponent],
 			providers: [
 				{ provide: NewSecretMessageStateService, useValue: stateService },
-				{ provide: UrlHelperService, useValue: { createLocalUrlWithParams: () => url } },
+				{ provide: UrlHelperService, useValue: urlHelperService },
 				{ provide: Clipboard, useValue: clipboard },
+				{ provide: SecretMessageCreationService, useValue: creationService },
+				{ provide: ToastService, useValue: toastService },
 				{
 					provide: SecretMessageDeliveryNotificationHubService,
 					useValue: {
@@ -124,6 +146,95 @@ describe('NewSecretMessageComponent', () => {
 		expect(component.secretMsgDelivered()).toBeFalse();
 	});
 
+	it('should create another message with the same content and show the new share details', async () => {
+		expect(fixture.nativeElement.textContent).toContain('Create another');
+
+		await component.createAnotherSecretMessage();
+		fixture.detectChanges();
+		await fixture.whenStable();
+
+		expect(creationService.create).toHaveBeenCalledWith(
+			jasmine.objectContaining({
+				plainText: 'A secret message',
+				fileName: 'greeting.txt',
+				base64BlobFile: 'data:text/plain;base64,aGVsbG8='
+			}),
+			{ required: false, recipientsEmail: '' });
+		expect(component.secretMsgId()).toBe('new-message-id');
+		expect(component.secretMsgKey()).toBe('new-encryption-key');
+		expect(component.secretMsgUrl())
+			.toBe('https://example.com/get-secret-message?id=new-message-id#new-encryption-key');
+		expect(stateService.get()?.secretMsgId).toBe('new-message-id');
+		expect(stateService.get()?.secretMsgKey).toBe('new-encryption-key');
+		expect(toastService.success).toHaveBeenCalled();
+		expect(component.isCreatingAnotherSecretMessage()).toBeFalse();
+
+		// The new message gets a fresh auto-clear window of its own.
+		expect(FakeWorker.instances.length).toBe(2);
+		expect(FakeWorker.instances[0].terminate).toHaveBeenCalled();
+		expect(FakeWorker.instances[1].postMessage).toHaveBeenCalledWith({
+			timeOutMs: Constants.NEW_SECRET_MESSAGE_AUTOCLEAR_INTERVAL_MINUTES * 60 * 1000
+		});
+	});
+
+	it('should go back to the pending state when another message is created after the first was opened', async () => {
+		deliveredMessageIds.set(['message-id']);
+		fixture.detectChanges();
+		await fixture.whenStable();
+		expect(component.secretMsgDelivered()).toBeTrue();
+
+		await component.createAnotherSecretMessage();
+		fixture.detectChanges();
+		await fixture.whenStable();
+
+		expect(component.secretMsgDelivered()).toBeFalse();
+		expect(fixture.nativeElement.querySelector('.qr-card')).not.toBeNull();
+		expect(fixture.nativeElement.textContent).toContain('Waiting for recipient');
+	});
+
+	it('should not create another message after the content was cleared', async () => {
+		FakeWorker.instances[0].emit({ clear: true });
+		fixture.detectChanges();
+
+		await component.createAnotherSecretMessage();
+
+		expect(creationService.create).not.toHaveBeenCalled();
+		expect(fixture.nativeElement.querySelector('.duplicate-action')).toBeNull();
+	});
+
+	it('should keep the current message when creating another one fails', async () => {
+		creationService.create.and.returnValue(Promise.resolve(null));
+
+		await component.createAnotherSecretMessage();
+		fixture.detectChanges();
+
+		expect(component.secretMsgId()).toBe('message-id');
+		expect(component.secretMsgKey()).toBe('encryption-key');
+		expect(stateService.get()?.secretMsgId).toBe('message-id');
+		expect(toastService.success).not.toHaveBeenCalled();
+		expect(component.isCreatingAnotherSecretMessage()).toBeFalse();
+	});
+
+	it('should disable the button and ignore repeated clicks while creating another message', async () => {
+		let resolveCreate!: (value: CreatedSecretMessage | null) => void;
+		creationService.create.and.returnValue(new Promise(resolve => resolveCreate = resolve));
+
+		const firstCall = component.createAnotherSecretMessage();
+		const secondCall = component.createAnotherSecretMessage();
+		fixture.detectChanges();
+
+		expect(creationService.create).toHaveBeenCalledTimes(1);
+		expect(component.isCreatingAnotherSecretMessage()).toBeTrue();
+		expect((fixture.nativeElement.querySelector('.duplicate-action button') as HTMLButtonElement).disabled)
+			.toBeTrue();
+
+		resolveCreate(null);
+		await firstCall;
+		await secondCall;
+
+		expect(component.isCreatingAnotherSecretMessage()).toBeFalse();
+	});
+
 	it('should copy the share URL to the clipboard', () => {
 		component.copySecretMsgUrlToClipboard();
 
@@ -141,6 +252,12 @@ describe('NewSecretMessageComponent', () => {
 		expect(link.href).toBe('data:image/png;base64,qr');
 		expect(link.download).toBe('QRCode.png');
 		expect(clickSpy).toHaveBeenCalled();
+	});
+
+	it('should give the auto-clear worker the sender page interval', () => {
+		expect(FakeWorker.instances[0].postMessage).toHaveBeenCalledWith({
+			timeOutMs: Constants.NEW_SECRET_MESSAGE_AUTOCLEAR_INTERVAL_MINUTES * 60 * 1000
+		});
 	});
 
 	it('should clear the message content when the auto-clear timer fires', () => {

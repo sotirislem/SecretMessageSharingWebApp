@@ -1,13 +1,15 @@
-import { afterNextRender, ChangeDetectionStrategy, Component, computed, DestroyRef, effect, ElementRef, inject, signal, viewChild } from '@angular/core';
+import { afterNextRender, ChangeDetectionStrategy, Component, computed, DestroyRef, effect, ElementRef, inject, Injector, signal, viewChild } from '@angular/core';
 import { Clipboard } from '@angular/cdk/clipboard';
 import { NgbTooltip } from '@ng-bootstrap/ng-bootstrap';
 import * as QRCode from 'qrcode';
 
 import { NewSecretMessageStateService } from '../../services/new-secret-message-state.service';
+import { CreatedSecretMessage, SecretMessageCreationService } from '../../services/secret-message-creation.service';
+import { ToastService } from '../../services/toast.service';
 import { UrlHelperService } from '../../services/url-helper.service';
 import { SecretMessageDeliveryNotificationHubService } from '../../services/secret-message-delivery-notification-hub.service';
 
-import { Routes } from '../../../constants';
+import { Constants, Routes } from '../../../constants';
 import { SecretMessage } from '../../models/secret-message.model';
 
 const EMPTY_SECRET_MESSAGE: SecretMessage = {
@@ -30,7 +32,10 @@ export class NewSecretMessageComponent {
 	private readonly clipboard = inject(Clipboard);
 	private readonly urlHelperService = inject(UrlHelperService);
 	private readonly newSecretMessageStateService = inject(NewSecretMessageStateService);
+	private readonly secretMessageCreationService = inject(SecretMessageCreationService);
 	private readonly hubService = inject(SecretMessageDeliveryNotificationHubService);
+	private readonly toastService = inject(ToastService);
+	private readonly injector = inject(Injector);
 	private readonly destroyRef = inject(DestroyRef);
 
 	// The route guard guarantees this state exists; it is held only in memory.
@@ -45,6 +50,7 @@ export class NewSecretMessageComponent {
 		this.state.secretMsgKey));
 	readonly secretMsgDelivered = signal(false);
 	readonly secretMsgContentCleared = signal(false);
+	readonly isCreatingAnotherSecretMessage = signal(false);
 
 	readonly statusLabel = computed(() => this.secretMsgDelivered() ? 'Opened' : 'Waiting for recipient');
 
@@ -106,6 +112,60 @@ export class NewSecretMessageComponent {
 		this.tooltipClearTimer = setTimeout(() => this.tooltip()?.close(), 5_000);
 	}
 
+	/**
+	 * Stores the content again under a new key and replaces the share details on this
+	 * page, so the sender gets another single-use link without retyping anything.
+	 */
+	async createAnotherSecretMessage(): Promise<void> {
+		if (this.isCreatingAnotherSecretMessage() || this.secretMsgContentCleared()) return;
+
+		this.isCreatingAnotherSecretMessage.set(true);
+
+		try {
+			const createdSecretMessage = await this.secretMessageCreationService.create(
+				this.secretMsgObj(),
+				this.state.otp);
+
+			if (!createdSecretMessage) return;
+
+			this.applyCreatedSecretMessage(createdSecretMessage);
+
+			this.toastService.success(
+				'A new single-use link was created from the same content.',
+				'New message created');
+		} finally {
+			this.isCreatingAnotherSecretMessage.set(false);
+		}
+	}
+
+	private applyCreatedSecretMessage(createdSecretMessage: CreatedSecretMessage): void {
+		this.tooltip()?.close();
+		this.secretMsgDelivered.set(false);
+
+		this.secretMsgId.set(createdSecretMessage.secretMsgId);
+		this.secretMsgKey.set(createdSecretMessage.secretMsgKey);
+		this.secretMsgUrl.set(this.urlHelperService.createLocalUrlWithParams(
+			Routes.GetSecretMessage,
+			{ id: createdSecretMessage.secretMsgId },
+			createdSecretMessage.secretMsgKey));
+
+		// A refresh of this page has to show the message that is now being shared.
+		this.newSecretMessageStateService.set({
+			secretMsgObj: this.secretMsgObj(),
+			secretMsgId: createdSecretMessage.secretMsgId,
+			secretMsgKey: createdSecretMessage.secretMsgKey,
+			otp: this.state.otp
+		});
+
+		// The new message gets its own full window before the local content is cleared again.
+		this.stopAutoClearTimer();
+		this.startAutoClearTimer();
+
+		// The QR canvas is re-created by the view after a delivered message becomes pending
+		// again, so the code can only be drawn once the next render has happened.
+		afterNextRender(() => this.renderQrCode(), { injector: this.injector });
+	}
+
 	private renderQrCode(): void {
 		const canvas = this.qrCodeCanvas()?.nativeElement;
 		if (!canvas) return;
@@ -127,6 +187,10 @@ export class NewSecretMessageComponent {
 				this.clearSecretMessageContent();
 			}
 		};
+
+		this.autoClearWorker.postMessage({
+			timeOutMs: Constants.NEW_SECRET_MESSAGE_AUTOCLEAR_INTERVAL_MINUTES * 60 * 1000
+		});
 	}
 
 	private stopAutoClearTimer(): void {
@@ -147,7 +211,8 @@ export class NewSecretMessageComponent {
 		this.newSecretMessageStateService.set({
 			secretMsgObj: emptySecretMessage,
 			secretMsgId: this.secretMsgId(),
-			secretMsgKey: this.secretMsgKey()
+			secretMsgKey: this.secretMsgKey(),
+			otp: this.state.otp
 		});
 	}
 

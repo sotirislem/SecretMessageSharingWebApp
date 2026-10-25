@@ -5,6 +5,7 @@ import { from, of, throwError } from 'rxjs';
 
 import '../../../extensions/string.extensions';
 
+import { Constants } from '../../../constants';
 import { GetSecretMessageResponse } from '../../models/api/get-secret-message-response.model';
 import { DecryptionResult, DecryptionStatus } from '../../models/decryption-result.model';
 import { SecretMessage } from '../../models/secret-message.model';
@@ -441,6 +442,10 @@ describe('GetSecretMessageComponent', () => {
 	it('should clear the decrypted content when the auto-clear timer fires', async () => {
 		await create();
 		const worker = FakeWorker.instances[0];
+
+		expect(worker.postMessage).toHaveBeenCalledWith({
+			timeOutMs: Constants.GET_SECRET_MESSAGE_AUTOCLEAR_INTERVAL_MINUTES * 60 * 1000
+		});
 
 		worker.emit({ clear: true });
 		fixture.detectChanges();

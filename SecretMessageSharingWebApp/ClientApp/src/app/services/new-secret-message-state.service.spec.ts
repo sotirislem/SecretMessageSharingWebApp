@@ -16,7 +16,8 @@ describe('NewSecretMessageStateService', () => {
 			password: ''
 		},
 		secretMsgId: 'message-id',
-		secretMsgKey: 'message-key'
+		secretMsgKey: 'message-key',
+		otp: { required: false, recipientsEmail: '' }
 	};
 
 	beforeEach(() => {

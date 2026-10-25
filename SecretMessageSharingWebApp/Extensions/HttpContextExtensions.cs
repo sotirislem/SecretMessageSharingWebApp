@@ -1,4 +1,5 @@
-﻿using SecretMessageSharingWebApp.Middlewares;
+﻿using System.Net;
+using SecretMessageSharingWebApp.Middlewares;
 using SecretMessageSharingWebApp.Models;
 using UAParser;
 
@@ -22,7 +23,22 @@ public static class HttpContextExtensions
 
 	public static string GetClientIP(this HttpContext httpContext)
 	{
-		return httpContext.Connection.RemoteIpAddress?.ToString() ?? "Unknown";
+		var ipAddress = httpContext.Connection.RemoteIpAddress;
+
+		if (ipAddress is null)
+		{
+			return "Unknown";
+		}
+
+		// Kestrel reports the loopback address (::1 or 127.0.0.1) when the app is opened
+		// from the developer's own machine. Store a readable value in development so the
+		// sender's IP does not show up as an IPv6 loopback address in the UI.
+		if (IPAddress.IsLoopback(ipAddress) && httpContext.RequestServices?.GetService<IWebHostEnvironment>()?.IsDevelopment() is true)
+		{
+			return "localhost";
+		}
+
+		return ipAddress.ToString();
 	}
 
 	public static DateTime GetRequestDateTime(this HttpContext httpContext)

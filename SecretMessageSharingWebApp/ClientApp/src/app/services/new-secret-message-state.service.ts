@@ -1,11 +1,13 @@
 import { Injectable, signal } from '@angular/core';
 
+import { OtpSettings } from '../models/api/store-new-secret-message-request.model';
 import { SecretMessage } from '../models/secret-message.model';
 
 export interface NewSecretMessageState {
 	secretMsgObj: SecretMessage;
 	secretMsgId: string;
 	secretMsgKey: string;
+	otp: OtpSettings;
 }
 
 /**

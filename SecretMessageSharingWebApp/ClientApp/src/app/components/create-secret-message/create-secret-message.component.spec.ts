@@ -149,7 +149,8 @@ describe('CreateSecretMessageComponent', () => {
 		expect(stateService.get()).toEqual({
 			secretMsgObj: jasmine.objectContaining({ plainText: 'secret message' }),
 			secretMsgId: 'message-id',
-			secretMsgKey: 'encryption-key'
+			secretMsgKey: 'encryption-key',
+			otp: { required: false, recipientsEmail: '' }
 		});
 		expect(router.navigate).toHaveBeenCalledWith([Routes.NewSecretMessage]);
 		expect(component.formSubmitted()).toBeFalse();
@@ -239,8 +240,7 @@ describe('CreateSecretMessageComponent', () => {
 		expect(component.formSubmitted()).toBeTrue();
 
 		resolveEncryption(encryptionResult());
-		await Promise.resolve();
-		await Promise.resolve();
+		await new Promise(resolve => setTimeout(resolve, 0));
 
 		expect(component.formSubmitted()).toBeFalse();
 		expect(router.navigate).toHaveBeenCalled();

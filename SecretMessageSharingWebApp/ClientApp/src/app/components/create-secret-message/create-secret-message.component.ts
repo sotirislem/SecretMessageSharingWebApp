@@ -1,18 +1,15 @@
-import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormControl, NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
-import { firstValueFrom } from 'rxjs';
 
-import { CryptoService } from '../../services/crypto.service';
-import { ApiClientService } from '../../services/api-client.service';
 import { FileService } from '../../services/file.service';
 import { NewSecretMessageStateService } from '../../services/new-secret-message-state.service';
+import { SecretMessageCreationService } from '../../services/secret-message-creation.service';
 import { ToastService } from '../../services/toast.service';
 
 import { Constants, Routes } from '../../../constants';
 import { SecretMessage } from '../../models/secret-message.model';
-import { OtpSettings, StoreNewSecretMessageRequest } from '../../models/api/store-new-secret-message-request.model';
+import { OtpSettings } from '../../models/api/store-new-secret-message-request.model';
 
 @Component({
 	selector: 'create-secret-message',
@@ -24,10 +21,9 @@ import { OtpSettings, StoreNewSecretMessageRequest } from '../../models/api/stor
 export class CreateSecretMessageComponent {
 	private readonly formBuilder = inject(NonNullableFormBuilder);
 	private readonly router = inject(Router);
-	private readonly cryptoService = inject(CryptoService);
-	private readonly apiClientService = inject(ApiClientService);
 	private readonly fileService = inject(FileService);
 	private readonly newSecretMessageStateService = inject(NewSecretMessageStateService);
+	private readonly secretMessageCreationService = inject(SecretMessageCreationService);
 	private readonly toastService = inject(ToastService);
 
 	readonly formSubmitted = signal(false);
@@ -125,35 +121,19 @@ export class CreateSecretMessageComponent {
 				password: this.password.trim()
 			};
 
-			const encryptionResult = await this.cryptoService.encryptMessage(secretMsgObj);
-
-			// The encrypted payload is what gets stored, so check its size after encryption.
-			// This covers the message text, attachment, filename, credentials, and Unicode/JSON escaping.
-			if (encryptionResult.secretMessageData.ct.length > Constants.MAX_ENCRYPTED_PAYLOAD_BASE64_LENGTH) {
-				this.toastService.warning(
-					'The encrypted message is too large to store. Reduce the message text or attach a smaller file.',
-					'Message too large'
-				);
-				return;
-			}
-
-			const request = <StoreNewSecretMessageRequest>{
-				secretMessageData: encryptionResult.secretMessageData,
-				otp: <OtpSettings>{
-					required: this.secretMsgRequiresOtp,
-					recipientsEmail: this.secretMsgOtpRecipientsEmail.trim()
-				},
-				encryptionKeySha256: encryptionResult.encryptionKeySha256
+			const otp = <OtpSettings>{
+				required: this.secretMsgRequiresOtp,
+				recipientsEmail: this.secretMsgOtpRecipientsEmail.trim()
 			};
 
-			const secretMsgId = await firstValueFrom(this.apiClientService.storeSecretMessage(request));
+			const createdSecretMessage = await this.secretMessageCreationService.create(secretMsgObj, otp);
+			if (!createdSecretMessage) return;
 
-			this.navigateToNewSecretMessagePage(secretMsgObj, secretMsgId, encryptionResult.encryptionKeyAsBase64Url);
-		} catch (error) {
-			// HTTP failures have already been reported by httpErrorInterceptor.
-			if (!(error instanceof HttpErrorResponse)) {
-				this.toastService.error('Could not encrypt the message. Please try again.');
-			}
+			this.navigateToNewSecretMessagePage(secretMsgObj, otp, createdSecretMessage.secretMsgId, createdSecretMessage.secretMsgKey);
+		} catch {
+			// Reading the attachment failed; HTTP and encryption failures are reported
+			// by the creation service and the HTTP error interceptor.
+			this.toastService.error('Could not encrypt the message. Please try again.');
 		} finally {
 			this.formSubmitted.set(false);
 		}
@@ -185,13 +165,14 @@ export class CreateSecretMessageComponent {
 		this.attachedFile = null;
 	}
 
-	private navigateToNewSecretMessagePage(secretMsgObj: SecretMessage, secretMsgId: string, secretMsgKey: string): void {
+	private navigateToNewSecretMessagePage(secretMsgObj: SecretMessage, otp: OtpSettings, secretMsgId: string, secretMsgKey: string): void {
 		// Keep the plaintext and key out of history.state. The new-message
 		// component clears this in-memory state when it is destroyed.
 		this.newSecretMessageStateService.set({
 			secretMsgObj,
 			secretMsgId,
-			secretMsgKey
+			secretMsgKey,
+			otp
 		});
 
 		this.router.navigate([Routes.NewSecretMessage]);

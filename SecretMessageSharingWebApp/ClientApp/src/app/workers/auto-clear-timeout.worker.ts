@@ -1,10 +1,17 @@
 /// <reference lib="webworker" />
 
-import { Constants } from "../../constants";
+interface AutoClearTimeoutConfig {
+	timeOutMs: number;
+}
 
+let autoClearTimeout: ReturnType<typeof setTimeout> | undefined;
 
-const autoClearTimeoutMs = Constants.AUTOCLEAR_INTERVAL_MINUTES * (60 * 1000);
+// The owning page decides how long its content stays visible, because the recipient
+// page and the sender page use different windows.
+addEventListener('message', ({ data }: MessageEvent<AutoClearTimeoutConfig>) => {
+	clearTimeout(autoClearTimeout);
 
-setTimeout(() => {
-	postMessage({ clear: true });
-}, autoClearTimeoutMs);
+	autoClearTimeout = setTimeout(() => {
+		postMessage({ clear: true });
+	}, data.timeOutMs);
+});
