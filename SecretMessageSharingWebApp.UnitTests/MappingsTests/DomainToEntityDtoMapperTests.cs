@@ -23,6 +23,7 @@ public class DomainToEntityDtoMapperTests
 
 		var secretMessage = _fixture.Build<SecretMessage>()
 			.With(sm => sm.Otp, otp)
+			.With(sm => sm.NotificationEmail, "sender@example.com")
 			.Create();
 
 		// Act
@@ -30,6 +31,7 @@ public class DomainToEntityDtoMapperTests
 
 		// Assert
 		result.CreatedDateTime.Should().Be(secretMessage.CreatedDateTime);
+		result.NotificationEmail.Should().Be(secretMessage.NotificationEmail);
 		result.JsonData.Should().Be(JsonSerializer.Serialize(secretMessage.Data));
 		result.CreatorClientId.Should().Be(secretMessage.CreatorClientId);
 		result.CreatorTabId.Should().Be(secretMessage.CreatorTabId);

@@ -122,7 +122,7 @@ public class SecretMessagesManagerTests
 			.Returns((false, null));
 
 		// Act
-		var result = await _sut.SendOtp(messageId);
+		var result = await _sut.SendOtp(messageId, null, null);
 
 		// Assert
 		result.Should().BeEquivalentTo(ApiResult.BadRequest("Message does not exist or does not require OTP"));
@@ -149,15 +149,51 @@ public class SecretMessagesManagerTests
 		_otpService.Generate()
 			.Returns(oneTimePassword);
 
-		_sendGridEmailService.SendOtp(oneTimePassword, messageId, otpSettings.RecipientsEmail)
+		_sendGridEmailService.SendOtp(oneTimePassword, messageId, otpSettings.RecipientsEmail, Arg.Any<string?>(), Arg.Any<int?>())
 			.Returns(true);
 
 		// Act
-		var result = await _sut.SendOtp(messageId);
+		var result = await _sut.SendOtp(messageId, null, null);
 
 		// Assert
 		result.Should().BeEquivalentTo(ApiResult.SuccessNoContent());
 		_memoryCacheService.Received().SetValue(messageId, oneTimePassword, Constants.MemoryKeys.SecretMessageOtp);
+	}
+
+	[Fact]
+	public async Task SendOtp_ShouldForwardTheRecipientTimeZoneToTheEmail()
+	{
+		// Arrange
+		var messageId = _fixture.Create<string>();
+		var otpSettings = new OtpSettings
+		{
+			Required = true,
+			RecipientsEmail = _fixture.Create<string>()
+		};
+		var oneTimePassword = _fixture.Create<OneTimePassword>();
+		const string recipientTimeZone = "Europe/Bucharest";
+		const int recipientUtcOffsetMinutes = 180;
+
+		_secretMessagesService.Exists(messageId)
+			.Returns((true, otpSettings));
+
+		_memoryCacheService.GetValue<OneTimePassword>(messageId, Constants.MemoryKeys.SecretMessageOtp, remove: false)
+			.Returns((false, null));
+
+		_otpService.Generate()
+			.Returns(oneTimePassword);
+
+		_sendGridEmailService.SendOtp(
+				oneTimePassword, messageId, otpSettings.RecipientsEmail, recipientTimeZone, recipientUtcOffsetMinutes)
+			.Returns(true);
+
+		// Act
+		var result = await _sut.SendOtp(messageId, recipientTimeZone, recipientUtcOffsetMinutes);
+
+		// Assert
+		result.Should().BeEquivalentTo(ApiResult.SuccessNoContent());
+		await _sendGridEmailService.Received(1).SendOtp(
+			oneTimePassword, messageId, otpSettings.RecipientsEmail, recipientTimeZone, recipientUtcOffsetMinutes);
 	}
 
 	[Fact]
@@ -181,11 +217,11 @@ public class SecretMessagesManagerTests
 		_otpService.Generate()
 			.Returns(oneTimePassword);
 
-		_sendGridEmailService.SendOtp(oneTimePassword, messageId, otpSettings.RecipientsEmail)
+		_sendGridEmailService.SendOtp(oneTimePassword, messageId, otpSettings.RecipientsEmail, Arg.Any<string?>(), Arg.Any<int?>())
 			.Returns(false);
 
 		// Act
-		var result = await _sut.SendOtp(messageId);
+		var result = await _sut.SendOtp(messageId, null, null);
 
 		// Assert
 		result.Should().BeEquivalentTo(ApiResult.InternalServerError());
@@ -736,13 +772,13 @@ public class SecretMessagesManagerTests
 			.Returns(false);
 
 		// Act
-		var result = await _sut.SendOtp(messageId);
+		var result = await _sut.SendOtp(messageId, null, null);
 
 		// Assert
 		result.Should().BeEquivalentTo(ApiResult.SuccessNoContent());
 		_otpService.DidNotReceive().Generate();
 		await _sendGridEmailService.DidNotReceive()
-			.SendOtp(Arg.Any<OneTimePassword>(), Arg.Any<string>(), Arg.Any<string>());
+			.SendOtp(Arg.Any<OneTimePassword>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string?>(), Arg.Any<int?>());
 		_memoryCacheService.DidNotReceive()
 			.SetValue(Arg.Any<string>(), Arg.Any<OneTimePassword>(), Arg.Any<string>());
 	}
@@ -772,11 +808,11 @@ public class SecretMessagesManagerTests
 		_otpService.Generate()
 			.Returns(newOtp);
 
-		_sendGridEmailService.SendOtp(newOtp, messageId, otpSettings.RecipientsEmail)
+		_sendGridEmailService.SendOtp(newOtp, messageId, otpSettings.RecipientsEmail, Arg.Any<string?>(), Arg.Any<int?>())
 			.Returns(true);
 
 		// Act
-		var result = await _sut.SendOtp(messageId);
+		var result = await _sut.SendOtp(messageId, null, null);
 
 		// Assert
 		result.Should().BeEquivalentTo(ApiResult.SuccessNoContent());
@@ -866,6 +902,124 @@ public class SecretMessagesManagerTests
 			DeliveryNotificationSent = true
 		}));
 		_jwtService.Received(1).ValidateToken(jwtToken, messageId);
+		await _secretMessagesService.Received(1).Delete(messageId);
+	}
+
+	[Fact]
+	public async Task GetMessage_ShouldEmailDeliveryDetails_WhenNotificationEmailIsSet()
+	{
+		// Arrange
+		var encryptionKeySha256 = _fixture.Create<string>();
+		var secretMessage = _fixture.Create<SecretMessage>() with
+		{
+			EncryptionKeySha256 = KeyHashVerifier.Create(encryptionKeySha256),
+			NotificationEmail = "sender@example.com",
+			Otp = new OtpSettings
+			{
+				Required = false,
+				RecipientsEmail = ""
+			}
+		};
+		var messageId = secretMessage.Id;
+		var httpContextClientInfo = _fixture.Create<HttpContextClientInfo>();
+
+		var getLog = _fixture.Create<GetLog>();
+		var secretMessageDeliveryNotification = getLog.ToSecretMessageDeliveryNotification();
+
+		_secretMessagesService.Get(messageId)
+			.Returns(secretMessage);
+
+		_secretMessagesService.Delete(messageId)
+			.Returns(true);
+
+		_getLogsService.CreateNewLog(Arg.Any<GetLog>())
+			.Returns(getLog);
+
+		_sendGridEmailService.SendDeliveryNotification(secretMessageDeliveryNotification, "sender@example.com")
+			.Returns(true);
+
+		// Act
+		var result = await _sut.GetMessage(messageId, encryptionKeySha256, null, httpContextClientInfo);
+
+		// Assert
+		result.Should().BeOfType<SuccessResult<GetSecretMessageResponse>>();
+		await _sendGridEmailService.Received(1)
+			.SendDeliveryNotification(secretMessageDeliveryNotification, "sender@example.com");
+	}
+
+	[Fact]
+	public async Task GetMessage_ShouldNotEmailDeliveryDetails_WhenNotificationEmailIsMissing()
+	{
+		// Arrange
+		var encryptionKeySha256 = _fixture.Create<string>();
+		var secretMessage = _fixture.Create<SecretMessage>() with
+		{
+			EncryptionKeySha256 = KeyHashVerifier.Create(encryptionKeySha256),
+			NotificationEmail = null,
+			Otp = new OtpSettings
+			{
+				Required = false,
+				RecipientsEmail = ""
+			}
+		};
+		var messageId = secretMessage.Id;
+		var httpContextClientInfo = _fixture.Create<HttpContextClientInfo>();
+
+		_secretMessagesService.Get(messageId)
+			.Returns(secretMessage);
+
+		_secretMessagesService.Delete(messageId)
+			.Returns(true);
+
+		_getLogsService.CreateNewLog(Arg.Any<GetLog>())
+			.Returns(_fixture.Create<GetLog>());
+
+		// Act
+		var result = await _sut.GetMessage(messageId, encryptionKeySha256, null, httpContextClientInfo);
+
+		// Assert
+		result.Should().BeOfType<SuccessResult<GetSecretMessageResponse>>();
+		await _sendGridEmailService.DidNotReceive()
+			.SendDeliveryNotification(Arg.Any<SecretMessageDeliveryNotification>(), Arg.Any<string>());
+	}
+
+	[Fact]
+	public async Task GetMessage_ShouldStillSucceed_WhenDeliveryNotificationEmailFails()
+	{
+		// Arrange
+		var encryptionKeySha256 = _fixture.Create<string>();
+		var secretMessage = _fixture.Create<SecretMessage>() with
+		{
+			EncryptionKeySha256 = KeyHashVerifier.Create(encryptionKeySha256),
+			NotificationEmail = "sender@example.com",
+			Otp = new OtpSettings
+			{
+				Required = false,
+				RecipientsEmail = ""
+			}
+		};
+		var messageId = secretMessage.Id;
+		var httpContextClientInfo = _fixture.Create<HttpContextClientInfo>();
+		var getLog = _fixture.Create<GetLog>();
+
+		_secretMessagesService.Get(messageId)
+			.Returns(secretMessage);
+
+		_secretMessagesService.Delete(messageId)
+			.Returns(true);
+
+		_getLogsService.CreateNewLog(Arg.Any<GetLog>())
+			.Returns(getLog);
+
+		_sendGridEmailService.SendDeliveryNotification(
+				Arg.Any<SecretMessageDeliveryNotification>(), Arg.Any<string>())
+			.Returns(Task.FromException<bool>(new InvalidOperationException("SendGrid unavailable")));
+
+		// Act
+		var result = await _sut.GetMessage(messageId, encryptionKeySha256, null, httpContextClientInfo);
+
+		// Assert
+		result.Should().BeOfType<SuccessResult<GetSecretMessageResponse>>();
 		await _secretMessagesService.Received(1).Delete(messageId);
 	}
 }

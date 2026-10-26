@@ -40,9 +40,7 @@ export class RecipientLocationService {
 	 */
 	async collect(onPermissionPrompt?: () => void): Promise<ClientLocation> {
 		const location: ClientLocation = {
-			timezone: this.getTimeZone(),
-			utcOffsetMinutes: -new Date().getTimezoneOffset(),
-			language: navigator.language,
+			...this.collectRequestContext(),
 			deviceModel: await this.getDeviceModel()
 		};
 
@@ -80,6 +78,19 @@ export class RecipientLocationService {
 		} catch {
 			return undefined;
 		}
+	}
+
+	/**
+	 * Request context that never needs a browser prompt: time zone, UTC offset,
+	 * and language. Used by requests that only need to render local times, such
+	 * as the OTP email, where asking for coordinates would be out of place.
+	 */
+	collectRequestContext(): ClientLocation {
+		return {
+			timezone: this.getTimeZone(),
+			utcOffsetMinutes: -new Date().getTimezoneOffset(),
+			language: navigator.language
+		};
 	}
 
 	/**

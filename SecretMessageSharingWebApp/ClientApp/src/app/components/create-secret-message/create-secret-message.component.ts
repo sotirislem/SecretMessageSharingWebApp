@@ -40,6 +40,11 @@ export class CreateSecretMessageComponent {
 		secretMsgOtpRecipientsEmailFormControl: [{ value: '', disabled: true }, [
 			Validators.required,
 			Validators.pattern(/[\w.]+@[a-zA-Z_-]+?(?:\.[a-zA-Z]{2,6})+$/)
+		]],
+		secretMsgNotifyOnDeliveryFormControl: [false],
+		secretMsgNotificationEmailFormControl: [{ value: '', disabled: true }, [
+			Validators.required,
+			Validators.pattern(/[\w.]+@[a-zA-Z_-]+?(?:\.[a-zA-Z]{2,6})+$/)
 		]]
 	});
 
@@ -65,6 +70,12 @@ export class CreateSecretMessageComponent {
 
 	get secretMsgOtpRecipientsEmailFormControl() { return this.newSecretMessageForm.controls.secretMsgOtpRecipientsEmailFormControl; }
 	get secretMsgOtpRecipientsEmail(): string { return this.secretMsgOtpRecipientsEmailFormControl.value; }
+
+	get secretMsgNotifyOnDeliveryFormControl() { return this.newSecretMessageForm.controls.secretMsgNotifyOnDeliveryFormControl; }
+	get secretMsgNotifyOnDelivery(): boolean { return this.secretMsgNotifyOnDeliveryFormControl.value; }
+
+	get secretMsgNotificationEmailFormControl() { return this.newSecretMessageForm.controls.secretMsgNotificationEmailFormControl; }
+	get secretMsgNotificationEmail(): string { return this.secretMsgNotificationEmailFormControl.value; }
 
 	includeUsernameAndPasswordCheckboxToggle(): void {
 		this.usernameFormControl.setValue('');
@@ -99,6 +110,16 @@ export class CreateSecretMessageComponent {
 		}
 	}
 
+	secretMsgNotifyOnDeliveryCheckboxToggle(): void {
+		this.secretMsgNotificationEmailFormControl.setValue('');
+
+		if (this.secretMsgNotifyOnDelivery) {
+			this.secretMsgNotificationEmailFormControl.enable();
+		} else {
+			this.secretMsgNotificationEmailFormControl.disable();
+		}
+	}
+
 	submitNewSecretMessageForm(): void {
 		if (this.newSecretMessageForm.invalid) return;
 
@@ -125,10 +146,19 @@ export class CreateSecretMessageComponent {
 				recipientsEmail: this.secretMsgOtpRecipientsEmail.trim()
 			};
 
-			const createdSecretMessage = await this.secretMessageCreationService.create(secretMsgObj, otp);
+			const notificationEmail = this.secretMsgNotifyOnDelivery
+				? this.secretMsgNotificationEmail.trim()
+				: null;
+
+			const createdSecretMessage = await this.secretMessageCreationService.create(secretMsgObj, otp, notificationEmail);
 			if (!createdSecretMessage) return;
 
-			this.navigateToNewSecretMessagePage(secretMsgObj, otp, createdSecretMessage.secretMsgId, createdSecretMessage.secretMsgKey);
+			this.navigateToNewSecretMessagePage(
+				secretMsgObj,
+				otp,
+				notificationEmail,
+				createdSecretMessage.secretMsgId,
+				createdSecretMessage.secretMsgKey);
 		} catch {
 			// Reading the attachment failed; HTTP and encryption failures are reported
 			// by the creation service and the HTTP error interceptor.
@@ -164,14 +194,20 @@ export class CreateSecretMessageComponent {
 		this.attachedFile = null;
 	}
 
-	private navigateToNewSecretMessagePage(secretMsgObj: SecretMessage, otp: OtpSettings, secretMsgId: string, secretMsgKey: string): void {
+	private navigateToNewSecretMessagePage(
+		secretMsgObj: SecretMessage,
+		otp: OtpSettings,
+		notificationEmail: string | null,
+		secretMsgId: string,
+		secretMsgKey: string): void {
 		// Keep the plaintext and key out of history.state. The new-message
 		// component clears this in-memory state when it is destroyed.
 		this.newSecretMessageStateService.set({
 			secretMsgObj,
 			secretMsgId,
 			secretMsgKey,
-			otp
+			otp,
+			notificationEmail
 		});
 
 		this.router.navigate([Routes.NewSecretMessage]);

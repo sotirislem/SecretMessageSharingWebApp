@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta name="x-apple-disable-message-reformatting">
+	<title>{{Heading}}</title>
+<style>
+		/* Mobile only: stack and center the header lockup; keep the message ID on one line. */
+		@media only screen and (max-width:480px) {
+			.email-header-brand { display:block !important; width:100% !important; text-align:center !important; padding:0 0 12px !important; }
+			.email-header-badge { display:block !important; width:100% !important; text-align:center !important; padding:0 !important; }
+			.email-message-id-card { padding:12px !important; }
+			.email-message-id-value { font-size:12px !important; }
+		}
+	</style>
+</head>
+<body style="margin:0;padding:0;background-color:#eef0f7;font-family:'Segoe UI',-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;">
+	<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;background-color:#eef0f7;">
+		<tr>
+			<td align="center" style="padding:32px 12px 40px;">
+				<table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:600px;border-collapse:separate;background-color:#ffffff;border:1px solid #e2e5f0;border-radius:20px;overflow:hidden;">
+					<tr>
+						<td bgcolor="#4f46e5" style="background-color:#4f46e5;background-image:linear-gradient(120deg,#4f46e5 0%,#7c3aed 100%);padding:20px 28px;">
+							<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">
+								<tr>
+									<td class="email-header-brand" style="font-size:16px;font-weight:700;line-height:1.2;color:#ffffff;letter-spacing:-.01em;text-align:left;padding-right:12px;">{{AppName}}</td>
+									<td class="email-header-badge" align="right" style="line-height:1;white-space:nowrap;">
+										<span style="display:inline-block;padding:5px 10px;border-radius:999px;background-color:#ffffff;color:#4f46e5;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap;">{{Badge}}</span>
+									</td>
+								</tr>
+							</table>
+						</td>
+					</tr>
+					<tr>
+						<td style="padding:30px 28px 6px;">
+							<p style="margin:0 0 8px;font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#7c3aed;">{{Eyebrow}}</p>
+							<h1 style="margin:0 0 12px;font-size:26px;line-height:1.2;font-weight:700;letter-spacing:-.02em;color:#171a2b;">{{Heading}}</h1>
+
+							<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;margin:0 0 18px;">
+								<tr>
+									<td class="email-message-id-card" bgcolor="#f6f4ff" style="background-color:#f6f4ff;border:1px solid #ddd6ff;border-left:4px solid #6d5ce7;padding:12px 16px;">
+										<p style="margin:0 0 4px;font-size:10.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#6b58d4;">Message ID</p>
+										<p class="email-message-id-value" style="margin:0;font-family:Consolas,'Courier New',monospace;font-size:14px;font-weight:700;line-height:1.45;color:#231f3d;word-break:normal;overflow-wrap:break-word;">{{MessageId}}</p>
+									</td>
+								</tr>
+							</table>
+
+							{{Body}}
+						</td>
+					</tr>
+					<tr>
+						<td style="padding:16px 28px;background-color:#fbfbfe;border-top:1px solid #e2e5f0;font-size:11px;line-height:1.6;color:#7b8195;">
+							Sent by <a href="{{AppUrl}}" style="color:#4f46e5;font-weight:700;text-decoration:none;">{{AppName}}</a> &middot; {{FooterNote}}
+						</td>
+					</tr>
+				</table>
+			</td>
+		</tr>
+	</table>
+</body>
+</html>

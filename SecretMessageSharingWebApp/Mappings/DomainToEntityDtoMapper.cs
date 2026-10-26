@@ -17,7 +17,8 @@ public static class DomainToEntityDtoMapper
 		Otp = secretMessage.Otp.Required
 			? new OtpSettings() { RecipientsEmail = secretMessage.Otp.RecipientsEmail }
 			: null,
-		EncryptionKeySha256 = secretMessage.EncryptionKeySha256
+		EncryptionKeySha256 = secretMessage.EncryptionKeySha256,
+		NotificationEmail = secretMessage.NotificationEmail
 	};
 
 	public static GetLogEntity ToEntity(this GetLog getLog) => new(getLog.SecretMessageId, getLog.RequestDateTime)

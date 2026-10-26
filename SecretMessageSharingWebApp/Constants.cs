@@ -4,6 +4,8 @@ public static class Constants
 {
 	public const string AppName = "SecretMessageSharingWebApp";
 
+	public const string AppUrl = "https://secret-message-sharing-web-app.azurewebsites.net/";
+
 	public const int SessionIdleTimeoutInMinutes = 15;
 	public const int MemoryCacheValueExpirationTimeInMinutes = 15;
 	public const int DbAutoCleanerBackgroundServiceRunIntervalInMinutes = 10;

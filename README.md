@@ -31,9 +31,13 @@ link sent to the wrong person.
 - **File attachments** &mdash; any file type up to 1 MB, encrypted with the message.
 - **Optional credentials** &mdash; username and password fields are encrypted into the same payload.
 - **Optional OTP** &mdash; a one-time code is emailed to the recipient, valid for 3 minutes with
-  3 validation attempts.
+  3 validation attempts. The expiry shown in the email is rendered in the recipient's own time zone
+  when the browser supplies it.
 - **Delivery notifications** &mdash; the sender's browser receives a SignalR notification when the
   recipient opens the message.
+- **Delivery details by email** &mdash; optionally have the same delivery details emailed to the
+  sender: when the message was created and opened, how long it stayed unread, where it was opened,
+  and the recipient's masked IP, device, network provider, time zone, browser language and OTP use.
 - **Delivery location** &mdash; delivery details show where the message was opened: the city,
   region and country (with a flag), the network provider, the recipient's time zone and browser
   language, and how long the message stayed unread. The city comes from device location when the
@@ -59,11 +63,11 @@ link sent to the wrong person.
 | Geolocation consent | Location is requested only after the recipient confirms retrieval; the browser prompt decides, and the IP estimate is the fallback when it is denied |
 
 **What the server can see:** message ID, timestamps, IV + ciphertext, key hash, creator IP and
-user-agent (logs kept 24 hours), the recipient email when OTP is enabled, and delivery metadata
-after the message is read. Delivery metadata covers the time and duration until the message was
-opened, the recipient's masked IP, browser and device type, time zone, browser language, whether
-OTP protection was used, and the city, region, country and network provider resolved for the
-recipient.
+user-agent (logs kept 24 hours), the recipient email when OTP is enabled, the sender's optional
+notification email, and delivery metadata after the message is read. Delivery metadata covers the
+time and duration until the message was opened, the recipient's masked IP, browser and device type,
+time zone, browser language, whether OTP protection was used, and the city, region, country and
+network provider resolved for the recipient.
 
 **What the server cannot see:** the plaintext, the attachment contents, the encryption key, the
 recipient's exact device coordinates (they are rounded, used only for a city lookup, and never
@@ -139,6 +143,7 @@ SecretMessageSharingWebApp/
 │  │  └─ angular.json
 │  ├─ Endpoints/                            # FastEndpoints routes
 │  ├─ Services/                             # message, OTP, JWT, delivery and location logic
+│  ├─ EmailTemplates/                       # embedded HTML email templates
 │  ├─ Data/                                 # EF Core context and entities
 │  ├─ Middlewares/                          # security headers, timing
 │  └─ Program.cs
@@ -161,6 +166,10 @@ SecretMessageSharingWebApp/
 ignored when absent: `X-Client-Latitude` and `X-Client-Longitude` (rounded to 3 decimals by the
 browser), `X-Client-Timezone` (IANA id), `X-Client-Utc-Offset-Minutes`, `X-Client-Language`, and
 `X-Client-Device-Model` (Android device model when the browser exposes it; desktop browsers do not).
+
+`GET /api/secret-messages/otp/{id}` reads `X-Client-Timezone` and `X-Client-Utc-Offset-Minutes` too,
+so the emailed code can show its expiry in the recipient's time zone. It falls back to the UTC offset
+when the IANA id is missing or unknown, and to UTC when neither header is usable.
 
 Swagger UI is available in development at `/swagger/index.html`.
 
@@ -187,7 +196,7 @@ Local settings live in `SecretMessageSharingWebApp/appsettings.Development.json`
   },
   "SendGrid": {
     "ApiKey": "<sendgrid-api-key>",
-    "AuthSender": "<verified-sender@example.com>"
+    "AuthSender": "<sender@your-authenticated-domain.com>"
   },
   "Jwt": {
     "SigningKey": "<base64-key>"
@@ -202,8 +211,23 @@ Local settings live in `SecretMessageSharingWebApp/appsettings.Development.json`
 ```
 
 - The Cosmos DB emulator's well-known key works as-is for local development.
-- SendGrid is only needed for OTP email. With a debugger attached the OTP is printed to the
-  server console instead, so you can test the flow without an account.
+- SendGrid is used for OTP email and the optional delivery-details email. With a debugger attached
+  the OTP is printed to the server console and delivery emails are skipped, so you can test the
+  flow without an account.
+- Both emails are rendered from the HTML files in `EmailTemplates/`, which are embedded into the
+  assembly at build time. They ship with the published app, are never read from disk at runtime,
+  and an edit only takes effect after a rebuild.
+- `SendGrid:AuthSender` should be an address on a domain authenticated in SendGrid (domain
+  authentication with the SPF and DKIM records SendGrid provides). Single Sender Verification of a
+  consumer address (for example `@outlook.com`) is accepted by SendGrid, but strict receivers such
+  as Gmail reject it with `550 5.7.40` because the From domain does not align with SendGrid's
+  authenticated domain.
+- SendGrid calls are guarded by a Polly pipeline: transient responses (`408`, `429`, `500`, `502`,
+  `503`, `504`) and network/timeout failures are retried up to 3 times with jittered exponential
+  backoff starting at 1 second. Every attempt gets its own 3-second timeout, so a retry is not
+  starved by the previous attempt, and a send that fails on every attempt returns after roughly
+  19 seconds. Permanent failures such as a bad API key are not retried. See
+  `Providers/SendGridResiliencePipeline.cs`.
 - `RecipientLocation` controls the delivery-city lookup. Its defaults live in `appsettings.json`;
   the block above shows those defaults plus the development-only
   `ResolveLocalRequestsThroughPublicIp` override. Requests from your own machine report
@@ -248,8 +272,9 @@ npx ng test --watch=false --browsers=ChromeHeadless
 ```
 
 The .NET test project covers validators, mappings, services (including recipient location
-resolution and request-header parsing), security headers, and the key-hash verifier. Angular tests
-cover the route guard, crypto service, recipient location collection, and string extensions.
+resolution, request-header parsing, SendGrid email rendering and the retry pipeline), security
+headers, and the key-hash verifier. Angular tests cover the components, services, guards,
+interceptors, pipes, and string extensions.
 
 ## Deployment
 
@@ -291,7 +316,10 @@ cover the route guard, crypto service, recipient location collection, and string
 - Every browser tab also has its own id, kept in `sessionStorage` so it survives a refresh. When
   the creator opens their own message, the notification is sent only to the tab that created it;
   the other tabs of the same browser are left alone.
-- The recipient email address for OTP is stored server-side so the code can be delivered.
+- The recipient email address for OTP is stored server-side so the code can be delivered. The
+  sender's optional notification email is stored for the same reason: to send the delivery-details
+  email when the message is opened. Sending that email is best-effort, so a SendGrid failure is
+  logged but never blocks or fails the retrieval.
 - Attachments are limited to 1 MB before Base64 encoding; the server caps the encrypted
   payload at 1.5 MB (decoded ciphertext) and the request body at 3 MiB. Cosmos DB enforces a
   2 MB item limit, which is the practical ceiling: a 1 MB attachment produces a document of

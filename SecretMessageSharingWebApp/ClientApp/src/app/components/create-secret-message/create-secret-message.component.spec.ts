@@ -70,6 +70,7 @@ describe('CreateSecretMessageComponent', () => {
 		expect(component.passwordFormControl.disabled).toBeTrue();
 		expect(component.attachedFileFormControl.disabled).toBeTrue();
 		expect(component.secretMsgOtpRecipientsEmailFormControl.disabled).toBeTrue();
+		expect(component.secretMsgNotificationEmailFormControl.disabled).toBeTrue();
 		expect(component.formSubmitted()).toBeFalse();
 	});
 
@@ -120,6 +121,19 @@ describe('CreateSecretMessageComponent', () => {
 		expect(component.secretMsgOtpRecipientsEmail).toBe('');
 	});
 
+	it('should enable and reset the notification email field', () => {
+		component.secretMsgNotifyOnDeliveryFormControl.setValue(true);
+		component.secretMsgNotifyOnDeliveryCheckboxToggle();
+		expect(component.secretMsgNotificationEmailFormControl.enabled).toBeTrue();
+
+		component.secretMsgNotificationEmailFormControl.setValue('sender@example.com');
+		component.secretMsgNotifyOnDeliveryFormControl.setValue(false);
+		component.secretMsgNotifyOnDeliveryCheckboxToggle();
+
+		expect(component.secretMsgNotificationEmailFormControl.disabled).toBeTrue();
+		expect(component.secretMsgNotificationEmail).toBe('');
+	});
+
 	it('should not submit an invalid form', () => {
 		component.submitNewSecretMessageForm();
 
@@ -144,13 +158,15 @@ describe('CreateSecretMessageComponent', () => {
 		expect(apiClient.storeSecretMessage).toHaveBeenCalledWith({
 			secretMessageData: { iv: 'iv', ct: 'ciphertext' },
 			otp: { required: false, recipientsEmail: '' },
-			encryptionKeySha256: 'key-hash'
+			encryptionKeySha256: 'key-hash',
+			notificationEmail: null
 		});
 		expect(stateService.get()).toEqual({
 			secretMsgObj: jasmine.objectContaining({ plainText: 'secret message' }),
 			secretMsgId: 'message-id',
 			secretMsgKey: 'encryption-key',
-			otp: { required: false, recipientsEmail: '' }
+			otp: { required: false, recipientsEmail: '' },
+			notificationEmail: null
 		});
 		expect(router.navigate).toHaveBeenCalledWith([Routes.NewSecretMessage]);
 		expect(component.formSubmitted()).toBeFalse();
@@ -193,6 +209,20 @@ describe('CreateSecretMessageComponent', () => {
 		expect(apiClient.storeSecretMessage).toHaveBeenCalledWith(jasmine.objectContaining({
 			otp: { required: true, recipientsEmail: 'recipient@example.com' }
 		}));
+	});
+
+	it('should send the notification email to the API and store it in state', async () => {
+		component.secretMsgPlainTextFormControl.setValue('secret');
+		component.secretMsgNotifyOnDeliveryFormControl.setValue(true);
+		component.secretMsgNotifyOnDeliveryCheckboxToggle();
+		component.secretMsgNotificationEmailFormControl.setValue(' sender@example.com ');
+
+		await component.createSecretMessage();
+
+		expect(apiClient.storeSecretMessage).toHaveBeenCalledWith(jasmine.objectContaining({
+			notificationEmail: 'sender@example.com'
+		}));
+		expect(stateService.get()?.notificationEmail).toBe('sender@example.com');
 	});
 
 	it('should reject an encrypted payload that is too large', async () => {

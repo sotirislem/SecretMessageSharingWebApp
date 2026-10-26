@@ -33,7 +33,10 @@ export class SecretMessageCreationService {
 	 * Returns the stored message on success and null on failure, after reporting
 	 * the failure to the user.
 	 */
-	async create(secretMsgObj: SecretMessage, otp: OtpSettings): Promise<CreatedSecretMessage | null> {
+	async create(
+		secretMsgObj: SecretMessage,
+		otp: OtpSettings,
+		notificationEmail: string | null = null): Promise<CreatedSecretMessage | null> {
 		try {
 			const encryptionResult = await this.cryptoService.encryptMessage(secretMsgObj);
 
@@ -50,7 +53,8 @@ export class SecretMessageCreationService {
 			const request = <StoreNewSecretMessageRequest>{
 				secretMessageData: encryptionResult.secretMessageData,
 				otp,
-				encryptionKeySha256: encryptionResult.encryptionKeySha256
+				encryptionKeySha256: encryptionResult.encryptionKeySha256,
+				notificationEmail
 			};
 
 			const secretMsgId = await firstValueFrom(this.apiClientService.storeSecretMessage(request));

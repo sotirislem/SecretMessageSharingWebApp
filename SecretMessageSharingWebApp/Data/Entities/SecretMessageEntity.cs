@@ -20,6 +20,8 @@ public sealed record SecretMessageEntity : IDbEntity
 
 	public string EncryptionKeySha256 { get; init; }
 
+	public string? NotificationEmail { get; init; }
+
 
 	public SecretMessageEntity()
 	{

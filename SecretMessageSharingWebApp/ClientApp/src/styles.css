@@ -1093,8 +1093,10 @@ textarea.form-control {
 	margin: 0;
 }
 
-.delivery-status-text {
-	margin: 0;
+/* `margin-left: auto` keeps the status at the right edge even when it wraps
+   onto its own line, where `space-between` would otherwise left-align it. */
+.delivery-bar .delivery-status-text {
+	margin: 0 0 0 auto;
 	font-size: .82rem;
 	font-weight: 700;
 	letter-spacing: .02em;

@@ -275,6 +275,57 @@ public class StoreNewSecretMessageRequestValidatorTests
 		result.ShouldNotHaveValidationErrorFor(r => r.Otp.RecipientsEmail);
 	}
 
+	[Theory]
+	[InlineData("invalid-email")]
+	[InlineData("not-an-email@")]
+	[InlineData("@example.com")]
+	public void StoreNewSecretMessageRequestValidator_ShouldHaveError_WhenNotificationEmailIsInvalid(string notificationEmail)
+	{
+		// Arrange
+		var request = _fixture.Build<StoreNewSecretMessageRequest>()
+			.With(r => r.NotificationEmail, notificationEmail)
+			.Create();
+
+		// Act
+		var result = _validator.TestValidate(request);
+
+		// Assert
+		result.ShouldHaveValidationErrorFor(r => r.NotificationEmail);
+	}
+
+	[Fact]
+	public void StoreNewSecretMessageRequestValidator_ShouldNotHaveError_WhenNotificationEmailIsValid()
+	{
+		// Arrange
+		var request = _fixture.Build<StoreNewSecretMessageRequest>()
+			.With(r => r.NotificationEmail, "sender@example.com")
+			.Create();
+
+		// Act
+		var result = _validator.TestValidate(request);
+
+		// Assert
+		result.ShouldNotHaveValidationErrorFor(r => r.NotificationEmail);
+	}
+
+	[Theory]
+	[InlineData(null)]
+	[InlineData("")]
+	[InlineData("   ")]
+	public void StoreNewSecretMessageRequestValidator_ShouldNotHaveError_WhenNotificationEmailIsNotProvided(string? notificationEmail)
+	{
+		// Arrange
+		var request = _fixture.Build<StoreNewSecretMessageRequest>()
+			.With(r => r.NotificationEmail, notificationEmail)
+			.Create();
+
+		// Act
+		var result = _validator.TestValidate(request);
+
+		// Assert
+		result.ShouldNotHaveValidationErrorFor(r => r.NotificationEmail);
+	}
+
 	[Fact]
 	public void StoreNewSecretMessageRequestValidator_ShouldHaveError_WhenEncryptionKeySha256IsInvalid()
 	{

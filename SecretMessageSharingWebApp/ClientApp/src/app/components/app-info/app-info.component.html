@@ -79,6 +79,7 @@
 				<li>A SHA-256 hash of the encryption key, used only to verify retrieval</li>
 				<li>Creator IP address and browser user-agent (logs are deleted after 24 hours)</li>
 				<li>Recipient email address when OTP protection is enabled</li>
+				<li>Your optional notification email, used only to send the delivery details</li>
 				<li>Delivery metadata (time, city, IP, browser, device model when the browser exposes it, and request language) once the message is read</li>
 			</ul>
 		</article>
@@ -145,10 +146,11 @@
 					<ng-template>
 						The message ID, creation timestamp, the IV and ciphertext, the key hash, and the
 						creator's IP and user-agent for diagnostics. If OTP is enabled, the recipient's
-						email address is also stored so the one-time code can be sent. After retrieval,
-						delivery metadata such as the recipient's IP, browser, device model (when the
-						browser exposes it), city, time zone, and language is recorded so the sender can
-						be notified.
+						email address is also stored so the one-time code can be sent. If you ask for a
+						delivery email, your notification address is stored so those details can be sent
+						when the message is opened. After retrieval, delivery metadata such as the
+						recipient's IP, browser, device model (when the browser exposes it), city, time
+						zone, and language is recorded so the sender can be notified.
 						<br /><br />
 						The city comes from device location when the browser grants location access;
 						otherwise it is estimated from the IP address. Exact coordinates are never stored.
@@ -204,6 +206,25 @@
 						before the message can be retrieved. The code is valid for 3 minutes and limited to
 						3 attempts. OTP adds a second factor on top of the link &mdash; it does not replace
 						the encryption key.
+					</ng-template>
+				</div>
+			</div>
+		</div>
+
+		<div ngbAccordionItem>
+			<h2 ngbAccordionHeader>
+				<button ngbAccordionButton>Can I get the delivery details by email?</button>
+			</h2>
+			<div ngbAccordionCollapse>
+				<div ngbAccordionBody>
+					<ng-template>
+						Yes. When you create a message you can enable &ldquo;Email me the delivery
+						details?&rdquo; and enter your own address. When the recipient opens the message,
+						that address receives the same information shown in the delivery popup: the
+						message ID, creation and open times, time to open, location, masked IP, device,
+						network provider, time zone, browser language, and whether OTP was used. The email
+						is optional and best-effort &mdash; if it cannot be sent, the message can still be
+						read.
 					</ng-template>
 				</div>
 			</div>
@@ -271,7 +292,7 @@
 					<ng-template>
 						Angular 22 on the client, .NET 10 with FastEndpoints and Entity Framework Core on
 						the server, Azure Cosmos DB for storage, SignalR for delivery notifications, and
-						SendGrid for OTP email. It is hosted on Azure App Service.
+						SendGrid for OTP and delivery-details email. It is hosted on Azure App Service.
 					</ng-template>
 				</div>
 			</div>

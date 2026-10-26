@@ -19,6 +19,7 @@ public static class EntityToDomainDtoMapper
 		CreatorTabId = entity.CreatorTabId,
 		CreatorIP = entity.CreatorIP,
 		CreatorClientInfo = entity.CreatorClientInfo,
+		NotificationEmail = entity.NotificationEmail,
 	};
 
 	public static Models.Common.OtpSettings ToDomain(this Data.Entities.OtpSettings? entity) => new()

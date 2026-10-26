@@ -22,6 +22,7 @@ public class EntityToDomainDtoMapperTests
 		// Arrange
 		var entity = _fixture.Build<SecretMessageEntity>()
 			.With(x => x.Otp, _fixture.Create<OtpSettings>())
+			.With(x => x.NotificationEmail, "sender@example.com")
 			.With(x => x.JsonData, JsonSerializer.Serialize(_fixture.Create<SecretMessageData>()))
 			.Create();
 
@@ -37,6 +38,7 @@ public class EntityToDomainDtoMapperTests
 		result.CreatorTabId.Should().Be(entity.CreatorTabId);
 		result.CreatorIP.Should().Be(entity.CreatorIP);
 		result.CreatorClientInfo.Should().Be(entity.CreatorClientInfo);
+		result.NotificationEmail.Should().Be(entity.NotificationEmail);
 
 		result.Otp.Should().NotBeNull();
 		result.Otp.Should().BeEquivalentTo(entity.Otp.ToDomain());

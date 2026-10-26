@@ -25,6 +25,9 @@ public static class ApiContractToDomainDtoMapper
 		CreatorClientId = request.ClientId,
 		CreatorTabId = request.TabId,
 		CreatorIP = httpContextClientInfo.ClientIP,
-		CreatorClientInfo = httpContextClientInfo.ClientInfo
+		CreatorClientInfo = httpContextClientInfo.ClientInfo,
+		NotificationEmail = string.IsNullOrWhiteSpace(request.NotificationEmail)
+			? null
+			: request.NotificationEmail.Trim()
 	};
 }

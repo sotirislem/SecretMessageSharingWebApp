@@ -8,6 +8,7 @@ export interface NewSecretMessageState {
 	secretMsgId: string;
 	secretMsgKey: string;
 	otp: OtpSettings;
+	notificationEmail: string | null;
 }
 
 /**

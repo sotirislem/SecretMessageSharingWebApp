@@ -25,9 +25,10 @@ describe('AppInfoComponent', () => {
 		fixture.detectChanges();
 
 		const buttons = fixture.nativeElement.querySelectorAll('[ngbAccordionButton]') as NodeListOf<HTMLButtonElement>;
-		expect(buttons.length).toBe(10);
+		expect(buttons.length).toBe(11);
 		expect(buttons[0].textContent).toContain('How is the message encrypted?');
-		expect(buttons[9].textContent).toContain('What is it built with?');
+		expect(buttons[6].textContent).toContain('Can I get the delivery details by email?');
+		expect(buttons[10].textContent).toContain('What is it built with?');
 	});
 
 	it('should expand a question when it is clicked', () => {

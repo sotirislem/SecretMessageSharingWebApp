@@ -32,7 +32,10 @@ public static class ServiceCollectionExtensions
 		services.AddSingleton<IJwtService, JwtService>();
 
 		services.AddScoped<ISendGridEmailService, SendGridEmailService>();
+		services.AddHttpClient(SendGridClientFactory.HttpClientName);
 		services.AddSingleton<ISendGridClientFactory, SendGridClientFactory>();
+		services.AddSingleton(serviceProvider => SendGridResiliencePipeline.Create(
+			serviceProvider.GetRequiredService<ILogger<ResilientSendGridClient>>()));
 
 		services.AddScoped<ISecretMessagesRepository, SecretMessagesRepository>();
 		services.AddScoped<ISecretMessagesService, SecretMessagesService>();

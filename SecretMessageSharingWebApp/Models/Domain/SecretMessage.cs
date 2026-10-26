@@ -23,4 +23,7 @@ public sealed record SecretMessage
 	public string? CreatorIP { get; init; }
 
 	public string? CreatorClientInfo { get; init; }
+
+	// Optional address that receives the delivery details by email once the message is opened.
+	public string? NotificationEmail { get; init; }
 }

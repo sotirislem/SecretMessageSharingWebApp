@@ -57,6 +57,7 @@ export class NewSecretMessageComponent {
 	readonly secretMsgContentCleared = signal(false);
 	readonly isCreatingAnotherSecretMessage = signal(false);
 	readonly otp = this.state.otp;
+	readonly notificationEmail = this.state.notificationEmail;
 
 	readonly autoDeletedText = '--- Auto deleted ---';
 
@@ -153,7 +154,8 @@ export class NewSecretMessageComponent {
 		try {
 			const createdSecretMessage = await this.secretMessageCreationService.create(
 				this.secretMsgObj(),
-				this.state.otp);
+				this.state.otp,
+				this.notificationEmail);
 
 			if (!createdSecretMessage) return;
 
@@ -183,7 +185,8 @@ export class NewSecretMessageComponent {
 			secretMsgObj: this.secretMsgObj(),
 			secretMsgId: createdSecretMessage.secretMsgId,
 			secretMsgKey: createdSecretMessage.secretMsgKey,
-			otp: this.state.otp
+			otp: this.state.otp,
+			notificationEmail: this.notificationEmail
 		});
 
 		// The new message gets its own full window before the local content is cleared again.
@@ -231,7 +234,8 @@ export class NewSecretMessageComponent {
 			secretMsgObj: emptySecretMessage,
 			secretMsgId: this.secretMsgId(),
 			secretMsgKey: this.secretMsgKey(),
-			otp: this.state.otp
+			otp: this.state.otp,
+			notificationEmail: this.notificationEmail
 		});
 	}
 

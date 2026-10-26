@@ -1,4 +1,5 @@
 ﻿using FastEndpoints;
+using SecretMessageSharingWebApp.Extensions;
 using SecretMessageSharingWebApp.Services.Interfaces;
 
 namespace SecretMessageSharingWebApp.Endpoints;
@@ -33,7 +34,12 @@ public sealed class AcquireSecretMessageOtpEndpoint(
 	{
 		var messageId = Route<string>("id")!;
 
-		var apiResult = await secretMessagesManager.SendOtp(messageId);
+		// The recipient's browser calls this endpoint, so the expiry shown in the
+		// OTP email can be rendered in their own time zone instead of UTC.
+		var recipientTimeZone = HttpContext.GetClientTimeZone();
+		var recipientUtcOffsetMinutes = HttpContext.GetClientUtcOffsetMinutes();
+
+		var apiResult = await secretMessagesManager.SendOtp(messageId, recipientTimeZone, recipientUtcOffsetMinutes);
 
 		await Send.ResultAsync(apiResult.HttpResult);
 	}

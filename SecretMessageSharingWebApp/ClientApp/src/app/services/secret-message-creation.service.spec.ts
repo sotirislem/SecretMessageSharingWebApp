@@ -65,11 +65,20 @@ describe('SecretMessageCreationService', () => {
 		expect(apiClient.storeSecretMessage).toHaveBeenCalledWith({
 			secretMessageData: { iv: 'iv', ct: 'ciphertext' },
 			otp,
-			encryptionKeySha256: 'key-hash'
+			encryptionKeySha256: 'key-hash',
+			notificationEmail: null
 		});
 		expect(result).toEqual({ secretMsgId: 'message-id', secretMsgKey: 'encryption-key' });
 		expect(toastService.warning).not.toHaveBeenCalled();
 		expect(toastService.error).not.toHaveBeenCalled();
+	});
+
+	it('should send the notification email with the request', async () => {
+		await service.create(secretMsgObj, otp, 'sender@example.com');
+
+		expect(apiClient.storeSecretMessage).toHaveBeenCalledWith(jasmine.objectContaining({
+			notificationEmail: 'sender@example.com'
+		}));
 	});
 
 	it('should refuse an encrypted payload that is too large', async () => {

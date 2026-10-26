@@ -22,4 +22,8 @@ public sealed record StoreNewSecretMessageRequest
 
 	[JsonPropertyName("encryptionKeySha256")]
 	public string EncryptionKeySha256 { get; init; }
+
+	// Optional address that receives the delivery details by email once the message is opened.
+	[JsonPropertyName("notificationEmail")]
+	public string? NotificationEmail { get; init; }
 }

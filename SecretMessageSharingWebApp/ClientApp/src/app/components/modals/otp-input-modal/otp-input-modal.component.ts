@@ -6,6 +6,7 @@ import { DigitOnlyDirective } from '@uiowa/digit-only';
 
 import { Constants } from '../../../../constants';
 import { ApiClientService } from '../../../services/api-client.service';
+import { RecipientLocationService } from '../../../services/recipient-location.service';
 import { ValidateSecretMessageOtpResponse } from '../../../models/api/validate-secret-message-otp-response.model';
 import { MODAL_DATA } from '../../../tokens';
 
@@ -25,6 +26,7 @@ export class OtpInputModalComponent {
 
 	private readonly formBuilder = inject(NonNullableFormBuilder);
 	private readonly apiClientService = inject(ApiClientService);
+	private readonly recipientLocationService = inject(RecipientLocationService);
 	private readonly destroyRef = inject(DestroyRef);
 
 	private readonly form = viewChild<FormGroupDirective>('form');
@@ -51,7 +53,9 @@ export class OtpInputModalComponent {
 		if (this.otpSent() && this.timerActive()) return;
 
 		try {
-			await firstValueFrom(this.apiClientService.acquireSecretMessageOtp(this.data.messageId));
+			await firstValueFrom(this.apiClientService.acquireSecretMessageOtp(
+				this.data.messageId,
+				this.recipientLocationService.collectRequestContext()));
 
 			this.otpSent.set(true);
 			this.startExpirationTimer();

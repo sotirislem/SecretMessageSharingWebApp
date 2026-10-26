@@ -4,7 +4,7 @@ import { Clipboard } from '@angular/cdk/clipboard';
 
 import { Constants } from '../../../constants';
 import { CreatedSecretMessage, SecretMessageCreationService } from '../../services/secret-message-creation.service';
-import { NewSecretMessageStateService } from '../../services/new-secret-message-state.service';
+import { NewSecretMessageState, NewSecretMessageStateService } from '../../services/new-secret-message-state.service';
 import { SecretMessageDeliveryNotificationHubService } from '../../services/secret-message-delivery-notification-hub.service';
 import { ToastService } from '../../services/toast.service';
 import { UrlHelperService } from '../../services/url-helper.service';
@@ -32,6 +32,22 @@ class FakeWorker {
 describe('NewSecretMessageComponent', () => {
 	const url = 'https://example.com/get-secret-message?id=message-id#encryption-key';
 
+	const messageState: NewSecretMessageState = {
+		secretMsgObj: {
+			plainText: 'A secret message',
+			containsFile: true,
+			fileName: 'greeting.txt',
+			base64BlobFile: 'data:text/plain;base64,aGVsbG8=',
+			containsUsernameAndPassword: true,
+			username: 'user',
+			password: 'pass'
+		},
+		secretMsgId: 'message-id',
+		secretMsgKey: 'encryption-key',
+		otp: { required: true, recipientsEmail: 'recipient@example.com' },
+		notificationEmail: 'sender@example.com'
+	};
+
 	let stateService: NewSecretMessageStateService;
 	let clipboard: jasmine.SpyObj<Clipboard>;
 	let creationService: jasmine.SpyObj<SecretMessageCreationService>;
@@ -49,20 +65,7 @@ describe('NewSecretMessageComponent', () => {
 		window.Worker = FakeWorker as unknown as typeof Worker;
 
 		stateService = new NewSecretMessageStateService();
-		stateService.set({
-			secretMsgObj: {
-				plainText: 'A secret message',
-				containsFile: true,
-				fileName: 'greeting.txt',
-				base64BlobFile: 'data:text/plain;base64,aGVsbG8=',
-				containsUsernameAndPassword: true,
-				username: 'user',
-				password: 'pass'
-			},
-			secretMsgId: 'message-id',
-			secretMsgKey: 'encryption-key',
-			otp: { required: true, recipientsEmail: 'recipient@example.com' }
-		});
+		stateService.set(messageState);
 
 		clipboard = jasmine.createSpyObj<Clipboard>('Clipboard', ['copy']);
 		deliveredMessageIds = signal<readonly string[]>([]);
@@ -135,9 +138,21 @@ describe('NewSecretMessageComponent', () => {
 		expect(inputValues).toContain('message-id');
 		expect(inputValues).toContain('encryption-key');
 		expect(inputValues).toContain('recipient@example.com');
+		expect(inputValues).toContain('sender@example.com');
 		expect(inputValues).toContain(url);
 		expect(element.textContent).toContain('Recipient Email:');
+		expect(element.textContent).toContain('Notification to:');
 		expect(element.textContent).toContain('Waiting for recipient');
+	});
+
+	it('should hide the notification email when none was provided', async () => {
+		stateService.set({ ...messageState, notificationEmail: null });
+
+		const anonymousFixture = TestBed.createComponent(NewSecretMessageComponent);
+		anonymousFixture.detectChanges();
+		await anonymousFixture.whenStable();
+
+		expect(anonymousFixture.nativeElement.textContent).not.toContain('Notification to:');
 	});
 
 	it('should switch to the opened state when the hub reports this message', async () => {
@@ -215,7 +230,8 @@ describe('NewSecretMessageComponent', () => {
 				fileName: 'greeting.txt',
 				base64BlobFile: 'data:text/plain;base64,aGVsbG8='
 			}),
-			{ required: true, recipientsEmail: 'recipient@example.com' });
+			{ required: true, recipientsEmail: 'recipient@example.com' },
+			'sender@example.com');
 		expect(component.secretMsgId()).toBe('new-message-id');
 		expect(component.secretMsgKey()).toBe('new-encryption-key');
 		expect(component.secretMsgUrl())

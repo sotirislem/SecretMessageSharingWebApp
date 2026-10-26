@@ -35,7 +35,7 @@ public class SecretMessagesManager(
 			: ApiResult.NotFound();
 	}
 
-	public async Task<ApiResult> SendOtp(string messageId)
+	public async Task<ApiResult> SendOtp(string messageId, string? recipientTimeZone, int? recipientUtcOffsetMinutes)
 	{
 		var (exists, otpSettings) = await secretMessagesService.Exists(messageId);
 
@@ -53,7 +53,8 @@ public class SecretMessagesManager(
 		
 		var oneTimePassword = otpService.Generate();
 
-		var otpSent = await sendGridEmailService.SendOtp(oneTimePassword, messageId, otpSettings.RecipientsEmail);
+		var otpSent = await sendGridEmailService.SendOtp(
+			oneTimePassword, messageId, otpSettings.RecipientsEmail, recipientTimeZone, recipientUtcOffsetMinutes);
 		if (!otpSent)
 		{
 			logger.LogError("Could not sent OTP to recipient's Email: {recipientsEmail}", otpSettings.RecipientsEmail);
@@ -185,10 +186,38 @@ public class SecretMessagesManager(
 		var secretMessageDeliveryNotification = getLog.ToSecretMessageDeliveryNotification();
 		var deliveryNotificationSent = await notificationHubService.SendNotification(secretMessage.CreatorClientId, targetTabId, secretMessageDeliveryNotification);
 
+		// The email is optional and best-effort: a SendGrid failure must not fail a retrieval
+		// that has already deleted the one-time message.
+		await SendDeliveryNotificationEmail(secretMessage.NotificationEmail, secretMessageDeliveryNotification);
+
 		return ApiResult<GetSecretMessageResponse>.SuccessWithData(new()
 		{
 			Data = secretMessage.Data,
 			DeliveryNotificationSent = deliveryNotificationSent
 		});
+	}
+
+	private async Task SendDeliveryNotificationEmail(string? recipientsEmail, SecretMessageDeliveryNotification notification)
+	{
+		if (string.IsNullOrWhiteSpace(recipientsEmail))
+		{
+			return;
+		}
+
+		try
+		{
+			var emailSent = await sendGridEmailService.SendDeliveryNotification(notification, recipientsEmail);
+
+			if (emailSent is false)
+			{
+				logger.LogError("Could not send delivery notification email for message: {messageId} to: {recipientsEmail}",
+					notification.MessageId, recipientsEmail);
+			}
+		}
+		catch (Exception exception)
+		{
+			logger.LogError(exception, "Failed to send delivery notification email for message: {messageId} to: {recipientsEmail}",
+				notification.MessageId, recipientsEmail);
+		}
 	}
 }

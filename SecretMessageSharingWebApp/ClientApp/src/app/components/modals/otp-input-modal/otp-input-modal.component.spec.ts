@@ -3,6 +3,7 @@ import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
 import { of, throwError } from 'rxjs';
 
 import { ApiClientService } from '../../../services/api-client.service';
+import { RecipientLocationService } from '../../../services/recipient-location.service';
 import { MODAL_DATA } from '../../../tokens';
 import { OtpInputModalComponent } from './otp-input-modal.component';
 
@@ -24,8 +25,14 @@ class FakeWorker {
 
 describe('OtpInputModalComponent', () => {
 	const messageId = 'message-id';
+	const requestContext = {
+		timezone: 'Europe/Bucharest',
+		utcOffsetMinutes: 180,
+		language: 'ro-RO'
+	};
 
 	let apiClient: jasmine.SpyObj<ApiClientService>;
+	let recipientLocation: jasmine.SpyObj<RecipientLocationService>;
 	let modal: jasmine.SpyObj<NgbActiveModal>;
 	let fixture: ReturnType<typeof TestBed.createComponent<OtpInputModalComponent>>;
 	let component: OtpInputModalComponent;
@@ -40,6 +47,10 @@ describe('OtpInputModalComponent', () => {
 		apiClient = jasmine.createSpyObj<ApiClientService>(
 			'ApiClientService',
 			['acquireSecretMessageOtp', 'validateSecretMessageOtp']);
+		recipientLocation = jasmine.createSpyObj<RecipientLocationService>(
+			'RecipientLocationService',
+			['collect', 'collectRequestContext']);
+		recipientLocation.collectRequestContext.and.returnValue(requestContext);
 		modal = jasmine.createSpyObj<NgbActiveModal>('NgbActiveModal', ['close', 'dismiss']);
 
 		await TestBed.configureTestingModule({
@@ -47,7 +58,8 @@ describe('OtpInputModalComponent', () => {
 			providers: [
 				{ provide: MODAL_DATA, useValue: { messageId } },
 				{ provide: NgbActiveModal, useValue: modal },
-				{ provide: ApiClientService, useValue: apiClient }
+				{ provide: ApiClientService, useValue: apiClient },
+				{ provide: RecipientLocationService, useValue: recipientLocation }
 			]
 		}).compileComponents();
 
@@ -79,7 +91,7 @@ describe('OtpInputModalComponent', () => {
 	it('should send the OTP, start the expiration timer and reset the form', async () => {
 		await sendOtp();
 
-		expect(apiClient.acquireSecretMessageOtp).toHaveBeenCalledWith(messageId);
+		expect(apiClient.acquireSecretMessageOtp).toHaveBeenCalledWith(messageId, requestContext);
 		expect(component.otpSent()).toBeTrue();
 		expect(component.timerActive()).toBeTrue();
 		expect(component.timerExpirationTime()).toBe('03:00');
@@ -258,7 +270,7 @@ describe('OtpInputModalComponent', () => {
 		await component.getOtp();
 		fixture.detectChanges();
 
-		expect(apiClient.acquireSecretMessageOtp).toHaveBeenCalledWith(messageId);
+		expect(apiClient.acquireSecretMessageOtp).toHaveBeenCalledWith(messageId, requestContext);
 		expect(component.timerActive()).toBeTrue();
 		expect(FakeWorker.instances.length).toBe(2);
 	});

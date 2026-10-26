@@ -22,6 +22,7 @@ public class ApiContractToDomainDtoMapperTests
 		var tabId = Guid.NewGuid().ToString();
 		var request = _fixture.Build<StoreNewSecretMessageRequest>()
 			.With(x => x.TabId, tabId)
+			.With(x => x.NotificationEmail, " sender@example.com ")
 			.Create();
 		var httpContextClientInfo = _fixture.Create<HttpContextClientInfo>();
 
@@ -41,6 +42,25 @@ public class ApiContractToDomainDtoMapperTests
 		result.CreatorTabId.Should().Be(tabId);
 		result.CreatorIP.Should().Be(httpContextClientInfo.ClientIP);
 		result.CreatorClientInfo.Should().Be(httpContextClientInfo.ClientInfo);
+		result.NotificationEmail.Should().Be("sender@example.com");
+	}
+
+	[Theory]
+	[InlineData(null)]
+	[InlineData("")]
+	[InlineData("   ")]
+	public void ToSecretMessage_ShouldNotStoreBlankNotificationEmail(string? notificationEmail)
+	{
+		// Arrange
+		var request = _fixture.Build<StoreNewSecretMessageRequest>()
+			.With(x => x.NotificationEmail, notificationEmail)
+			.Create();
+
+		// Act
+		var result = request.ToSecretMessage(_fixture.Create<HttpContextClientInfo>());
+
+		// Assert
+		result.NotificationEmail.Should().BeNull();
 	}
 
 	[Fact]

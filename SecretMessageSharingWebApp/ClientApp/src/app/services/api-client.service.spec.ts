@@ -68,6 +68,26 @@ describe('ApiClientService', () => {
 
 		const httpRequest = httpTesting.expectOne(`${baseApiUrl}/otp/message-id`);
 		expect(httpRequest.request.method).toBe('GET');
+		expect(httpRequest.request.headers.has('X-Client-Timezone')).toBeFalse();
+		expect(httpRequest.request.headers.has('X-Client-Utc-Offset-Minutes')).toBeFalse();
+
+		httpRequest.flush(null);
+	});
+
+	it('should send the time zone context when acquiring an OTP', () => {
+		service.acquireSecretMessageOtp('message-id', {
+			timezone: 'Europe/Bucharest',
+			utcOffsetMinutes: 180,
+			language: 'ro-RO'
+		}).subscribe();
+
+		const httpRequest = httpTesting.expectOne(`${baseApiUrl}/otp/message-id`);
+		expect(httpRequest.request.method).toBe('GET');
+		expect(httpRequest.request.headers.get('X-Client-Timezone')).toBe('Europe/Bucharest');
+		expect(httpRequest.request.headers.get('X-Client-Utc-Offset-Minutes')).toBe('180');
+		expect(httpRequest.request.headers.get('X-Client-Language')).toBe('ro-RO');
+		expect(httpRequest.request.headers.has('X-Client-Latitude')).toBeFalse();
+		expect(httpRequest.request.headers.has('X-Client-Longitude')).toBeFalse();
 
 		httpRequest.flush(null);
 	});

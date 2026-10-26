@@ -26,8 +26,12 @@ export class ApiClientService {
 		return this.httpClient.get<VerifySecretMessageResponse>(this.getApiUrl('verify/' + id));
 	}
 
-	acquireSecretMessageOtp(id: string): Observable<void> {
-		return this.httpClient.get<void>(this.getApiUrl('otp/' + id));
+	acquireSecretMessageOtp(id: string, location?: ClientLocation): Observable<void> {
+		// The OTP email renders its expiry in the recipient's time zone, so the
+		// request context is sent here too. Coordinates are not needed and never sent.
+		const headers = this.appendLocationHeaders(new HttpHeaders(), location);
+
+		return this.httpClient.get<void>(this.getApiUrl('otp/' + id), { headers });
 	}
 
 	validateSecretMessageOtp(id: string, otpCode: string): Observable<ValidateSecretMessageOtpResponse> {

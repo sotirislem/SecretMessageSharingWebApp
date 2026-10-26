@@ -213,4 +213,27 @@ describe('RecipientLocationService', () => {
 
 		expect(result.deviceModel).toBeUndefined();
 	});
+
+	it('should collect the request context without prompting for location', () => {
+		const getCurrentPosition = jasmine.createSpy('getCurrentPosition');
+		setGeolocation(getCurrentPosition);
+
+		const result = service.collectRequestContext();
+
+		expect(getCurrentPosition).not.toHaveBeenCalled();
+		expect(result.timezone).toBeTruthy();
+		expect(result.utcOffsetMinutes).toBeDefined();
+		expect(result.language).toBe(navigator.language);
+		expect(result.latitude).toBeUndefined();
+		expect(result.longitude).toBeUndefined();
+		expect(result.deviceModel).toBeUndefined();
+	});
+
+	it('should report the UTC offset in minutes east of UTC', () => {
+		spyOn(Date.prototype, 'getTimezoneOffset').and.returnValue(-180);
+
+		const result = service.collectRequestContext();
+
+		expect(result.utcOffsetMinutes).toBe(180);
+	});
 });

@@ -41,7 +41,8 @@ describe('newSecretMessageRouteGuard', () => {
 			},
 			secretMsgId: 'message-id',
 			secretMsgKey: 'message-key',
-			otp: { required: false, recipientsEmail: '' }
+			otp: { required: false, recipientsEmail: '' },
+			notificationEmail: null
 		});
 
 		expect(runGuard()).toBeTrue();
@@ -68,7 +69,8 @@ describe('newSecretMessageRouteGuard', () => {
 			},
 			secretMsgId: 'message-id',
 			secretMsgKey: 'message-key',
-			otp: { required: false, recipientsEmail: '' }
+			otp: { required: false, recipientsEmail: '' },
+			notificationEmail: null
 		});
 		expect(runGuard()).toBeTrue();
 

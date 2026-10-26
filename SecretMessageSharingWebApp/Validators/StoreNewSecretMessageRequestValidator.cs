@@ -40,6 +40,12 @@ public sealed class StoreNewSecretMessageRequestValidator : Validator<StoreNewSe
 				.When(request => request.Otp!.Required);
 		});
 
+		RuleFor(request => request.NotificationEmail)
+			.MaximumLength(320)
+			.EmailAddress()
+			.WithMessage($"'{nameof(StoreNewSecretMessageRequest.NotificationEmail)}' must be a valid email address.")
+			.When(request => string.IsNullOrWhiteSpace(request.NotificationEmail) is false);
+
 		RuleFor(request => request.EncryptionKeySha256)
 			.Matches("^[a-fA-F0-9]{64}$")
 			.WithMessage($"'{nameof(StoreNewSecretMessageRequest.EncryptionKeySha256)}' must be a valid SHA-256 hexadecimal string.");
