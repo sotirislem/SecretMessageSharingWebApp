@@ -2,13 +2,32 @@ import { httpResource } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, computed, inject, signal, TemplateRef, viewChild } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 
-import { RecentlyStoredSecretMessage, RecentlyStoredSecretMessagesResponse } from '../../models/api/recently-stored-secret-messages-response.model';
+import { DeliveryDetails, RecentlyStoredSecretMessage, RecentlyStoredSecretMessagesResponse } from '../../models/api/recently-stored-secret-messages-response.model';
 import { SecretMessageDeliveryNotification } from '../../models/api/secret-message-delivery-notification.model';
 import { ApiClientService } from '../../services/api-client.service';
 import { ModalService } from '../../services/modal.service';
+import { SecretMessageDeliveryNotificationHubService } from '../../services/secret-message-delivery-notification-hub.service';
 import { ToastService } from '../../services/toast.service';
 import { MessageDeliveryDetailsModalComponent } from '../modals/message-delivery-details-modal/message-delivery-details-modal.component';
 import { DateTimeFullPipe } from '../../pipes/date-time-full.pipe';
+
+function toDeliveryDetails(notification: SecretMessageDeliveryNotification): DeliveryDetails {
+	return {
+		deliveredAt: notification.messageDeliveredOn,
+		recipientIP: notification.recipientIP,
+		recipientClientInfo: notification.recipientClientInfo,
+		recipientCity: notification.recipientCity,
+		recipientRegion: notification.recipientRegion,
+		recipientCountry: notification.recipientCountry,
+		recipientCountryCode: notification.recipientCountryCode,
+		recipientLocationSource: notification.recipientLocationSource,
+		recipientIsp: notification.recipientIsp,
+		recipientTimezone: notification.recipientTimezone,
+		recipientUtcOffsetMinutes: notification.recipientUtcOffsetMinutes,
+		recipientLanguage: notification.recipientLanguage,
+		otpVerified: notification.otpVerified
+	};
+}
 
 @Component({
 	templateUrl: './recently-stored-messages.component.html',
@@ -19,17 +38,33 @@ export class RecentlyStoredMessagesComponent {
 	private readonly apiClient = inject(ApiClientService);
 	private readonly modalService = inject(ModalService);
 	private readonly toastService = inject(ToastService);
+	private readonly hubService = inject(SecretMessageDeliveryNotificationHubService);
 
 	private readonly messagesResource = httpResource<RecentlyStoredSecretMessagesResponse>(
 		() => this.apiClient.getRecentlyStoredSecretMessagesUrl());
+
+	private readonly deliveryNotificationsById = computed(() =>
+		new Map<string, SecretMessageDeliveryNotification>(
+			this.hubService.deliveryNotifications().map(notification => [notification.messageId, notification])));
 
 	private readonly deleteConfirmationBody = viewChild.required<TemplateRef<unknown>>('deleteConfirmationModalBody');
 
 	readonly messagePendingDeletion = signal<RecentlyStoredSecretMessage | null>(null);
 	readonly loading = this.messagesResource.isLoading;
 	readonly loadError = this.messagesResource.error;
+	// The list is loaded once, but a delivery notification can arrive while it is open.
+	// Overlay those notifications so the affected row switches to "Delivered" without a
+	// refresh, using the same data the server would have returned.
 	readonly recentlyStoredSecretMessages = computed(() =>
-		this.messagesResource.value()?.recentlyStoredSecretMessages ?? []);
+		(this.messagesResource.value()?.recentlyStoredSecretMessages ?? [])
+			.map(msg => {
+				if (msg.deliveryDetails) return msg;
+
+				const notification = this.deliveryNotificationsById().get(msg.id);
+				return notification
+					? { ...msg, deliveryDetails: toDeliveryDetails(notification) }
+					: msg;
+			}));
 	readonly deliveredCount = computed(() =>
 		this.recentlyStoredSecretMessages().filter(msg => msg.deliveryDetails).length);
 	readonly pendingCount = computed(() =>

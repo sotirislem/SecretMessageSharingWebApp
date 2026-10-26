@@ -502,6 +502,42 @@ describe('GetSecretMessageComponent', () => {
 		expect(component.secretMessageTextAsHtml()).toContain('https://example.com');
 	});
 
+	it('should clear the message when the page becomes visible after the interval elapsed', async () => {
+		await create();
+
+		// The worker timer does not run while the page is hidden or frozen, so the
+		// deadline has to be checked again once the page is running.
+		let now = Date.now();
+		spyOn(Date, 'now').and.callFake(() => now);
+		now += Constants.GET_SECRET_MESSAGE_AUTOCLEAR_INTERVAL_MINUTES * 60 * 1000;
+
+		document.dispatchEvent(new Event('visibilitychange'));
+		fixture.detectChanges();
+
+		expect(component.msgAutoClearTimeoutTriggered()).toBeTrue();
+		expect(component.secretMessageTextAsHtml()).toBe('--- Message auto deleted ---');
+	});
+
+	it('should keep the message when the page becomes visible before the interval elapsed', async () => {
+		await create();
+		const worker = FakeWorker.instances[0];
+
+		document.dispatchEvent(new Event('visibilitychange'));
+
+		expect(component.msgAutoClearTimeoutTriggered()).toBeFalse();
+		expect(worker.postMessage).toHaveBeenCalledTimes(2);
+	});
+
+	it('should clear the message before the page is cached in the back/forward cache', async () => {
+		await create();
+
+		window.dispatchEvent(new PageTransitionEvent('pagehide', { persisted: true }));
+		fixture.detectChanges();
+
+		expect(component.msgAutoClearTimeoutTriggered()).toBeTrue();
+		expect(component.secretMessageTextAsHtml()).toBe('--- Message auto deleted ---');
+	});
+
 	it('should drop decrypted content and stop the timer when destroyed', async () => {
 		await create();
 		const worker = FakeWorker.instances[0];

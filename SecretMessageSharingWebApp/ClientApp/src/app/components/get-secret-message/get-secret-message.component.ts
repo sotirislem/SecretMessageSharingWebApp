@@ -9,6 +9,7 @@ import { DecryptionResult, DecryptionStatus } from '../../models/decryption-resu
 import { SecretMessage } from '../../models/secret-message.model';
 
 import { ApiClientService } from '../../services/api-client.service';
+import { AutoClearService } from '../../services/auto-clear.service';
 import { CryptoService } from '../../services/crypto.service';
 import { FileService } from '../../services/file.service';
 import { ModalService } from '../../services/modal.service';
@@ -53,6 +54,7 @@ export class GetSecretMessageComponent {
 	private readonly clipboard = inject(Clipboard);
 	private readonly modalService = inject(ModalService);
 	private readonly recipientLocationService = inject(RecipientLocationService);
+	private readonly autoClearService = inject(AutoClearService);
 	private readonly destroyRef = inject(DestroyRef);
 
 	private readonly confirmationModalBody = viewChild.required<TemplateRef<unknown>>('getSecretMessageConfirmationModalBody');
@@ -70,16 +72,13 @@ export class GetSecretMessageComponent {
 	readonly msgAutoClearTimeoutTriggered = signal(false);
 	readonly secretMessageTextAsHtml = signal('');
 
-	private autoClearWorker: Worker | null = null;
-
 	constructor() {
 		this.messageId.set(this.route.snapshot.queryParams['id'] ?? '');
 
 		void this.verifyMessage();
 
 		this.destroyRef.onDestroy(() => {
-			this.autoClearWorker?.terminate();
-			this.autoClearWorker = null;
+			this.autoClearService.stop();
 
 			// Do not leave plaintext or key material reachable through the destroyed component.
 			this.decryptionResult.set(null);
@@ -254,26 +253,18 @@ export class GetSecretMessageComponent {
 	}
 
 	private setDecryptedMsgAutoclearTimeout(): void {
-		this.autoClearWorker?.terminate();
-		this.autoClearWorker = new Worker(new URL('../../workers/auto-clear-timeout.worker', import.meta.url));
+		this.autoClearService.start(
+			Constants.GET_SECRET_MESSAGE_AUTOCLEAR_INTERVAL_MINUTES,
+			() => this.clearDecryptedMessage());
+	}
 
-		this.autoClearWorker.onmessage = ({ data }) => {
-			if (!data.clear) return;
+	private clearDecryptedMessage(): void {
+		this.msgAutoClearTimeoutTriggered.set(true);
 
-			this.msgAutoClearTimeoutTriggered.set(true);
-
-			this.decryptionResult.update(result => result
-				? { ...result, decryptedMsg: { ...EMPTY_SECRET_MESSAGE } }
-				: result);
-			this.secretMessageTextAsHtml.set('--- Message auto deleted ---');
-
-			this.autoClearWorker?.terminate();
-			this.autoClearWorker = null;
-		};
-
-		this.autoClearWorker.postMessage({
-			timeOutMs: Constants.GET_SECRET_MESSAGE_AUTOCLEAR_INTERVAL_MINUTES * 60 * 1000
-		});
+		this.decryptionResult.update(result => result
+			? { ...result, decryptedMsg: { ...EMPTY_SECRET_MESSAGE } }
+			: result);
+		this.secretMessageTextAsHtml.set('--- Message auto deleted ---');
 	}
 
 	private removeEncryptionKeyFromAddressBar(): void {

@@ -3,6 +3,7 @@ import { Clipboard } from '@angular/cdk/clipboard';
 import { NgbTooltip } from '@ng-bootstrap/ng-bootstrap';
 import * as QRCode from 'qrcode';
 
+import { AutoClearService } from '../../services/auto-clear.service';
 import { NewSecretMessageStateService } from '../../services/new-secret-message-state.service';
 import { CreatedSecretMessage, SecretMessageCreationService } from '../../services/secret-message-creation.service';
 import { ToastService } from '../../services/toast.service';
@@ -38,6 +39,7 @@ export class NewSecretMessageComponent {
 	private readonly hubService = inject(SecretMessageDeliveryNotificationHubService);
 	private readonly modalService = inject(ModalService);
 	private readonly toastService = inject(ToastService);
+	private readonly autoClearService = inject(AutoClearService);
 	private readonly injector = inject(Injector);
 	private readonly destroyRef = inject(DestroyRef);
 
@@ -69,7 +71,6 @@ export class NewSecretMessageComponent {
 	private readonly tooltip = viewChild<NgbTooltip>('ngbTooltipElement');
 	private readonly qrCodeCanvas = viewChild<ElementRef<HTMLCanvasElement>>('qrCodeCanvas');
 
-	private autoClearWorker: Worker | null = null;
 	private tooltipClearTimer: ReturnType<typeof setTimeout> | undefined;
 
 	constructor() {
@@ -87,7 +88,7 @@ export class NewSecretMessageComponent {
 		this.startAutoClearTimer();
 
 		this.destroyRef.onDestroy(() => {
-			this.stopAutoClearTimer();
+			this.autoClearService.stop();
 			clearTimeout(this.tooltipClearTimer);
 
 			// Drop the plaintext, key, and URL as soon as the user leaves the page.
@@ -186,7 +187,6 @@ export class NewSecretMessageComponent {
 		});
 
 		// The new message gets its own full window before the local content is cleared again.
-		this.stopAutoClearTimer();
 		this.startAutoClearTimer();
 
 		// The QR canvas is re-created by the view after a delivered message becomes pending
@@ -208,27 +208,12 @@ export class NewSecretMessageComponent {
 	 * the sender can still share it.
 	 */
 	private startAutoClearTimer(): void {
-		this.autoClearWorker = new Worker(new URL('../../workers/auto-clear-timeout.worker', import.meta.url));
-
-		this.autoClearWorker.onmessage = ({ data }) => {
-			if (data.clear) {
-				this.clearSecretMessageContent();
-			}
-		};
-
-		this.autoClearWorker.postMessage({
-			timeOutMs: Constants.NEW_SECRET_MESSAGE_AUTOCLEAR_INTERVAL_MINUTES * 60 * 1000
-		});
-	}
-
-	private stopAutoClearTimer(): void {
-		this.autoClearWorker?.terminate();
-		this.autoClearWorker = null;
+		this.autoClearService.start(
+			Constants.NEW_SECRET_MESSAGE_AUTOCLEAR_INTERVAL_MINUTES,
+			() => this.clearSecretMessageContent());
 	}
 
 	private clearSecretMessageContent(): void {
-		this.stopAutoClearTimer();
-
 		this.secretMsgContentCleared.set(true);
 
 		const emptySecretMessage = {

@@ -1,5 +1,6 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { of, throwError } from 'rxjs';
 
@@ -7,8 +8,10 @@ import {
 	RecentlyStoredSecretMessage,
 	RecentlyStoredSecretMessagesResponse
 } from '../../models/api/recently-stored-secret-messages-response.model';
+import { SecretMessageDeliveryNotification } from '../../models/api/secret-message-delivery-notification.model';
 import { ApiClientService } from '../../services/api-client.service';
 import { ModalService } from '../../services/modal.service';
+import { SecretMessageDeliveryNotificationHubService } from '../../services/secret-message-delivery-notification-hub.service';
 import { ToastService } from '../../services/toast.service';
 import { MessageDeliveryDetailsModalComponent } from '../modals/message-delivery-details-modal/message-delivery-details-modal.component';
 import { RecentlyStoredMessagesComponent } from './recently-stored-messages.component';
@@ -40,10 +43,29 @@ describe('RecentlyStoredMessagesComponent', () => {
 		id: 'pending-id',
 		createdDateTime: createdAt
 	};
+	const deliveryNotification: SecretMessageDeliveryNotification = {
+		messageId: pendingMessage.id,
+		messageCreatedOn: createdAt,
+		messageDeliveredOn: new Date(2026, 9, 25, 9, 5, 0),
+		recipientIP: '192.168.1.10',
+		recipientClientInfo: 'Chrome on Windows',
+		recipientCity: 'Bucharest',
+		recipientRegion: 'Bucuresti',
+		recipientCountry: 'Romania',
+		recipientCountryCode: 'RO',
+		recipientLocationSource: 'device',
+		recipientIsp: 'DIGI Romania',
+		recipientTimezone: 'Europe/Bucharest',
+		recipientUtcOffsetMinutes: 180,
+		recipientLanguage: 'ro-RO',
+		otpVerified: true
+	};
 
 	let apiClient: jasmine.SpyObj<ApiClientService>;
 	let modalService: jasmine.SpyObj<ModalService>;
 	let toastService: jasmine.SpyObj<ToastService>;
+	let deliveredMessageIds: ReturnType<typeof signal<readonly string[]>>;
+	let deliveryNotifications: ReturnType<typeof signal<readonly SecretMessageDeliveryNotification[]>>;
 	let httpTesting: HttpTestingController;
 	let writeTextSpy: jasmine.Spy;
 	let fixture: ReturnType<typeof TestBed.createComponent<RecentlyStoredMessagesComponent>>;
@@ -55,6 +77,9 @@ describe('RecentlyStoredMessagesComponent', () => {
 			['getRecentlyStoredSecretMessagesUrl', 'deleteRecentlyStoredSecretMessage']);
 		apiClient.getRecentlyStoredSecretMessagesUrl.and.returnValue(apiUrl);
 		apiClient.deleteRecentlyStoredSecretMessage.and.returnValue(of(undefined));
+
+		deliveredMessageIds = signal<readonly string[]>([]);
+		deliveryNotifications = signal<readonly SecretMessageDeliveryNotification[]>([]);
 
 		modalService = jasmine.createSpyObj<ModalService>('ModalService', ['openModal', 'openConfirmationModal']);
 		modalService.openModal.and.returnValue(Promise.resolve());
@@ -76,7 +101,14 @@ describe('RecentlyStoredMessagesComponent', () => {
 				provideHttpClientTesting(),
 				{ provide: ApiClientService, useValue: apiClient },
 				{ provide: ModalService, useValue: modalService },
-				{ provide: ToastService, useValue: toastService }
+				{ provide: ToastService, useValue: toastService },
+				{
+					provide: SecretMessageDeliveryNotificationHubService,
+					useValue: {
+						deliveredMessageIds: deliveredMessageIds.asReadonly(),
+						deliveryNotifications: deliveryNotifications.asReadonly()
+					}
+				}
 			]
 		}).compileComponents();
 
@@ -124,6 +156,61 @@ describe('RecentlyStoredMessagesComponent', () => {
 		expect(element.querySelectorAll('.status-pill--success').length).toBe(1);
 		expect(element.querySelectorAll('.status-pill--warning').length).toBe(1);
 		expect(element.querySelector('.message-time')?.textContent).toContain('25/10/2026 09:00:00');
+	});
+
+	it('should mark a message as delivered when a delivery notification arrives', async () => {
+		await flushMessages([pendingMessage]);
+
+		deliveryNotifications.set([deliveryNotification]);
+		fixture.detectChanges();
+
+		const element: HTMLElement = fixture.nativeElement;
+		expect(component.deliveredCount()).toBe(1);
+		expect(component.pendingCount()).toBe(0);
+		expect(component.recentlyStoredSecretMessages()[0].deliveryDetails?.deliveredAt)
+			.toEqual(deliveryNotification.messageDeliveredOn);
+		expect(element.querySelectorAll('.status-pill--success').length).toBe(1);
+		expect(element.querySelector('.status-pill--warning')).toBeNull();
+		expect(element.textContent).toContain('1 delivered');
+		expect(element.textContent).toContain('0 pending');
+		expect(element.querySelector('.message-actions')?.textContent).toContain('Details');
+	});
+
+	it('should show the notification details for a message marked as delivered', async () => {
+		await flushMessages([pendingMessage]);
+
+		deliveryNotifications.set([deliveryNotification]);
+		fixture.detectChanges();
+
+		component.showDeliveryDetails(component.recentlyStoredSecretMessages()[0]);
+
+		expect(modalService.openModal).toHaveBeenCalledWith(
+			MessageDeliveryDetailsModalComponent,
+			{
+				isNotification: false,
+				messageDeliveryDetails: jasmine.objectContaining({
+					messageId: 'pending-id',
+					messageCreatedOn: createdAt,
+					messageDeliveredOn: deliveryNotification.messageDeliveredOn,
+					recipientIP: '192.168.1.10',
+					recipientClientInfo: 'Chrome on Windows',
+					recipientCity: 'Bucharest',
+					recipientLanguage: 'ro-RO',
+					otpVerified: true
+				})
+			});
+	});
+
+	it('should ignore delivery notifications for other messages', async () => {
+		await flushMessages([pendingMessage]);
+
+		deliveryNotifications.set([{ ...deliveryNotification, messageId: 'other-id' }]);
+		fixture.detectChanges();
+
+		expect(component.deliveredCount()).toBe(0);
+		expect(component.pendingCount()).toBe(1);
+		expect(component.recentlyStoredSecretMessages()[0].deliveryDetails).toBeUndefined();
+		expect(fixture.nativeElement.querySelector('.status-pill--warning')).not.toBeNull();
 	});
 
 	it('should show an empty state when there are no messages', async () => {

@@ -357,6 +357,26 @@ describe('NewSecretMessageComponent', () => {
 		expect(component.secretMsgObj().plainText).toBe('A secret message');
 	});
 
+	it('should clear the content when the page becomes visible after the interval elapsed', () => {
+		// The worker timer does not run while the page is hidden or frozen, so the
+		// deadline has to be checked again once the page is running.
+		let now = Date.now();
+		spyOn(Date, 'now').and.callFake(() => now);
+		now += Constants.NEW_SECRET_MESSAGE_AUTOCLEAR_INTERVAL_MINUTES * 60 * 1000;
+
+		document.dispatchEvent(new Event('visibilitychange'));
+
+		expect(component.secretMsgContentCleared()).toBeTrue();
+		expect(component.secretMsgObj().plainText).toBe('');
+	});
+
+	it('should clear the content before the page is cached in the back/forward cache', () => {
+		window.dispatchEvent(new PageTransitionEvent('pagehide', { persisted: true }));
+
+		expect(component.secretMsgContentCleared()).toBeTrue();
+		expect(component.secretMsgObj().plainText).toBe('');
+	});
+
 	it('should drop the in-memory message and clear the QR code when destroyed', () => {
 		const worker = FakeWorker.instances[0];
 		const canvas = fixture.nativeElement.querySelector('#qrCodeCanvas') as HTMLCanvasElement;
